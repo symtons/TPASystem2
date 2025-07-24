@@ -1,7 +1,9 @@
 ﻿<%@ Master Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DashboardMaster.master.cs" Inherits="TPASystem2.DashboardMaster" %>
 
 <asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
-    <link href="~/Content/css/tpa-dashboard.css" rel="stylesheet" />
+    <link href="Content/css/tpa-dashboard.css" rel="stylesheet" />
+
+
 </asp:Content>
 
 <asp:Content ID="MainContent" ContentPlaceHolderID="MainContent" runat="server">
@@ -144,5 +146,5 @@
 </asp:Content>
 
 <asp:Content ID="ScriptContent" ContentPlaceHolderID="ScriptContent" runat="server">
-    <script src="~/Content/js/tpa-dashboard.js"></script>
+    <script src="Content/js/tpa-dashboard.js"></script>
 </asp:Content>

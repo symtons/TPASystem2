@@ -4,7 +4,7 @@ using System.Web;
 namespace TPASystem2.Helpers
 {
     /// <summary>
-    /// Helper class for managing clean URLs and navigation in the TPA Web Forms application
+    /// Helper class for managing clean URLs and navigation in the TPA System
     /// </summary>
     public static class SimpleUrlHelper
     {

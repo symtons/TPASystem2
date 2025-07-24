@@ -129,11 +129,11 @@
             </div>
         </div>
     </form>
-    
+     <script src="~/Content/js/tpa-common.js"></script>
+
     <!-- Materialize JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <!-- Custom JavaScript -->
-    <script src="~/Content/js/tpa-common.js"></script>
-    <script src="~/Content/js/tpa-auth.js"></script>
+   
 </body>
 </html>

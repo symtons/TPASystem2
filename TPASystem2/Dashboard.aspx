@@ -1,7 +1,4 @@
-﻿
-
-
-<%@ Page Title="Dashboard" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="TPASystem2.Dashboard" %>
+﻿<%@ Page Title="Dashboard" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="Dashboard.aspx.cs" Inherits="TPASystem2.Dashboard" %>
 
 <asp:Content ID="DashboardContent" ContentPlaceHolderID="DashboardContent" runat="server">
     <!-- Page Header -->
@@ -59,16 +56,15 @@
         <asp:Literal ID="litUserRole" runat="server"></asp:Literal>
         <asp:Literal ID="litNavigation" runat="server"></asp:Literal>
     </div>
-</asp:Content>
 
-<asp:Content ID="ScriptContent" ContentPlaceHolderID="ScriptContent" runat="server">
-    <script>
+    <!-- Dashboard JavaScript -->
+    <script type="text/javascript">
         // Dashboard JavaScript functionality
         function handleQuickAction(actionKey) {
             console.log('Quick action clicked:', actionKey);
-            
+
             // Handle different action types based on your enhanced role system
-            switch(actionKey) {
+            switch (actionKey) {
                 // Employee actions
                 case 'clock-in':
                     window.location.href = '/time-attendance';
@@ -82,7 +78,7 @@
                 case 'my-documents':
                     window.location.href = '/documents';
                     break;
-                
+
                 // Admin actions
                 case 'add-employee':
                     window.location.href = '/employees/add';
@@ -96,7 +92,7 @@
                 case 'system-health':
                     window.location.href = '/admin/health';
                     break;
-                
+
                 // HR Admin actions
                 case 'leave-approvals':
                     window.location.href = '/leave/approvals';
@@ -107,7 +103,7 @@
                 case 'performance-reviews':
                     window.location.href = '/hr/performance';
                     break;
-                
+
                 // Program Director actions
                 case 'program-overview':
                     window.location.href = '/programs';
@@ -121,7 +117,7 @@
                 case 'performance-analytics':
                     window.location.href = '/director/analytics';
                     break;
-                
+
                 // Program Coordinator actions
                 case 'schedule-meeting':
                     window.location.href = '/coordination/meeting';
@@ -135,7 +131,7 @@
                 case 'team-reports':
                     window.location.href = '/reports/team';
                     break;
-                
+
                 // Super Admin actions
                 case 'system-monitor':
                     window.location.href = '/admin/monitor';
@@ -149,7 +145,7 @@
                 case 'system-settings':
                     window.location.href = '/admin/settings';
                     break;
-                
+
                 default:
                     console.log('Unknown action:', actionKey);
                     // Fallback - try to navigate to the action as a URL
@@ -160,13 +156,13 @@
         }
 
         // Initialize dashboard when page loads
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Animate stat cards on load
             const statCards = document.querySelectorAll('.stat-card');
             statCards.forEach((card, index) => {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
-                
+
                 setTimeout(() => {
                     card.style.transition = 'all 0.3s ease';
                     card.style.opacity = '1';
@@ -179,7 +175,7 @@
             quickActions.forEach((action, index) => {
                 action.style.opacity = '0';
                 action.style.transform = 'translateY(20px)';
-                
+
                 setTimeout(() => {
                     action.style.transition = 'all 0.3s ease';
                     action.style.opacity = '1';
@@ -192,7 +188,7 @@
             activityItems.forEach((item, index) => {
                 item.style.opacity = '0';
                 item.style.transform = 'translateX(20px)';
-                
+
                 setTimeout(() => {
                     item.style.transition = 'all 0.3s ease';
                     item.style.opacity = '1';
@@ -202,12 +198,12 @@
 
             // Add click handlers for stat cards
             statCards.forEach(card => {
-                card.addEventListener('click', function() {
+                card.addEventListener('click', function () {
                     const label = this.querySelector('.stat-label')?.textContent;
                     if (label) {
                         console.log('Stat card clicked:', label);
                         // Navigate to detailed views based on stat type
-                        switch(label.toLowerCase()) {
+                        switch (label.toLowerCase()) {
                             case 'total employees':
                             case 'active employees':
                                 window.location.href = '/employees';
@@ -243,7 +239,7 @@
         }
 
         // Auto-refresh dashboard every 5 minutes (optional)
-        setInterval(function() {
+        setInterval(function () {
             console.log('🔄 Auto-refreshing dashboard data...');
             // Implement AJAX refresh here in the future
         }, 300000); // 5 minutes
