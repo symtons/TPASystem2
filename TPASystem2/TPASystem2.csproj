@@ -72,11 +72,19 @@
     <Content Include="Content\css\tpa-dashboard.css" />
     <Content Include="Content\js\tpa-common.js" />
     <Content Include="Content\js\tpa-dashboard.js" />
+    <Content Include="Dashboard.aspx" />
     <Content Include="Global.asax" />
     <Content Include="Login.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Dashboard.aspx.cs">
+      <DependentUpon>Dashboard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Dashboard.aspx.designer.cs">
+      <DependentUpon>Dashboard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="DashboardMaster.Master.cs">
       <DependentUpon>DashboardMaster.Master</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>

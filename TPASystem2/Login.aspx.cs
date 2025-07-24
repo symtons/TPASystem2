@@ -459,7 +459,7 @@ namespace TPASystem2
                     UpdateLastLogin(user.Id);
 
                     // Redirect to dashboard
-                    Response.Redirect("Dashboard.aspx", false);
+                    Response.Redirect("~/Dashboard.aspx", false);
                     Context.ApplicationInstance.CompleteRequest();
                 }
                 else
