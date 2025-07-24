@@ -1,0 +1,148 @@
+﻿<%@ Master Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="DashboardMaster.master.cs" Inherits="TPASystem2.DashboardMaster" %>
+
+<asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
+    <link href="~/Content/css/tpa-dashboard.css" rel="stylesheet" />
+</asp:Content>
+
+<asp:Content ID="MainContent" ContentPlaceHolderID="MainContent" runat="server">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+            <div class="tpa-logo">
+                <div class="tpa-logo-text">TPA</div>
+                <i class="material-icons tpa-logo-icon">people</i>
+            </div>
+            <h6 class="sidebar-brand">Tennessee Personal Assistance</h6>
+        </div>
+        
+        <!-- User Info -->
+        <div class="user-info">
+            <div class="user-avatar">
+                <asp:Literal ID="Literal1" runat="server"></asp:Literal>
+            </div>
+            <div class="user-details">
+                <div class="user-name">
+                    <asp:Literal ID="litSidebarUserName" runat="server"></asp:Literal>
+                </div>
+                <div class="user-role">
+                    <asp:Literal ID="litSidebarUserRole" runat="server"></asp:Literal>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
+            <asp:Literal ID="litNavigation" runat="server"></asp:Literal>
+        </div>
+        
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <div class="sidebar-version">TPA HR System v1.0</div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="app-header">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" type="button" onclick="toggleSidebar()">
+                <i class="material-icons">menu</i>
+            </button>
+            
+            <h1 class="header-title">TPA Management System</h1>
+            
+            <div class="header-actions">
+                <!-- Notifications -->
+                <div class="dropdown-trigger notification-dropdown" data-target="notificationDropdown">
+                    <button class="notification-btn" type="button">
+                        <i class="material-icons">notifications</i>
+                        <asp:Panel ID="pnlNotificationBadge" runat="server" CssClass="notification-badge">
+                            <asp:Literal ID="litNotificationCount" runat="server">0</asp:Literal>
+                        </asp:Panel>
+                    </button>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown-trigger user-menu" data-target="userDropdown">
+                    <button class="user-menu-btn" type="button">
+                        <div class="header-user-avatar">
+                            <asp:Literal ID="litHeaderUserInitial" runat="server"></asp:Literal>
+                        </div>
+                        <span class="header-user-name">
+                            <asp:Literal ID="litHeaderUserName" runat="server"></asp:Literal>
+                        </span>
+                        <i class="material-icons">arrow_drop_down</i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Breadcrumbs -->
+            <asp:Panel ID="pnlBreadcrumbs" runat="server" CssClass="breadcrumb-container">
+                <nav class="breadcrumb-nav">
+                    <div class="breadcrumb">
+                        <asp:Literal ID="litBreadcrumbs" runat="server"></asp:Literal>
+                    </div>
+                </nav>
+            </asp:Panel>
+            
+            <!-- Page Content -->
+            <asp:ContentPlaceHolder ID="DashboardContent" runat="server">
+            </asp:ContentPlaceHolder>
+        </div>
+    </div>
+    
+    <!-- Notification Dropdown -->
+    <ul id="notificationDropdown" class="dropdown-content notification-dropdown-content">
+        <li class="dropdown-header">
+            <span>Notifications</span>
+            <a href="#" class="mark-all-read">Mark all as read</a>
+        </li>
+        <li class="divider"></li>
+        <asp:Literal ID="litNotifications" runat="server"></asp:Literal>
+        <li class="divider"></li>
+        <li class="dropdown-footer">
+            <a href="/notifications" class="view-all-notifications">View All Notifications</a>
+        </li>
+    </ul>
+    
+    <!-- User Dropdown -->
+    <ul id="userDropdown" class="dropdown-content user-dropdown-content">
+        <li class="dropdown-header">
+            <div class="dropdown-user-info">
+                <div class="dropdown-user-avatar">
+                    <asp:Literal ID="litDropdownUserInitial" runat="server"></asp:Literal>
+                </div>
+                <div class="dropdown-user-details">
+                    <div class="dropdown-user-name">
+                        <asp:Literal ID="litDropdownUserName" runat="server"></asp:Literal>
+                    </div>
+                    <div class="dropdown-user-email">
+                        <asp:Literal ID="litDropdownUserEmail" runat="server"></asp:Literal>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <li class="divider"></li>
+        <li><a href="/profile"><i class="material-icons">person</i>My Profile</a></li>
+        <li><a href="/settings"><i class="material-icons">settings</i>Settings</a></li>
+        <li><a href="/help"><i class="material-icons">help</i>Help & Support</a></li>
+        <li class="divider"></li>
+        <li>
+            <asp:LinkButton ID="btnLogout" runat="server" OnClick="btnLogout_Click" CssClass="logout-link">
+                <i class="material-icons">exit_to_app</i>Sign Out
+            </asp:LinkButton>
+        </li>
+    </ul>
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" onclick="closeSidebar()"></div>
+</asp:Content>
+
+<asp:Content ID="ScriptContent" ContentPlaceHolderID="ScriptContent" runat="server">
+    <script src="~/Content/js/tpa-dashboard.js"></script>
+</asp:Content>
