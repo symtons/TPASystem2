@@ -1,13 +1,11 @@
 ﻿<%@ Page Title="Employee Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="Employees.aspx.cs" Inherits="TPASystem2.HR.Employees" %>
 
-<%-- REMOVED: The HeadContent section that was causing the error --%>
+<%-- Add the employee-management.css to the head section --%>
+<asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
+    <link href="~/employee-management.css" rel="stylesheet" />
+</asp:Content>
 
 <asp:Content ID="EmployeeContent" ContentPlaceHolderID="DashboardContent" runat="server">
-    
-    <%-- Add the CSS directly in the page since HeadContent doesn't exist --%>
-    <style type="text/css">
-        @import url("../../Content/css/employee-management.css");
-    </style>
     
     <!-- Page Header -->
     <div class="page-header">
@@ -20,6 +18,49 @@
                         CssClass="btn btn-primary" OnClick="btnAddEmployee_Click" />
             <asp:Button ID="btnExportEmployees" runat="server" Text="Export CSV" 
                         CssClass="btn btn-secondary" OnClick="btnExportEmployees_Click" />
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="material-icons">people</i>
+            </div>
+            <div class="stat-content">
+                <h3><asp:Literal ID="litTotalEmployees" runat="server">0</asp:Literal></h3>
+                <p>Total Employees</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="material-icons">check_circle</i>
+            </div>
+            <div class="stat-content">
+                <h3><asp:Literal ID="litActiveEmployees" runat="server">0</asp:Literal></h3>
+                <p>Active Employees</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <i class="material-icons">pending</i>
+            </div>
+            <div class="stat-content">
+                <h3><asp:Literal ID="litOnboardingEmployees" runat="server">0</asp:Literal></h3>
+                <p>In Onboarding</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="material-icons">calendar_today</i>
+            </div>
+            <div class="stat-content">
+                <h3><asp:Literal ID="litNewHires" runat="server">0</asp:Literal></h3>
+                <p>New Hires (30 days)</p>
+            </div>
         </div>
     </div>
 
@@ -49,6 +90,7 @@
                         <asp:ListItem Value="">All Status</asp:ListItem>
                         <asp:ListItem Value="Active">Active</asp:ListItem>
                         <asp:ListItem Value="Inactive">Inactive</asp:ListItem>
+                        <asp:ListItem Value="Terminated">Terminated</asp:ListItem>
                         <asp:ListItem Value="On Leave">On Leave</asp:ListItem>
                     </asp:DropDownList>
                 </div>
@@ -60,54 +102,13 @@
                         <asp:ListItem Value="Full-time">Full-time</asp:ListItem>
                         <asp:ListItem Value="Part-time">Part-time</asp:ListItem>
                         <asp:ListItem Value="Contract">Contract</asp:ListItem>
-                        <asp:ListItem Value="Intern">Intern</asp:ListItem>
+                        <asp:ListItem Value="Temporary">Temporary</asp:ListItem>
                     </asp:DropDownList>
                 </div>
-                <div class="filter-actions">
-                    <label>&nbsp;</label>
-                    <asp:Button ID="btnClearFilters" runat="server" Text="Clear Filters" 
+                <div class="filter-group">
+                    <asp:Button ID="btnClearFilters" runat="server" Text="Clear" 
                                 CssClass="btn btn-outline" OnClick="btnClearFilters_Click" />
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Employee Statistics -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-icon blue">
-                <i class="material-icons">people</i>
-            </div>
-            <div class="stat-content">
-                <h3><asp:Literal ID="litTotalEmployees" runat="server">0</asp:Literal></h3>
-                <p>Total Employees</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon green">
-                <i class="material-icons">check_circle</i>
-            </div>
-            <div class="stat-content">
-                <h3><asp:Literal ID="litActiveEmployees" runat="server">0</asp:Literal></h3>
-                <p>Active Employees</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon orange">
-                <i class="material-icons">person_add</i>
-            </div>
-            <div class="stat-content">
-                <h3><asp:Literal ID="litNewHires" runat="server">0</asp:Literal></h3>
-                <p>New Hires (30 days)</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon purple">
-                <i class="material-icons">business</i>
-            </div>
-            <div class="stat-content">
-                <h3><asp:Literal ID="litDepartmentCount" runat="server">0</asp:Literal></h3>
-                <p>Departments</p>
             </div>
         </div>
     </div>
@@ -115,60 +116,65 @@
     <!-- Employee Table -->
     <div class="table-container">
         <div class="table-header">
-            <div class="table-title">
-                <h3>Employee Directory</h3>
-                <span>Showing <asp:Literal ID="litRecordCount" runat="server">0</asp:Literal> employees</span>
-            </div>
-            <div class="table-actions">
-                <asp:DropDownList ID="ddlPageSize" runat="server" CssClass="form-control" style="width: auto;" 
-                                  AutoPostBack="true" OnSelectedIndexChanged="ddlPageSize_SelectedIndexChanged">
-                    <asp:ListItem Value="10">10 per page</asp:ListItem>
-                    <asp:ListItem Value="25" Selected="True">25 per page</asp:ListItem>
-                    <asp:ListItem Value="50">50 per page</asp:ListItem>
-                    <asp:ListItem Value="100">100 per page</asp:ListItem>
-                </asp:DropDownList>
-            </div>
+            <h3>Employee List</h3>
+            <!-- REMOVED: Bulk Actions button that was causing the error -->
         </div>
-
-        <asp:GridView ID="gvEmployees" runat="server" CssClass="data-table" 
-                      AutoGenerateColumns="false" AllowPaging="true" PageSize="25"
-                      OnPageIndexChanging="gvEmployees_PageIndexChanging"
+        
+        <asp:GridView ID="gvEmployees" runat="server" 
+                      CssClass="data-table" 
+                      AutoGenerateColumns="false"
+                      DataKeyNames="Id"
                       OnRowCommand="gvEmployees_RowCommand"
-                      EmptyDataText="No employees found."
-                      GridLines="None">
+                      OnRowDataBound="gvEmployees_RowDataBound"
+                      AllowPaging="true" 
+                      PageSize="25"
+                      OnPageIndexChanging="gvEmployees_PageIndexChanging"
+                      PagerStyle-CssClass="pagination-container">
+            
             <Columns>
-                <asp:TemplateField HeaderText="Employee">
+                <asp:TemplateField HeaderText="">
+                    <ItemTemplate>
+                        <asp:CheckBox ID="chkSelect" runat="server" />
+                    </ItemTemplate>
+                </asp:TemplateField>
+                
+                <asp:TemplateField HeaderText="Employee" SortExpression="LastName">
                     <ItemTemplate>
                         <div class="employee-info">
                             <h4><%# Eval("FirstName") %> <%# Eval("LastName") %></h4>
-                            <p class="employee-number">ID: <%# Eval("EmployeeNumber") %></p>
-                            <p class="employee-email"><%# Eval("Email") %></p>
+                            <div class="employee-number">ID: <%# Eval("EmployeeNumber") %></div>
+                            <div class="employee-email"><%# Eval("Email") %></div>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
-
-                <asp:TemplateField HeaderText="Position & Department">
+                
+                <asp:TemplateField HeaderText="Position" SortExpression="Position">
                     <ItemTemplate>
                         <div class="position-info">
                             <h5><%# Eval("Position") ?? Eval("JobTitle") %></h5>
-                            <p class="department"><%# Eval("DepartmentName") %></p>
+                            <div class="department"><%# Eval("DepartmentName") %></div>
                             <span class="employee-type"><%# Eval("EmployeeType") %></span>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
-
-                <asp:TemplateField HeaderText="Status & Hire Date">
+                
+                <asp:TemplateField HeaderText="Status" SortExpression="Status">
                     <ItemTemplate>
-                        <div class="status-info">
-                            <span class='badge <%# GetStatusClass(Eval("Status")?.ToString()) %>'>
-                                <%# Eval("Status") %>
-                            </span>
-                            <p class="hire-date">Hired: <%# Eval("HireDate", "{0:MMM dd, yyyy}") %></p>
-                            <p class="tenure"><%# GetTenure(Eval("HireDate")) %></p>
+                        <span class='badge <%# GetStatusClass(Eval("Status")?.ToString()) %>'>
+                            <%# Eval("Status") %>
+                        </span>
+                    </ItemTemplate>
+                </asp:TemplateField>
+                
+                <asp:TemplateField HeaderText="Hire Date" SortExpression="HireDate">
+                    <ItemTemplate>
+                        <%# Eval("HireDate", "{0:MMM dd, yyyy}") %>
+                        <div style="font-size: 0.8rem; color: #666;">
+                            <%# GetTenure(Eval("HireDate")) %>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
-
+                
                 <asp:TemplateField HeaderText="Actions">
                     <ItemTemplate>
                         <div class="action-buttons">

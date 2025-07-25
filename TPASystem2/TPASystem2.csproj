@@ -77,6 +77,7 @@
     <Content Include="Debug.aspx" />
     <Content Include="Global.asax" />
     <Content Include="HR\AddEmployee.aspx" />
+    <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
