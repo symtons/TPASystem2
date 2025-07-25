@@ -1,259 +1,14 @@
 ﻿<%@ Page Title="Employee Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="Employees.aspx.cs" Inherits="TPASystem2.HR.Employees" %>
 
-<asp:Content ID="EmployeeContent" ContentPlaceHolderID="DashboardContent" runat="server">
-    <script src="./Content/js/tpa-common.js"></script>
-    <style>
-        /* Essential inline styles for immediate functionality */
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-            border-radius: 8px;
-            color: white;
-        }
-        
-        .filter-section {
-            margin-bottom: 2rem;
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .filter-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
-            gap: 1rem;
-            align-items: end;
-        }
-        
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .filter-group label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #333;
-        }
-        
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        
-        .stat-icon.blue { background: #2196f3; color: white; }
-        .stat-icon.green { background: #4caf50; color: white; }
-        .stat-icon.orange { background: #ff9800; color: white; }
-        .stat-icon.purple { background: #9c27b0; color: white; }
-        
-        .stat-content h3 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #333;
-        }
-        
-        .stat-content p {
-            margin: 0;
-            color: #666;
-        }
-        
-        .table-container {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .table-header {
-            padding: 1rem;
-            background: #f5f5f5;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .data-table th {
-            background: #f8f9fa;
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #dee2e6;
-        }
-        
-        .data-table td {
-            padding: 1rem;
-            border-bottom: 1px solid #dee2e6;
-            vertical-align: top;
-        }
-        
-        .data-table tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin: 0.2rem;
-        }
-        
-        .btn-primary {
-            background: #007bff;
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-outline {
-            border: 1px solid #6c757d;
-            background: white;
-            color: #6c757d;
-        }
-        
-        .btn:hover {
-            opacity: 0.8;
-        }
-        
-        .badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-secondary { background: #e2e3e5; color: #383d41; }
-        
-        .form-control {
-            padding: 0.5rem;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-            font-size: 1rem;
-            width: 100%;
-        }
-        
-        .alert {
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 0.25rem;
-        }
-        
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6c757d;
-        }
-        
-        .employee-info h4 {
-            margin: 0 0 0.5rem 0;
-            color: #333;
-        }
-        
-        .employee-number,
-        .employee-email {
-            margin: 0.25rem 0;
-            font-size: 0.9rem;
-            color: #666;
-        }
-        
-        .position-info h5 {
-            margin: 0 0 0.5rem 0;
-            color: #333;
-        }
-        
-        .department {
-            margin: 0.25rem 0;
-            font-size: 0.9rem;
-            color: #666;
-        }
-        
-        .employee-type {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.8rem;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        
-        @media (max-width: 768px) {
-            .filter-row {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            
-            .stats-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .page-header {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-        }
-    </style>
+<%-- REMOVED: The HeadContent section that was causing the error --%>
 
+<asp:Content ID="EmployeeContent" ContentPlaceHolderID="DashboardContent" runat="server">
+    
+    <%-- Add the CSS directly in the page since HeadContent doesn't exist --%>
+    <style type="text/css">
+        @import url("../../Content/css/employee-management.css");
+    </style>
+    
     <!-- Page Header -->
     <div class="page-header">
         <div class="page-header-content">
@@ -270,45 +25,49 @@
 
     <!-- Search and Filter Section -->
     <div class="filter-section">
-        <div class="filter-row">
-            <div class="filter-group">
-                <label>Search Employees</label>
-                <asp:TextBox ID="txtSearch" runat="server" placeholder="Search by name, email, or employee number" 
-                             CssClass="form-control" AutoPostBack="true" 
-                             OnTextChanged="txtSearch_TextChanged"></asp:TextBox>
-            </div>
-            <div class="filter-group">
-                <label>Department</label>
-                <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-control" 
-                                  AutoPostBack="true" OnSelectedIndexChanged="ddlDepartment_SelectedIndexChanged">
-                    <asp:ListItem Value="">All Departments</asp:ListItem>
-                </asp:DropDownList>
-            </div>
-            <div class="filter-group">
-                <label>Status</label>
-                <asp:DropDownList ID="ddlStatus" runat="server" CssClass="form-control" 
-                                  AutoPostBack="true" OnSelectedIndexChanged="ddlStatus_SelectedIndexChanged">
-                    <asp:ListItem Value="">All Status</asp:ListItem>
-                    <asp:ListItem Value="Active">Active</asp:ListItem>
-                    <asp:ListItem Value="Inactive">Inactive</asp:ListItem>
-                    <asp:ListItem Value="On Leave">On Leave</asp:ListItem>
-                </asp:DropDownList>
-            </div>
-            <div class="filter-group">
-                <label>Employee Type</label>
-                <asp:DropDownList ID="ddlEmployeeType" runat="server" CssClass="form-control" 
-                                  AutoPostBack="true" OnSelectedIndexChanged="ddlEmployeeType_SelectedIndexChanged">
-                    <asp:ListItem Value="">All Types</asp:ListItem>
-                    <asp:ListItem Value="Full-time">Full-time</asp:ListItem>
-                    <asp:ListItem Value="Part-time">Part-time</asp:ListItem>
-                    <asp:ListItem Value="Contract">Contract</asp:ListItem>
-                    <asp:ListItem Value="Intern">Intern</asp:ListItem>
-                </asp:DropDownList>
-            </div>
-            <div class="filter-actions">
-                <label>&nbsp;</label>
-                <asp:Button ID="btnClearFilters" runat="server" Text="Clear Filters" 
-                            CssClass="btn btn-outline" OnClick="btnClearFilters_Click" />
+        <div class="filter-card">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Search Employees</label>
+                    <div class="search-input">
+                        <asp:TextBox ID="txtSearch" runat="server" placeholder="Search by name, email, or employee number" 
+                                     CssClass="form-control" AutoPostBack="true" 
+                                     OnTextChanged="txtSearch_TextChanged"></asp:TextBox>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label>Department</label>
+                    <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-control" 
+                                      AutoPostBack="true" OnSelectedIndexChanged="ddlDepartment_SelectedIndexChanged">
+                        <asp:ListItem Value="">All Departments</asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <asp:DropDownList ID="ddlStatus" runat="server" CssClass="form-control" 
+                                      AutoPostBack="true" OnSelectedIndexChanged="ddlStatus_SelectedIndexChanged">
+                        <asp:ListItem Value="">All Status</asp:ListItem>
+                        <asp:ListItem Value="Active">Active</asp:ListItem>
+                        <asp:ListItem Value="Inactive">Inactive</asp:ListItem>
+                        <asp:ListItem Value="On Leave">On Leave</asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+                <div class="filter-group">
+                    <label>Employee Type</label>
+                    <asp:DropDownList ID="ddlEmployeeType" runat="server" CssClass="form-control" 
+                                      AutoPostBack="true" OnSelectedIndexChanged="ddlEmployeeType_SelectedIndexChanged">
+                        <asp:ListItem Value="">All Types</asp:ListItem>
+                        <asp:ListItem Value="Full-time">Full-time</asp:ListItem>
+                        <asp:ListItem Value="Part-time">Part-time</asp:ListItem>
+                        <asp:ListItem Value="Contract">Contract</asp:ListItem>
+                        <asp:ListItem Value="Intern">Intern</asp:ListItem>
+                    </asp:DropDownList>
+                </div>
+                <div class="filter-actions">
+                    <label>&nbsp;</label>
+                    <asp:Button ID="btnClearFilters" runat="server" Text="Clear Filters" 
+                                CssClass="btn btn-outline" OnClick="btnClearFilters_Click" />
+                </div>
             </div>
         </div>
     </div>
@@ -317,7 +76,7 @@
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-icon blue">
-                👥
+                <i class="material-icons">people</i>
             </div>
             <div class="stat-content">
                 <h3><asp:Literal ID="litTotalEmployees" runat="server">0</asp:Literal></h3>
@@ -326,7 +85,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-icon green">
-                ✅
+                <i class="material-icons">check_circle</i>
             </div>
             <div class="stat-content">
                 <h3><asp:Literal ID="litActiveEmployees" runat="server">0</asp:Literal></h3>
@@ -335,7 +94,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-icon orange">
-                👤
+                <i class="material-icons">person_add</i>
             </div>
             <div class="stat-content">
                 <h3><asp:Literal ID="litNewHires" runat="server">0</asp:Literal></h3>
@@ -344,7 +103,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-icon purple">
-                🏢
+                <i class="material-icons">business</i>
             </div>
             <div class="stat-content">
                 <h3><asp:Literal ID="litDepartmentCount" runat="server">0</asp:Literal></h3>
@@ -398,23 +157,14 @@
                     </ItemTemplate>
                 </asp:TemplateField>
 
-                <asp:TemplateField HeaderText="Status">
+                <asp:TemplateField HeaderText="Status & Hire Date">
                     <ItemTemplate>
-                        <span class='badge badge-<%# GetStatusClass(Eval("Status").ToString()) %>'>
-                            <%# Eval("Status") %>
-                        </span>
-                        <asp:Panel ID="pnlOnboarding" runat="server" 
-                                   Visible='<%# !string.IsNullOrEmpty(Eval("OnboardingStatus")?.ToString()) && Eval("OnboardingStatus").ToString() != "COMPLETED" %>'>
-                            <br /><small>📋 <%# Eval("OnboardingStatus") %></small>
-                        </asp:Panel>
-                    </ItemTemplate>
-                </asp:TemplateField>
-
-                <asp:TemplateField HeaderText="Hire Date">
-                    <ItemTemplate>
-                        <div class="date-info">
-                            <%# Eval("HireDate", "{0:MMM dd, yyyy}") %>
-                            <br /><small><%# GetTenure(Eval("HireDate")) %></small>
+                        <div class="status-info">
+                            <span class='badge <%# GetStatusClass(Eval("Status")?.ToString()) %>'>
+                                <%# Eval("Status") %>
+                            </span>
+                            <p class="hire-date">Hired: <%# Eval("HireDate", "{0:MMM dd, yyyy}") %></p>
+                            <p class="tenure"><%# GetTenure(Eval("HireDate")) %></p>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
@@ -422,16 +172,24 @@
                 <asp:TemplateField HeaderText="Actions">
                     <ItemTemplate>
                         <div class="action-buttons">
-                            <asp:LinkButton ID="btnView" runat="server" CommandName="ViewEmployee" 
-                                          CommandArgument='<%# Eval("Id") %>' CssClass="btn btn-outline"
-                                          Text="View" />
-                            <asp:LinkButton ID="btnEdit" runat="server" CommandName="EditEmployee" 
-                                          CommandArgument='<%# Eval("Id") %>' CssClass="btn btn-primary"
-                                          Text="Edit" />
-                            <asp:LinkButton ID="btnOnboarding" runat="server" CommandName="ViewOnboarding" 
-                                          CommandArgument='<%# Eval("Id") %>' CssClass="btn btn-secondary"
-                                          Text="Tasks"
-                                          Visible='<%# !string.IsNullOrEmpty(Eval("OnboardingStatus")?.ToString()) %>' />
+                            <asp:Button ID="btnView" runat="server" 
+                                        CommandName="ViewEmployee" 
+                                        CommandArgument='<%# Eval("Id") %>' 
+                                        Text="View" 
+                                        CssClass="btn btn-primary btn-sm" />
+                            
+                            <asp:Button ID="btnEdit" runat="server" 
+                                        CommandName="EditEmployee" 
+                                        CommandArgument='<%# Eval("Id") %>' 
+                                        Text="Edit" 
+                                        CssClass="btn btn-secondary btn-sm" />
+                            
+                            <asp:Button ID="btnTasks" runat="server" 
+                                        CommandName="ViewOnboarding" 
+                                        CommandArgument='<%# Eval("Id") %>' 
+                                        Text="Tasks"
+                                        CssClass="btn btn-outline btn-sm"
+                                        Visible='<%# !string.IsNullOrEmpty(Eval("OnboardingStatus")?.ToString()) %>' />
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
@@ -455,4 +213,5 @@
 
     <!-- Hidden field for selected employee -->
     <asp:HiddenField ID="hdnSelectedEmployeeId" runat="server" />
+    
 </asp:Content>

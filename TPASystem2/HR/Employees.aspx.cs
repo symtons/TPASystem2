@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
@@ -36,7 +37,164 @@ namespace TPASystem2.HR
                 LoadPageData();
             }
         }
+        // Add these methods to your HR/Employees.aspx.cs file to fix compilation errors
 
+        #region Missing Event Handlers
+
+        protected void btnBulkActions_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Get selected employee IDs
+                List<int> selectedEmployeeIds = GetSelectedEmployeeIds();
+
+                if (selectedEmployeeIds.Count == 0)
+                {
+                    ShowMessage("Please select at least one employee for bulk actions.", "warning");
+                    return;
+                }
+
+                // For now, just show a message with selected count
+                // You can expand this to show a modal or perform bulk operations
+                ShowMessage($"Selected {selectedEmployeeIds.Count} employee(s) for bulk actions. Feature coming soon!", "info");
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error processing bulk actions: {ex.Message}", "error");
+            }
+        }
+
+        protected void btnClearFilters_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Clear all filter controls
+                txtSearch.Text = "";
+                ddlDepartment.SelectedIndex = 0;
+                ddlStatus.SelectedIndex = 0;
+                ddlEmployeeType.SelectedIndex = 0;
+
+                // Reload employees with no filters
+                LoadEmployees();
+
+                ShowMessage("Filters cleared successfully.", "success");
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error clearing filters: {ex.Message}", "error");
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods for Bulk Actions
+
+        private List<int> GetSelectedEmployeeIds()
+        {
+            List<int> selectedIds = new List<int>();
+
+            foreach (GridViewRow row in gvEmployees.Rows)
+            {
+                CheckBox chkSelect = (CheckBox)row.FindControl("chkSelect");
+                if (chkSelect != null && chkSelect.Checked)
+                {
+                    int employeeId = Convert.ToInt32(gvEmployees.DataKeys[row.RowIndex].Value);
+                    selectedIds.Add(employeeId);
+                }
+            }
+
+            return selectedIds;
+        }
+
+        private void PerformBulkStatusUpdate(List<int> employeeIds, string newStatus)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            foreach (int employeeId in employeeIds)
+                            {
+                                string query = @"
+                            UPDATE Employees 
+                            SET Status = @Status, UpdatedAt = GETUTCDATE() 
+                            WHERE Id = @EmployeeId";
+
+                                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                                {
+                                    cmd.Parameters.AddWithValue("@Status", newStatus);
+                                    cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            transaction.Commit();
+                            ShowMessage($"Successfully updated status for {employeeIds.Count} employee(s).", "success");
+                            LoadEmployees(); // Refresh the grid
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error updating employee status: {ex.Message}", "error");
+            }
+        }
+
+        private void PerformBulkDepartmentUpdate(List<int> employeeIds, int departmentId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            foreach (int employeeId in employeeIds)
+                            {
+                                string query = @"
+                            UPDATE Employees 
+                            SET DepartmentId = @DepartmentId, UpdatedAt = GETUTCDATE() 
+                            WHERE Id = @EmployeeId";
+
+                                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                                {
+                                    cmd.Parameters.AddWithValue("@DepartmentId", departmentId);
+                                    cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            transaction.Commit();
+                            ShowMessage($"Successfully updated department for {employeeIds.Count} employee(s).", "success");
+                            LoadEmployees(); // Refresh the grid
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error updating employee department: {ex.Message}", "error");
+            }
+        }
+
+        #endregion
         private void LoadPageData()
         {
             LoadDepartments();
@@ -261,14 +419,14 @@ namespace TPASystem2.HR
             LoadEmployees();
         }
 
-        protected void btnClearFilters_Click(object sender, EventArgs e)
-        {
-            txtSearch.Text = "";
-            ddlDepartment.SelectedIndex = 0;
-            ddlStatus.SelectedIndex = 0;
-            ddlEmployeeType.SelectedIndex = 0;
-            LoadEmployees();
-        }
+        //protected void btnClearFilters_Click(object sender, EventArgs e)
+        //{
+        //    txtSearch.Text = "";
+        //    ddlDepartment.SelectedIndex = 0;
+        //    ddlStatus.SelectedIndex = 0;
+        //    ddlEmployeeType.SelectedIndex = 0;
+        //    LoadEmployees();
+        //}
 
         protected void ddlPageSize_SelectedIndexChanged(object sender, EventArgs e)
         {

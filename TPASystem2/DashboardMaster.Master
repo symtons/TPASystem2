@@ -135,9 +135,9 @@
         <li><a href="/help"><i class="material-icons">help</i>Help & Support</a></li>
         <li class="divider"></li>
         <li>
-            <asp:LinkButton ID="btnLogout" runat="server" OnClick="btnLogout_Click" CssClass="logout-link">
+            <%--<asp:LinkButton ID="btnLogout" runat="server" OnClick="btnLogout_Click" CssClass="logout-link">
                 <i class="material-icons">exit_to_app</i>Sign Out
-            </asp:LinkButton>
+            </asp:LinkButton>--%>
         </li>
     </ul>
     
