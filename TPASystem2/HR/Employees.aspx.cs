@@ -126,28 +126,41 @@ namespace TPASystem2.HR
                             e.EmployeeType,
                             e.HireDate,
                             e.Status,
-                            e.ProfilePictureUrl,
+                            e.Salary,
+                            e.WorkLocation,
                             e.OnboardingStatus,
-                            d.Name as DepartmentName,
-                            m.FirstName + ' ' + m.LastName as ManagerName
+                            ISNULL(d.Name, 'No Department') as DepartmentName,
+                            CASE 
+                                WHEN e.ManagerId IS NOT NULL THEN m.FirstName + ' ' + m.LastName 
+                                ELSE 'No Manager' 
+                            END as ManagerName,
+                            DATEDIFF(DAY, e.HireDate, GETDATE()) as DaysEmployed
                         FROM Employees e
-                        LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                        LEFT JOIN Departments d ON e.DepartmentId = d.Id  
                         LEFT JOIN Employees m ON e.ManagerId = m.Id
                         WHERE e.IsActive = 1");
 
                     // Add search filters
-                    if (!string.IsNullOrEmpty(txtSearch.Text))
+                    if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
                     {
-                        query.Append(" AND (e.FirstName LIKE @Search OR e.LastName LIKE @Search OR e.Email LIKE @Search OR e.EmployeeNumber LIKE @Search)");
+                        query.Append(@" AND (
+                            e.FirstName LIKE @Search OR 
+                            e.LastName LIKE @Search OR 
+                            e.Email LIKE @Search OR 
+                            e.EmployeeNumber LIKE @Search
+                        )");
                     }
+
                     if (!string.IsNullOrEmpty(ddlDepartment.SelectedValue))
                     {
                         query.Append(" AND e.DepartmentId = @DepartmentId");
                     }
+
                     if (!string.IsNullOrEmpty(ddlStatus.SelectedValue))
                     {
                         query.Append(" AND e.Status = @Status");
                     }
+
                     if (!string.IsNullOrEmpty(ddlEmployeeType.SelectedValue))
                     {
                         query.Append(" AND e.EmployeeType = @EmployeeType");
@@ -157,9 +170,10 @@ namespace TPASystem2.HR
 
                     using (SqlCommand cmd = new SqlCommand(query.ToString(), conn))
                     {
-                        if (!string.IsNullOrEmpty(txtSearch.Text))
+                        // Add parameters
+                        if (!string.IsNullOrEmpty(txtSearch.Text.Trim()))
                         {
-                            cmd.Parameters.AddWithValue("@Search", "%" + txtSearch.Text + "%");
+                            cmd.Parameters.AddWithValue("@Search", "%" + txtSearch.Text.Trim() + "%");
                         }
                         if (!string.IsNullOrEmpty(ddlDepartment.SelectedValue))
                         {
@@ -198,7 +212,6 @@ namespace TPASystem2.HR
 
         protected void btnAddEmployee_Click(object sender, EventArgs e)
         {
-            // Redirect to Add Employee page in HR folder
             Response.Redirect("~/HR/AddEmployee.aspx");
         }
 
@@ -279,22 +292,17 @@ namespace TPASystem2.HR
 
         private void ViewEmployee(int employeeId)
         {
-            // Store the selected employee ID and redirect to view page
             hdnSelectedEmployeeId.Value = employeeId.ToString();
-            // For now, we'll show the employee details in a message
-            // Later you can redirect to a dedicated view page
             ShowMessage($"Viewing employee details for ID: {employeeId}", "info");
         }
 
         private void EditEmployee(int employeeId)
         {
-            // Redirect to edit page with employee ID
             Response.Redirect($"~/HR/EditEmployee.aspx?id={employeeId}");
         }
 
         private void ViewOnboarding(int employeeId)
         {
-            // Redirect to onboarding page for this employee
             Response.Redirect($"~/HR/Onboarding.aspx?employeeId={employeeId}");
         }
 
@@ -432,79 +440,37 @@ namespace TPASystem2.HR
         }
 
         /// <summary>
-        /// Gets employee avatar URL or returns default avatar
+        /// Formats salary for display
         /// </summary>
-        public string GetEmployeeAvatar(object profilePictureUrl)
+        public string FormatSalary(object salary)
         {
-            if (profilePictureUrl != null && !string.IsNullOrEmpty(profilePictureUrl.ToString()))
+            if (salary == null || salary == DBNull.Value)
+                return "Not Set";
+
+            try
             {
-                return profilePictureUrl.ToString();
+                decimal sal = Convert.ToDecimal(salary);
+                return sal.ToString("C0"); // Currency format without decimals
             }
-            return "~/Content/images/default-avatar.png";
+            catch
+            {
+                return "Not Set";
+            }
         }
 
         /// <summary>
-        /// Gets employee initials for avatar fallback
+        /// Gets initials for avatar fallback
         /// </summary>
-        public string GetInitials(string firstName, string lastName)
+        public string GetInitials(object firstName, object lastName)
         {
-            if (string.IsNullOrEmpty(firstName) && string.IsNullOrEmpty(lastName))
-                return "??";
+            string first = firstName?.ToString()?.Trim() ?? "";
+            string last = lastName?.ToString()?.Trim() ?? "";
 
             string initials = "";
-            if (!string.IsNullOrEmpty(firstName))
-                initials += firstName.Substring(0, 1).ToUpper();
-            if (!string.IsNullOrEmpty(lastName))
-                initials += lastName.Substring(0, 1).ToUpper();
+            if (!string.IsNullOrEmpty(first)) initials += first[0];
+            if (!string.IsNullOrEmpty(last)) initials += last[0];
 
-            return string.IsNullOrEmpty(initials) ? "??" : initials;
-        }
-
-        /// <summary>
-        /// Gets formatted hire date
-        /// </summary>
-        public string GetFormattedHireDate(object hireDate)
-        {
-            if (hireDate != null && hireDate != DBNull.Value)
-            {
-                DateTime date = Convert.ToDateTime(hireDate);
-                return date.ToString("MMM dd, yyyy");
-            }
-            return "N/A";
-        }
-
-        /// <summary>
-        /// Gets onboarding status badge class
-        /// </summary>
-        public string GetOnboardingStatusClass(object onboardingStatus)
-        {
-            if (onboardingStatus == null || onboardingStatus == DBNull.Value)
-                return "badge-warning";
-
-            switch (onboardingStatus.ToString().ToUpper())
-            {
-                case "COMPLETED": return "badge-success";
-                case "IN_PROGRESS": return "badge-primary";
-                case "NOT_STARTED": return "badge-warning";
-                default: return "badge-secondary";
-            }
-        }
-
-        /// <summary>
-        /// Gets friendly onboarding status text
-        /// </summary>
-        public string GetOnboardingStatusText(object onboardingStatus)
-        {
-            if (onboardingStatus == null || onboardingStatus == DBNull.Value)
-                return "Pending";
-
-            switch (onboardingStatus.ToString().ToUpper())
-            {
-                case "COMPLETED": return "Completed";
-                case "IN_PROGRESS": return "In Progress";
-                case "NOT_STARTED": return "Not Started";
-                default: return "Unknown";
-            }
+            return string.IsNullOrEmpty(initials) ? "?" : initials.ToUpper();
         }
 
         #endregion

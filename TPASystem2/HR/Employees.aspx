@@ -1,15 +1,11 @@
 ﻿<%@ Page Title="Employee Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="Employees.aspx.cs" Inherits="TPASystem2.HR.Employees" %>
 
-<%-- REMOVED: The HeadContent section that was causing the error --%>
-
 <asp:Content ID="EmployeeContent" ContentPlaceHolderID="DashboardContent" runat="server">
     
-    <%-- Add the CSS directly in the page since HeadContent doesn't exist --%>
-    <%--<style type="text/css">
-        @import url("employee-management.css");
-    </style>--%>
-    <link href='<%=ResolveUrl("Content/css/tpa-dasboard.css") %>' rel="stylesheet" type="text/css" />
+    <!-- CSS Links -->
+    <link href='<%=ResolveUrl("~/Content/css/tpa-dashboard.css") %>' rel="stylesheet" type="text/css" />
     <link href='<%=ResolveUrl("~/Content/css/employee-management.css") %>' rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <!-- Page Header -->
     <div class="page-header">
@@ -62,19 +58,18 @@
                         <asp:ListItem Value="Full-time">Full-time</asp:ListItem>
                         <asp:ListItem Value="Part-time">Part-time</asp:ListItem>
                         <asp:ListItem Value="Contract">Contract</asp:ListItem>
-                        <asp:ListItem Value="Intern">Intern</asp:ListItem>
+                        <asp:ListItem Value="Temporary">Temporary</asp:ListItem>
                     </asp:DropDownList>
                 </div>
-                <div class="filter-actions">
-                    <label>&nbsp;</label>
+                <div class="filter-group">
                     <asp:Button ID="btnClearFilters" runat="server" Text="Clear Filters" 
-                                CssClass="btn btn-outline" OnClick="btnClearFilters_Click" />
+                                CssClass="btn btn-outline-secondary" OnClick="btnClearFilters_Click" />
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Employee Statistics -->
+    <!-- Statistics Row -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-icon blue">
@@ -142,9 +137,16 @@
                 <asp:TemplateField HeaderText="Employee">
                     <ItemTemplate>
                         <div class="employee-info">
-                            <h4><%# Eval("FirstName") %> <%# Eval("LastName") %></h4>
-                            <p class="employee-number">ID: <%# Eval("EmployeeNumber") %></p>
-                            <p class="employee-email"><%# Eval("Email") %></p>
+                            <div class="employee-avatar">
+                                <div class="avatar-fallback">
+                                    <%# GetInitials(Eval("FirstName"), Eval("LastName")) %>
+                                </div>
+                            </div>
+                            <div class="employee-details">
+                                <h4><%# Eval("FirstName") %> <%# Eval("LastName") %></h4>
+                                <p class="employee-number">ID: <%# Eval("EmployeeNumber") %></p>
+                                <p class="employee-email"><%# Eval("Email") %></p>
+                            </div>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
@@ -154,19 +156,29 @@
                         <div class="position-info">
                             <h5><%# Eval("Position") ?? Eval("JobTitle") %></h5>
                             <p class="department"><%# Eval("DepartmentName") %></p>
-                            <span class="employee-type"><%# Eval("EmployeeType") %></span>
+                            <p class="employee-type"><%# Eval("EmployeeType") %></p>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
 
-                <asp:TemplateField HeaderText="Status & Hire Date">
+                <asp:TemplateField HeaderText="Status & Tenure">
                     <ItemTemplate>
                         <div class="status-info">
-                            <span class='badge <%# GetStatusClass(Eval("Status")?.ToString()) %>'>
+                            <span class="status-badge <%# GetStatusClass(Eval("Status")?.ToString()) %>">
                                 <%# Eval("Status") %>
                             </span>
-                            <p class="hire-date">Hired: <%# Eval("HireDate", "{0:MMM dd, yyyy}") %></p>
-                            <p class="tenure"><%# GetTenure(Eval("HireDate")) %></p>
+                            <p class="tenure">Tenure: <%# GetTenure(Eval("HireDate")) %></p>
+                            <p class="hire-date">Hired: <%# Eval("HireDate", "{0:MM/dd/yyyy}") %></p>
+                        </div>
+                    </ItemTemplate>
+                </asp:TemplateField>
+
+                <asp:TemplateField HeaderText="Contact & Location">
+                    <ItemTemplate>
+                        <div class="contact-info">
+                            <p class="phone">📞 <%# Eval("PhoneNumber") ?? "Not provided" %></p>
+                            <p class="location">📍 <%# Eval("WorkLocation") ?? "Office" %></p>
+                            <p class="salary">💰 <%# FormatSalary(Eval("Salary")) %></p>
                         </div>
                     </ItemTemplate>
                 </asp:TemplateField>
@@ -174,23 +186,18 @@
                 <asp:TemplateField HeaderText="Actions">
                     <ItemTemplate>
                         <div class="action-buttons">
-                            <asp:Button ID="btnView" runat="server" 
+                            <asp:Button ID="btnView" runat="server" Text="View" 
+                                        CssClass="btn btn-sm btn-outline-primary" 
                                         CommandName="ViewEmployee" 
-                                        CommandArgument='<%# Eval("Id") %>' 
-                                        Text="View" 
-                                        CssClass="btn btn-primary btn-sm" />
-                            
-                            <asp:Button ID="btnEdit" runat="server" 
+                                        CommandArgument='<%# Eval("Id") %>' />
+                            <asp:Button ID="btnEdit" runat="server" Text="Edit" 
+                                        CssClass="btn btn-sm btn-outline-secondary" 
                                         CommandName="EditEmployee" 
-                                        CommandArgument='<%# Eval("Id") %>' 
-                                        Text="Edit" 
-                                        CssClass="btn btn-secondary btn-sm" />
-                            
-                            <asp:Button ID="btnTasks" runat="server" 
+                                        CommandArgument='<%# Eval("Id") %>' />
+                            <asp:Button ID="btnOnboarding" runat="server" Text="Onboarding" 
+                                        CssClass="btn btn-sm btn-outline-info" 
                                         CommandName="ViewOnboarding" 
                                         CommandArgument='<%# Eval("Id") %>' 
-                                        Text="Tasks"
-                                        CssClass="btn btn-outline btn-sm"
                                         Visible='<%# !string.IsNullOrEmpty(Eval("OnboardingStatus")?.ToString()) %>' />
                         </div>
                     </ItemTemplate>
@@ -205,6 +212,9 @@
                                 CssClass="btn btn-primary" OnClick="btnAddEmployee_Click" />
                 </div>
             </EmptyDataTemplate>
+            
+            <PagerSettings Mode="NumericFirstLast" PageButtonCount="5" FirstPageText="First" LastPageText="Last" />
+            <PagerStyle CssClass="gridview-pager" />
         </asp:GridView>
     </div>
 
