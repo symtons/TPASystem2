@@ -10,7 +10,7 @@ namespace TPASystem2
 {
     public class Global : System.Web.HttpApplication
     {
-        //    private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+        private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
         //    protected void Application_Start(object sender, EventArgs e)
         //    {
@@ -298,8 +298,8 @@ namespace TPASystem2
         //            {
         //                conn.Open();
         //                string query = @"
-        //                    INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
-        //                    VALUES (0, 1, @Action, 'Application', @Details, @IPAddress, @CreatedAt)";
+        //                        INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
+        //                        VALUES (0, 1, @Action, 'Application', @Details, @IPAddress, @CreatedAt)";
 
         //                using (SqlCommand cmd = new SqlCommand(query, conn))
         //                {
@@ -326,8 +326,8 @@ namespace TPASystem2
         //            {
         //                conn.Open();
         //                string query = @"
-        //                    INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
-        //                    VALUES (0, 1, @Action, 'Session', @Details, @IPAddress, @CreatedAt)";
+        //                        INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
+        //                        VALUES (0, 1, @Action, 'Session', @Details, @IPAddress, @CreatedAt)";
 
         //                using (SqlCommand cmd = new SqlCommand(query, conn))
         //                {
@@ -353,8 +353,8 @@ namespace TPASystem2
         //            {
         //                conn.Open();
         //                string query = @"
-        //                    INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
-        //                    VALUES (@UserId, 1, @Action, @EntityType, @Details, @IPAddress, @CreatedAt)";
+        //                        INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
+        //                        VALUES (@UserId, 1, @Action, @EntityType, @Details, @IPAddress, @CreatedAt)";
 
         //                using (SqlCommand cmd = new SqlCommand(query, conn))
         //                {
@@ -389,8 +389,8 @@ namespace TPASystem2
         //            {
         //                conn.Open();
         //                string query = @"
-        //                    INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
-        //                    VALUES (0, 1, 'Error', 'Application', @Details, @IPAddress, @CreatedAt)";
+        //                        INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
+        //                        VALUES (0, 1, 'Error', 'Application', @Details, @IPAddress, @CreatedAt)";
 
         //                using (SqlCommand cmd = new SqlCommand(query, conn))
         //                {
@@ -514,6 +514,6 @@ namespace TPASystem2
         //    public TimeSpan Uptime { get; set; }
         //}
 
-        //#endregion  
+        //#endregion
     }
 }

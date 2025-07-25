@@ -67,6 +67,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\css\employee-management.css" />
     <Content Include="Content\css\tpa-auth.css" />
     <Content Include="Content\css\tpa-common.css" />
     <Content Include="Content\css\tpa-dashboard.css" />
@@ -74,6 +75,8 @@
     <Content Include="Content\js\tpa-dashboard.js" />
     <Content Include="Dashboard.aspx" />
     <Content Include="Global.asax" />
+    <Content Include="HR\AddEmployee.aspx" />
+    <Content Include="HR\Employees.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
@@ -94,6 +97,20 @@
     </Compile>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+    <Compile Include="HR\AddEmployee.aspx.cs">
+      <DependentUpon>AddEmployee.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\AddEmployee.aspx.designer.cs">
+      <DependentUpon>AddEmployee.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="HR\Employees.aspx.cs">
+      <DependentUpon>Employees.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\Employees.aspx.designer.cs">
+      <DependentUpon>Employees.aspx</DependentUpon>
     </Compile>
     <Compile Include="Login.aspx.cs">
       <DependentUpon>Login.aspx</DependentUpon>

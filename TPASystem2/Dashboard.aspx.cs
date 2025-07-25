@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
 using System.Web.UI;
 using TPASystem2.Helpers;
-
 
 namespace TPASystem2
 {
@@ -87,57 +88,225 @@ namespace TPASystem2
 
         private void LoadNavigationMenu(string userRole)
         {
-            try
-            {
+            //try
+            //{
                 var litNavigation = FindControlRecursive(Page, "litNavigation") as System.Web.UI.WebControls.Literal;
                 if (litNavigation == null) return;
 
-                var menuHtml = new StringBuilder();
-
-                // Dashboard (everyone)
-                menuHtml.AppendLine(CreateNavItem("Dashboard", "/dashboard", "dashboard", true));
-
-                // Time & Attendance (everyone)
-                menuHtml.AppendLine(CreateNavItem("Time & Attendance", "/time-attendance", "schedule"));
-
-                // Employees (Admin, HR, Manager only)
-                if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    menuHtml.AppendLine(CreateNavItem("Employees", "/employees", "people"));
+                    conn.Open();
+
+                    // Get menu items from database based on user role permissions
+                    string query = @"
+                        SELECT DISTINCT 
+                            mi.Id,
+                            mi.Name,
+                            mi.Route,
+                            mi.Icon,
+                            mi.ParentId,
+                            mi.SortOrder,
+                            mi.IsActive,
+                            rmp.CanView,
+                            rmp.CanEdit,
+                            rmp.CanDelete
+                        FROM MenuItems mi
+                        LEFT JOIN RoleMenuPermissions rmp ON mi.Id = rmp.MenuItemId AND rmp.Role = @UserRole
+                        WHERE mi.IsActive = 1 
+                        AND (rmp.CanView = 1 OR @UserRole IN ('SuperAdmin', 'Admin'))
+                        ORDER BY mi.ParentId, mi.SortOrder, mi.Name";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserRole", userRole);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            var menuItems = new List<MenuItem>();
+
+                            while (reader.Read())
+                            {
+                                menuItems.Add(new MenuItem
+                                {
+
+
+
+
+                                    Id = Convert.ToInt32(reader["Id"]),
+                                    Name = reader["Name"]?.ToString() ?? "",
+                                    Route = reader["Route"]?.ToString() ?? "",
+                                    Icon = reader["Icon"]?.ToString() ?? "",
+                                    ParentId = reader["ParentId"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["ParentId"]),
+                                    SortOrder = Convert.ToInt32(reader["SortOrder"]),
+                                    IsActive = Convert.ToBoolean(reader["IsActive"]),
+                                    CanView = reader["CanView"] == DBNull.Value ? true : Convert.ToBoolean(reader["CanView"]),
+                                    CanEdit = reader["CanEdit"] == DBNull.Value ? false : Convert.ToBoolean(reader["CanEdit"]),
+                                    CanDelete = reader["CanDelete"] == DBNull.Value ? false : Convert.ToBoolean(reader["CanDelete"])
+                                
+
+
+
+
+                        });
+                            }
+
+                            // Build hierarchical menu structure
+                            var menuHtml = BuildMenuHtml(menuItems, userRole);
+
+                            // If no menu from database, show default menu
+                            if (string.IsNullOrEmpty(menuHtml))
+                            {
+                                menuHtml = CreateDefaultMenu(userRole);
+                            }
+
+                            litNavigation.Text = menuHtml;
+                        }
+                    }
                 }
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Diagnostics.Debug.WriteLine($"Error loading navigation from database: {ex.Message}");
 
-                // Leave Management (everyone)
-                menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave-management", "event_available"));
+            //    // Fallback to default navigation if database fails
+            //    var litNavigation = FindControlRecursive(Page, "litNavigation") as System.Web.UI.WebControls.Literal;
+            //    if (litNavigation != null)
+            //    {
+            //        litNavigation.Text = CreateDefaultMenu(userRole);
+            //    }
+            //}
+        }
 
-                // Reports (Admin, HR, Manager only)
-                if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
-                {
-                    menuHtml.AppendLine(CreateNavItem("Reports", "/reports", "assessment"));
-                }
+        private string BuildMenuHtml(List<MenuItem> menuItems, string userRole)
+        {
+            var menuHtml = new StringBuilder();
 
-                // Profile (everyone)
-                menuHtml.AppendLine(CreateNavItem("Profile", "/profile", "person"));
+            // Get root level menu items (no parent)
+            var rootItems = menuItems.Where(m => m.ParentId == null).OrderBy(m => m.SortOrder).ToList();
 
-                // Settings (Admin, HR only)
-                if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin"))
-                {
-                    menuHtml.AppendLine(CreateNavItem("Settings", "/settings", "settings"));
-                }
-
-                // Help (everyone)
-                menuHtml.AppendLine(CreateNavItem("Help", "/help", "help"));
-
-                litNavigation.Text = menuHtml.ToString();
-            }
-            catch (Exception ex)
+            foreach (var rootItem in rootItems)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading navigation: {ex.Message}");
-                var litNavigation = FindControlRecursive(Page, "litNavigation") as System.Web.UI.WebControls.Literal;
-                if (litNavigation != null)
+                // Check if this is the current page
+                bool isActive = IsCurrentPage(rootItem.Route);
+
+                // Check if user has permission to view this menu
+                if (!rootItem.CanView && !HasAdminAccess(userRole))
+                    continue;
+
+                // Get child items
+                var childItems = menuItems.Where(m => m.ParentId == rootItem.Id).OrderBy(m => m.SortOrder).ToList();
+
+                if (childItems.Any())
                 {
-                    litNavigation.Text = CreateNavItem("Dashboard", "/dashboard", "dashboard", true);
+                    // Menu with submenu
+                    menuHtml.AppendLine(CreateMenuWithSubmenu(rootItem, childItems, userRole, isActive));
+                }
+                else
+                {
+                    // Simple menu item
+                    menuHtml.AppendLine(CreateNavItem(rootItem.Name, rootItem.Route, rootItem.Icon, isActive));
                 }
             }
+
+            return menuHtml.ToString();
+        }
+
+        private string CreateMenuWithSubmenu(MenuItem parentItem, List<MenuItem> childItems, string userRole, bool isActive)
+        {
+            var submenuHtml = new StringBuilder();
+
+            submenuHtml.AppendLine($@"
+                <div class='nav-item nav-group{(isActive ? " active" : "")}'>
+                    <a href='#' class='nav-link nav-group-toggle' onclick='toggleSubmenu(this); return false;'>
+                        <i class='material-icons nav-icon'>{parentItem.Icon ?? "folder"}</i>
+                        <span class='nav-text'>{parentItem.Name}</span>
+                        <i class='material-icons nav-arrow'>expand_more</i>
+                    </a>
+                    <div class='nav-submenu' style='display: {(isActive ? "block" : "none")};'>");
+
+            foreach (var childItem in childItems)
+            {
+                // Check permissions for child items
+                if (!childItem.CanView && !HasAdminAccess(userRole))
+                    continue;
+
+                bool childIsActive = IsCurrentPage(childItem.Route);
+                submenuHtml.AppendLine($@"
+                    <div class='nav-subitem{(childIsActive ? " active" : "")}'>
+                        <a href='{childItem.Route}' class='nav-sublink'>
+                            <i class='material-icons nav-subicon'>{childItem.Icon ?? "circle"}</i>
+                            <span class='nav-subtext'>{childItem.Name}</span>
+                        </a>
+                    </div>");
+            }
+
+            submenuHtml.AppendLine(@"
+                    </div>
+                </div>");
+
+            return submenuHtml.ToString();
+        }
+
+        private string CreateDefaultMenu(string userRole)
+        {
+            var menuHtml = new StringBuilder();
+
+            // Dashboard (everyone)
+            menuHtml.AppendLine(CreateNavItem("Dashboard", "/dashboard", "dashboard", true));
+
+            // Time & Attendance (everyone)
+            menuHtml.AppendLine(CreateNavItem("Time & Attendance", "/time-attendance", "schedule"));
+
+            // Employees (Admin, HR, Manager only)
+            if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Employees", "/employees", "people"));
+            }
+
+            // Leave Management (everyone)
+            menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave-management", "event_available"));
+
+            // Reports (Admin, HR, Manager only)
+            if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Reports", "/reports", "assessment"));
+            }
+
+            // Profile (everyone)
+            menuHtml.AppendLine(CreateNavItem("Profile", "/profile", "person"));
+
+            // Settings (Admin, HR only)
+            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Settings", "/settings", "settings"));
+            }
+
+            // Help (everyone)
+            menuHtml.AppendLine(CreateNavItem("Help", "/help", "help"));
+
+            return menuHtml.ToString();
+        }
+
+        private bool IsCurrentPage(string route)
+        {
+            if (string.IsNullOrEmpty(route)) return false;
+
+            try
+            {
+                string currentPath = Request.Url.AbsolutePath.ToLower();
+                string cleanRoute = route.TrimStart('/').ToLower();
+
+                return currentPath.Contains(cleanRoute) || currentPath.EndsWith($"/{cleanRoute}");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool HasAdminAccess(string userRole)
+        {
+            return HasAccess(userRole, "SuperAdmin", "Admin", "HRAdmin");
         }
 
         private void LoadDashboardStats(string userRole)
@@ -640,5 +809,37 @@ namespace TPASystem2
         }
 
         #endregion
+
+        #region MenuItem Class and Data Models
+
+        /// <summary>
+        /// MenuItem class for database-driven menus
+        /// </summary>
+        public class MenuItem
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Route { get; set; } = string.Empty;
+            public string Icon { get; set; } = string.Empty;
+            public int? ParentId { get; set; }
+            public int SortOrder { get; set; }
+            public bool IsActive { get; set; }
+            public bool CanView { get; set; }
+            public bool CanEdit { get; set; }
+            public bool CanDelete { get; set; }
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Extension methods for LINQ operations
+    /// </summary>
+    public static class LinqExtensions
+    {
+        public static IEnumerable<T> WhereIf<T>(this IEnumerable<T> source, bool condition, Func<T, bool> predicate)
+        {
+            return condition ? source.Where(predicate) : source;
+        }
     }
 }

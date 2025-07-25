@@ -247,5 +247,24 @@
         // Export functions for global access
         window.handleQuickAction = handleQuickAction;
         window.refreshDashboard = refreshDashboard;
+
+        // Menu navigation functions
+        function toggleSubmenu(element) {
+            const submenu = element.nextElementSibling;
+            const arrow = element.querySelector('.nav-arrow');
+
+            if (submenu.style.display === 'none' || submenu.style.display === '') {
+                submenu.style.display = 'block';
+                arrow.textContent = 'expand_less';
+                element.parentElement.classList.add('expanded');
+            } else {
+                submenu.style.display = 'none';
+                arrow.textContent = 'expand_more';
+                element.parentElement.classList.remove('expanded');
+            }
+        }
+
+        // Export menu functions
+        window.toggleSubmenu = toggleSubmenu;
     </script>
 </asp:Content>
