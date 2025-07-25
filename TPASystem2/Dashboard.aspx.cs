@@ -17,11 +17,11 @@ namespace TPASystem2
         protected void Page_Load(object sender, EventArgs e)
         {
             // Check if user is logged in
-            if (Session["UserId"] == null)
-            {
-                SimpleUrlHelper.RedirectToCleanUrl("login");
-                return;
-            }
+            //if (Session["UserId"] == null)
+            //{
+            //    SimpleUrlHelper.RedirectToCleanUrl("login");
+            //    return;
+            //}
 
             if (!IsPostBack)
             {

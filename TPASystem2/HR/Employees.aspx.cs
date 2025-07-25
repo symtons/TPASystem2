@@ -17,11 +17,11 @@ namespace TPASystem2.HR
         protected void Page_Load(object sender, EventArgs e)
         {
             //Check if user is logged in
-            if (Session["UserId"] == null)
-            {
-                SimpleUrlHelper.RedirectToCleanUrl("login");
-                return;
-            }
+            //if (Session["UserId"] == null)
+            //{
+            //    SimpleUrlHelper.RedirectToCleanUrl("login");
+            //    return;
+            //}
 
             // Check permissions - only HR, Admin, and Managers can access
             string userRole = Session["UserRole"]?.ToString() ?? "";

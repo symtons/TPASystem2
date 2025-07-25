@@ -146,5 +146,8 @@
 </asp:Content>
 
 <asp:Content ID="ScriptContent" ContentPlaceHolderID="ScriptContent" runat="server">
-    <script src="Content/js/tpa-dashboard.js"></script>
+
+
+    <script src="<%= ResolveUrl("~/Content/js/tpa-dashboard.js") %>"></script>
+    
 </asp:Content>

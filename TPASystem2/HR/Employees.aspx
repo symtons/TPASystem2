@@ -1,6 +1,7 @@
 ﻿<%@ Page Title="Employee Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="Employees.aspx.cs" Inherits="TPASystem2.HR.Employees" %>
 
 <asp:Content ID="EmployeeContent" ContentPlaceHolderID="DashboardContent" runat="server">
+    <script src="./Content/js/tpa-common.js"></script>
     <style>
         /* Essential inline styles for immediate functionality */
         .page-header {

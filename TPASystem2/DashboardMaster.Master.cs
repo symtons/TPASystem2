@@ -121,7 +121,7 @@ namespace TPASystem2
 
                     case "HRADMIN":
                         // HR Admin gets HR-focused functionality
-                        menuHtml.AppendLine(CreateNavItem("Employee Management", "/employees", "people", currentPage == "employees"));
+                        menuHtml.AppendLine(CreateNavItem("Employees", "HR/Employees.aspx", "people"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave-management", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("HR Reports", "/reports", "assessment", currentPage == "reports"));
                         menuHtml.AppendLine(CreateNavItem("Onboarding", "/onboarding", "assignment", currentPage == "onboarding"));
@@ -136,7 +136,7 @@ namespace TPASystem2
                     case "PROGRAMDIRECTOR":
                         // Program Director gets oversight functionality
                         menuHtml.AppendLine(CreateNavItem("Program Overview", "/programs", "business", currentPage == "programs"));
-                        menuHtml.AppendLine(CreateNavItem("Employee Management", "/employees", "people", currentPage == "employees"));
+                        menuHtml.AppendLine(CreateNavItem("Employees", "/HR/Employees.aspx", "people"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave-management", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("Director Reports", "/reports", "assessment", currentPage == "reports"));
 

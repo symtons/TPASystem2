@@ -74,6 +74,7 @@
     <Content Include="Content\js\tpa-common.js" />
     <Content Include="Content\js\tpa-dashboard.js" />
     <Content Include="Dashboard.aspx" />
+    <Content Include="Debug.aspx" />
     <Content Include="Global.asax" />
     <Content Include="HR\AddEmployee.aspx" />
     <Content Include="HR\Employees.aspx" />
@@ -95,6 +96,13 @@
     </Compile>
     <Compile Include="DashboardMaster.Master.designer.cs">
       <DependentUpon>DashboardMaster.Master</DependentUpon>
+    </Compile>
+    <Compile Include="Debug.aspx.cs">
+      <DependentUpon>Debug.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Debug.aspx.designer.cs">
+      <DependentUpon>Debug.aspx</DependentUpon>
     </Compile>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
