@@ -79,6 +79,8 @@
     <Content Include="HR\AddEmployee.aspx" />
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
+    <Content Include="HR\ManageEmployeeOnboarding.aspx" />
+    <Content Include="HR\OnboardingManagement.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
     <Content Include="Web.config" />
@@ -121,6 +123,20 @@
     </Compile>
     <Compile Include="HR\Employees.aspx.designer.cs">
       <DependentUpon>Employees.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="HR\ManageEmployeeOnboarding.aspx.cs">
+      <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\ManageEmployeeOnboarding.aspx.designer.cs">
+      <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="HR\OnboardingManagement.aspx.cs">
+      <DependentUpon>OnboardingManagement.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\OnboardingManagement.aspx.designer.cs">
+      <DependentUpon>OnboardingManagement.aspx</DependentUpon>
     </Compile>
     <Compile Include="Login.aspx.cs">
       <DependentUpon>Login.aspx</DependentUpon>
