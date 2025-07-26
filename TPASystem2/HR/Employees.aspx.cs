@@ -15,6 +15,9 @@ namespace TPASystem2.HR
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Set UnobtrusiveValidationMode to None to avoid jQuery requirement
+            Page.UnobtrusiveValidationMode = System.Web.UI.UnobtrusiveValidationMode.None;
+
             if (!IsPostBack)
             {
                 LoadPageData();

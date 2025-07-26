@@ -1,6 +1,12 @@
 ﻿<%@ Page Title="Add New Employee" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="AddEmployee.aspx.cs" Inherits="TPASystem2.HR.AddEmployee" %>
 
 <asp:Content ID="AddEmployeeContent" ContentPlaceHolderID="DashboardContent" runat="server">
+    
+    <!-- CSS Links -->
+    <link href='<%=ResolveUrl("~/Content/css/tpa-dashboard.css") %>' rel="stylesheet" type="text/css" />
+    <link href='<%=ResolveUrl("~/Content/css/employee-management.css") %>' rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
     <!-- Page Header -->
     <div class="page-header">
         <div class="page-header-content">
@@ -9,7 +15,7 @@
         </div>
         <div class="page-header-actions">
             <asp:Button ID="btnCancel" runat="server" Text="Cancel" 
-                        CssClass="btn btn-outline" OnClick="btnCancel_Click" />
+                        CssClass="btn btn-outline" OnClick="btnCancel_Click" CausesValidation="false" />
             <asp:Button ID="btnSaveEmployee" runat="server" Text="Create Employee" 
                         CssClass="btn btn-primary" OnClick="btnSaveEmployee_Click" />
         </div>
@@ -18,6 +24,7 @@
     <!-- Form Container -->
     <div class="form-container">
         <div class="form-grid">
+            
             <!-- Personal Information Section -->
             <div class="form-section">
                 <div class="section-header">
@@ -66,7 +73,7 @@
                     <div class="form-group">
                         <label for="<%= txtPhoneNumber.ClientID %>">Phone Number</label>
                         <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-control" 
-                                     placeholder="(555) 123-4567" MaxLength="20"></asp:TextBox>
+                                     placeholder="(555) 123-4567" MaxLength="20" TextMode="Phone"></asp:TextBox>
                     </div>
                 </div>
 
@@ -90,18 +97,54 @@
                 </div>
             </div>
 
+            <!-- Address Information Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3><i class="material-icons">home</i> Address Information</h3>
+                    <p>Employee residential address</p>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="<%= txtAddress.ClientID %>">Street Address</label>
+                        <asp:TextBox ID="txtAddress" runat="server" CssClass="form-control" 
+                                     placeholder="123 Main Street" MaxLength="255"></asp:TextBox>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="<%= txtCity.ClientID %>">City</label>
+                        <asp:TextBox ID="txtCity" runat="server" CssClass="form-control" 
+                                     placeholder="City name" MaxLength="100"></asp:TextBox>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="<%= txtState.ClientID %>">State</label>
+                        <asp:TextBox ID="txtState" runat="server" CssClass="form-control" 
+                                     placeholder="State/Province" MaxLength="50"></asp:TextBox>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="<%= txtZipCode.ClientID %>">ZIP Code</label>
+                        <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-control" 
+                                     placeholder="12345" MaxLength="10"></asp:TextBox>
+                    </div>
+                </div>
+            </div>
+
             <!-- Employment Information Section -->
             <div class="form-section">
                 <div class="section-header">
                     <h3><i class="material-icons">work</i> Employment Information</h3>
-                    <p>Job title, department, and employment details</p>
+                    <p>Job details and organizational structure</p>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtPosition.ClientID %>">Position/Job Title <span class="required">*</span></label>
                         <asp:TextBox ID="txtPosition" runat="server" CssClass="form-control" 
-                                     placeholder="e.g., Software Engineer, HR Manager" MaxLength="100" required></asp:TextBox>
+                                     placeholder="e.g., Software Developer, HR Specialist" MaxLength="100" required></asp:TextBox>
                         <asp:RequiredFieldValidator ID="rfvPosition" runat="server" 
                                                    ControlToValidate="txtPosition" 
                                                    ErrorMessage="Position is required" 
@@ -125,11 +168,11 @@
                         <label for="<%= ddlEmployeeType.ClientID %>">Employee Type <span class="required">*</span></label>
                         <asp:DropDownList ID="ddlEmployeeType" runat="server" CssClass="form-control" required>
                             <asp:ListItem Value="">Select Type</asp:ListItem>
-                            <asp:ListItem Value="Full-time">Full-time</asp:ListItem>
+                            <asp:ListItem Value="Full-time" Selected="True">Full-time</asp:ListItem>
                             <asp:ListItem Value="Part-time">Part-time</asp:ListItem>
                             <asp:ListItem Value="Contract">Contract</asp:ListItem>
-                            <asp:ListItem Value="Intern">Intern</asp:ListItem>
                             <asp:ListItem Value="Temporary">Temporary</asp:ListItem>
+                            <asp:ListItem Value="Intern">Intern</asp:ListItem>
                         </asp:DropDownList>
                         <asp:RequiredFieldValidator ID="rfvEmployeeType" runat="server" 
                                                    ControlToValidate="ddlEmployeeType" 
@@ -167,53 +210,17 @@
                     <div class="form-group">
                         <label for="<%= txtSalary.ClientID %>">Annual Salary</label>
                         <asp:TextBox ID="txtSalary" runat="server" CssClass="form-control" 
-                                     placeholder="0.00" TextMode="Number" step="0.01"></asp:TextBox>
-                        <small class="form-text">Optional - can be added later</small>
+                                     placeholder="50000.00" TextMode="Number" step="0.01"></asp:TextBox>
                     </div>
                     
                     <div class="form-group">
-                        <label for="<%= ddlStatus.ClientID %>">Initial Status</label>
+                        <label for="<%= ddlStatus.ClientID %>">Employment Status</label>
                         <asp:DropDownList ID="ddlStatus" runat="server" CssClass="form-control">
                             <asp:ListItem Value="Active" Selected="True">Active</asp:ListItem>
                             <asp:ListItem Value="Inactive">Inactive</asp:ListItem>
                             <asp:ListItem Value="On Leave">On Leave</asp:ListItem>
+                            <asp:ListItem Value="Terminated">Terminated</asp:ListItem>
                         </asp:DropDownList>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Address Information Section -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h3><i class="material-icons">location_on</i> Address Information</h3>
-                    <p>Home address and contact details</p>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label for="<%= txtAddress.ClientID %>">Street Address</label>
-                        <asp:TextBox ID="txtAddress" runat="server" CssClass="form-control" 
-                                     placeholder="123 Main Street" MaxLength="255"></asp:TextBox>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="<%= txtCity.ClientID %>">City</label>
-                        <asp:TextBox ID="txtCity" runat="server" CssClass="form-control" 
-                                     placeholder="City" MaxLength="100"></asp:TextBox>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="<%= txtState.ClientID %>">State</label>
-                        <asp:TextBox ID="txtState" runat="server" CssClass="form-control" 
-                                     placeholder="State" MaxLength="50"></asp:TextBox>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="<%= txtZipCode.ClientID %>">ZIP Code</label>
-                        <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-control" 
-                                     placeholder="12345" MaxLength="10"></asp:TextBox>
                     </div>
                 </div>
             </div>
@@ -222,39 +229,41 @@
             <div class="form-section">
                 <div class="section-header">
                     <h3><i class="material-icons">security</i> System Access</h3>
-                    <p>Login credentials and system permissions</p>
+                    <p>User account and system access configuration</p>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtTemporaryPassword.ClientID %>">Temporary Password</label>
                         <asp:TextBox ID="txtTemporaryPassword" runat="server" CssClass="form-control" 
-                                     placeholder="Leave blank for default" MaxLength="255"></asp:TextBox>
-                        <small class="form-text">If blank, will use default: TempPass123!</small>
+                                     placeholder="Leave blank for default (TempPass123!)" MaxLength="50"></asp:TextBox>
+                        <small class="form-text">If left blank, default password "TempPass123!" will be used</small>
                     </div>
                     
-                    <div class="form-group">
-                        <div class="checkbox-group">
-                            <asp:CheckBox ID="chkMustChangePassword" runat="server" Checked="true" />
-                            <label for="<%= chkMustChangePassword.ClientID %>">Require password change on first login</label>
-                        </div>
+                    <div class="form-group checkbox-group">
+                        <asp:CheckBox ID="chkMustChangePassword" runat="server" CssClass="form-check-input" Checked="true" />
+                        <label for="<%= chkMustChangePassword.ClientID %>" class="form-check-label">
+                            Must change password on first login
+                        </label>
                     </div>
                 </div>
             </div>
 
-            <!-- Onboarding Settings Section -->
+            <!-- Onboarding Preview Section -->
             <div class="form-section">
                 <div class="section-header">
-                    <h3><i class="material-icons">assignment</i> Onboarding Settings</h3>
-                    <p>Automatically assign onboarding template based on department</p>
+                    <h3><i class="material-icons">assignment</i> Onboarding Workflow</h3>
+                    <p>Automatic onboarding tasks will be created based on department</p>
                 </div>
                 
-                <div class="onboarding-info">
-                    <div class="info-card">
-                        <i class="material-icons">info</i>
-                        <div class="info-content">
-                            <h4>Automatic Onboarding</h4>
-                            <p>The appropriate onboarding template will be automatically assigned based on the selected department. This includes:</p>
+                <div class="onboarding-preview">
+                    <div class="preview-card">
+                        <div class="preview-icon">
+                            <i class="material-icons">checklist</i>
+                        </div>
+                        <div class="preview-content">
+                            <h4>Automated Task Assignment</h4>
+                            <p>Upon creation, this employee will automatically be assigned department-specific onboarding tasks. This includes:</p>
                             <ul>
                                 <li>Department-specific orientation tasks</li>
                                 <li>Required documentation and forms</li>
@@ -282,17 +291,16 @@
     <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert">
         <asp:Literal ID="litMessage" runat="server"></asp:Literal>
     </asp:Panel>
-</asp:Content>
 
-<asp:Content ID="AddEmployeeScripts" ContentPlaceHolderID="ScriptContent" runat="server">
+    <!-- JavaScript for form functionality -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize form validation
             initializeFormValidation();
-            
+
             // Set default hire date to today
             setDefaultHireDate();
-            
+
             // Initialize department-based features
             initializeDepartmentFeatures();
         });
@@ -312,48 +320,58 @@
         function validateField(event) {
             const field = event.target;
             const value = field.value.trim();
-            
-            if (field.hasAttribute('required') && !value) {
-                field.classList.add('error');
-                showFieldError(field, `${getFieldLabel(field)} is required`);
-            } else if (field.type === 'email' && value && !isValidEmail(value)) {
-                field.classList.add('error');
-                showFieldError(field, 'Please enter a valid email address');
-            } else {
-                field.classList.remove('error');
-                clearFieldError(field);
-            }
-        }
 
-        function clearFieldError(event) {
-            const field = event.target;
-            field.classList.remove('error');
-            const errorElement = field.parentNode.querySelector('.field-error');
-            if (errorElement) {
-                errorElement.remove();
+            if (field.hasAttribute('required') && !value) {
+                showFieldError(field, 'This field is required');
+                return false;
             }
+
+            // Email validation
+            if (field.type === 'email' && value) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) {
+                    showFieldError(field, 'Please enter a valid email address');
+                    return false;
+                }
+            }
+
+            // Salary validation
+            if (field.getAttribute('id') && field.getAttribute('id').includes('Salary') && value) {
+                const salaryValue = parseFloat(value);
+                if (salaryValue < 0) {
+                    showFieldError(field, 'Salary must be a positive number');
+                    return false;
+                }
+            }
+
+            clearFieldError(field);
+            return true;
         }
 
         function showFieldError(field, message) {
-            clearFieldError({ target: field });
-            const errorElement = document.createElement('span');
-            errorElement.className = 'field-error';
-            errorElement.textContent = message;
-            field.parentNode.appendChild(errorElement);
+            clearFieldError(field);
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'field-error';
+            errorDiv.textContent = message;
+            errorDiv.style.color = '#dc3545';
+            errorDiv.style.fontSize = '0.8rem';
+            errorDiv.style.marginTop = '0.25rem';
+
+            field.style.borderColor = '#dc3545';
+            field.parentNode.appendChild(errorDiv);
         }
 
-        function getFieldLabel(field) {
-            const label = field.parentNode.querySelector('label');
-            return label ? label.textContent.replace('*', '').trim() : 'Field';
-        }
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
+        function clearFieldError(field) {
+            const existingError = field.parentNode.querySelector('.field-error');
+            if (existingError) {
+                existingError.remove();
+            }
+            field.style.borderColor = '';
         }
 
         function setDefaultHireDate() {
-            const hireDateField = document.getElementById('<%= txtHireDate.ClientID %>');
+            const hireDateField = document.querySelector('input[type="date"]');
             if (hireDateField && !hireDateField.value) {
                 const today = new Date().toISOString().split('T')[0];
                 hireDateField.value = today;
@@ -361,43 +379,39 @@
         }
 
         function initializeDepartmentFeatures() {
-            const departmentSelect = document.getElementById('<%= ddlDepartment.ClientID %>');
+            const departmentSelect = document.querySelector('select[id*="Department"]');
             if (departmentSelect) {
-                departmentSelect.addEventListener('change', function() {
-                    updateOnboardingInfo(this.value);
+                departmentSelect.addEventListener('change', function () {
+                    updateOnboardingPreview(this.value);
                 });
             }
         }
 
-        function updateOnboardingInfo(departmentId) {
-            // This could be enhanced to show department-specific onboarding information
+        function updateOnboardingPreview(departmentId) {
+            // This could be enhanced to show department-specific onboarding tasks
+            // For now, just update the preview text
             console.log('Department selected:', departmentId);
         }
 
-        // Form submission handling
-        function validateForm() {
-            const requiredFields = document.querySelectorAll('input[required], select[required]');
-            let isValid = true;
-            
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    field.classList.add('error');
-                    showFieldError(field, `${getFieldLabel(field)} is required`);
-                    isValid = false;
-                }
-            });
-            
-            return isValid;
+        // Format phone number as user types
+        function formatPhoneNumber(input) {
+            let value = input.value.replace(/\D/g, '');
+            if (value.length >= 6) {
+                value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+            } else if (value.length >= 3) {
+                value = value.replace(/(\d{3})(\d{0,3})/, '($1) $2');
+            }
+            input.value = value;
         }
 
-        // Enhance save buttons to show loading state
-        document.querySelectorAll('.btn-primary, .btn-secondary').forEach(button => {
-            button.addEventListener('click', function() {
-                if (validateForm()) {
-                    this.disabled = true;
-                    this.innerHTML = '<i class="material-icons spin">hourglass_empty</i> Saving...';
-                }
-            });
+        // Add phone formatting to phone field
+        document.addEventListener('DOMContentLoaded', function () {
+            const phoneField = document.querySelector('input[type="tel"], input[id*="Phone"]');
+            if (phoneField) {
+                phoneField.addEventListener('input', function () {
+                    formatPhoneNumber(this);
+                });
+            }
         });
     </script>
 </asp:Content>

@@ -14,6 +14,9 @@ namespace TPASystem2.HR
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Set UnobtrusiveValidationMode to None to avoid jQuery requirement
+            Page.UnobtrusiveValidationMode = System.Web.UI.UnobtrusiveValidationMode.None;
+
             // Check if user is logged in
             if (Session["UserId"] == null)
             {
@@ -132,6 +135,9 @@ namespace TPASystem2.HR
             // Set default employee type to Full-time
             ddlEmployeeType.SelectedValue = "Full-time";
 
+            // Set default work location
+            txtWorkLocation.Text = "Office";
+
             // Check require password change by default
             chkMustChangePassword.Checked = true;
         }
@@ -230,7 +236,7 @@ namespace TPASystem2.HR
                     cmd.Parameters.AddWithValue("@ManagerId",
                         string.IsNullOrEmpty(ddlManager.SelectedValue) ? (object)DBNull.Value : Convert.ToInt32(ddlManager.SelectedValue));
                     cmd.Parameters.AddWithValue("@WorkLocation",
-                        string.IsNullOrEmpty(txtWorkLocation.Text) ? (object)DBNull.Value : txtWorkLocation.Text.Trim());
+                        string.IsNullOrEmpty(txtWorkLocation.Text) ? "Office" : txtWorkLocation.Text.Trim());
                     cmd.Parameters.AddWithValue("@Salary",
                         string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : Convert.ToDecimal(txtSalary.Text));
                     cmd.Parameters.AddWithValue("@Address",
@@ -296,7 +302,7 @@ namespace TPASystem2.HR
             txtPosition.Text = "";
             txtTemporaryPassword.Text = "";
             txtSalary.Text = "";
-            txtWorkLocation.Text = "";
+            txtWorkLocation.Text = "Office";
             txtAddress.Text = "";
             txtCity.Text = "";
             txtState.Text = "";
@@ -332,11 +338,11 @@ namespace TPASystem2.HR
         private void ShowMessage(string message, string type)
         {
             pnlMessage.Visible = true;
-            pnlMessage.CssClass = $"alert alert-{type}";
             litMessage.Text = message;
+            pnlMessage.CssClass = $"alert alert-{type}";
         }
 
-        private void LogActivity(int userId, string action, string targetType, string description, string ipAddress)
+        private void LogActivity(int userId, string action, string entityType, string description, string ipAddress)
         {
             try
             {
@@ -344,16 +350,17 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
                     string query = @"
-                        INSERT INTO ActivityLogs (UserId, Action, TargetType, Description, IPAddress, CreatedAt)
-                        VALUES (@UserId, @Action, @TargetType, @Description, @IPAddress, GETUTCDATE())";
+                        INSERT INTO ActivityLogs (UserId, Action, EntityType, Description, IPAddress, Timestamp)
+                        VALUES (@UserId, @Action, @EntityType, @Description, @IPAddress, @Timestamp)";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@UserId", userId);
                         cmd.Parameters.AddWithValue("@Action", action);
-                        cmd.Parameters.AddWithValue("@TargetType", targetType);
+                        cmd.Parameters.AddWithValue("@EntityType", entityType);
                         cmd.Parameters.AddWithValue("@Description", description);
                         cmd.Parameters.AddWithValue("@IPAddress", ipAddress);
+                        cmd.Parameters.AddWithValue("@Timestamp", DateTime.UtcNow);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -366,10 +373,10 @@ namespace TPASystem2.HR
 
         private string GetClientIP()
         {
-            string ip = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
-            if (string.IsNullOrEmpty(ip))
-                ip = Request.ServerVariables["REMOTE_ADDR"];
-            return ip ?? "Unknown";
+            string ipAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+            if (string.IsNullOrEmpty(ipAddress))
+                ipAddress = Request.ServerVariables["REMOTE_ADDR"];
+            return ipAddress ?? "Unknown";
         }
 
         #endregion
@@ -381,12 +388,12 @@ namespace TPASystem2.HR
     {
         public bool Success { get; set; }
         public int EmployeeId { get; set; }
-        public string EmployeeNumber { get; set; } = "";
-        public string EmployeeName { get; set; } = "";
+        public string EmployeeNumber { get; set; }
+        public string EmployeeName { get; set; }
         public int OnboardingTasksCount { get; set; }
-        public string Department { get; set; } = "";
-        public string Message { get; set; } = "";
-        public string ErrorMessage { get; set; } = "";
+        public string Department { get; set; }
+        public string Message { get; set; }
+        public string ErrorMessage { get; set; }
     }
 
     #endregion
