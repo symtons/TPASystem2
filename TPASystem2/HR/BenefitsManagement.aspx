@@ -4,7 +4,7 @@
     
     <!-- CSS Links -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="Content/css/tpa-dashboard.css" rel="stylesheet">
+    <link href="../Content/css/tpa-dashboard.css" rel="stylesheet">
     
     <div class="benefits-container">
         <!-- Page Header -->
