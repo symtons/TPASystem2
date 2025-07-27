@@ -18,16 +18,6 @@ namespace TPASystem2.HR
 
         private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
-        // ViewState properties for maintaining state - using simple types instead of complex objects
-        private List<OnboardingEmployeeInfo> CurrentEmployeeList
-        {
-            get
-            {
-                // Don't store complex objects in ViewState - retrieve fresh data instead
-                return GetOnboardingEmployees();
-            }
-        }
-
         #endregion
 
         #region Page Events
@@ -53,41 +43,84 @@ namespace TPASystem2.HR
 
         private void InitializePage()
         {
-            // Check user permissions
+            // Check user permissions (commented out for testing)
             //if (Session["UserRole"] == null || Session["UserId"] == null)
             //{
             //    Response.Redirect("~/Login.aspx");
             //    return;
             //}
 
-            //string userRole = Session["UserRole"].ToString();
-            //if (userRole != "HR" && userRole != "ADMIN" && userRole != "HRDIRECTOR")
-            //{
-            //    Response.Redirect("~/Dashboard.aspx");
-            //    return;
-            //}
+            // Initialize dropdowns
+            InitializeFilterDropdowns();
+            InitializeBulkActionDropdown();
+        }
 
-            // Set page title and breadcrumbs
-            Page.Title = "Employee Onboarding Management - TPA HR System";
+        private void InitializeFilterDropdowns()
+        {
+            try
+            {
+                // Status dropdown
+                ddlFilterStatus.Items.Clear();
+                ddlFilterStatus.Items.Add(new ListItem("All Statuses", ""));
+                ddlFilterStatus.Items.Add(new ListItem("Completed", "COMPLETED"));
+                ddlFilterStatus.Items.Add(new ListItem("In Progress", "IN_PROGRESS"));
+                ddlFilterStatus.Items.Add(new ListItem("Pending", "PENDING"));
+                ddlFilterStatus.Items.Add(new ListItem("Overdue", "OVERDUE"));
+                ddlFilterStatus.Items.Add(new ListItem("No Tasks", "NO_TASKS"));
+
+                // Page size dropdown
+                ddlPageSize.Items.Clear();
+                ddlPageSize.Items.Add(new ListItem("10", "10"));
+                ddlPageSize.Items.Add(new ListItem("25", "25"));
+                ddlPageSize.Items.Add(new ListItem("50", "50"));
+                ddlPageSize.Items.Add(new ListItem("100", "100"));
+                ddlPageSize.SelectedValue = "25";
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error initializing dropdowns: {ex.Message}", "error");
+            }
+        }
+
+        private void InitializeBulkActionDropdown()
+        {
+            try
+            {
+                ddlBulkAction.Items.Clear();
+                ddlBulkAction.Items.Add(new ListItem("Select Action", ""));
+                ddlBulkAction.Items.Add(new ListItem("Complete Onboarding", "COMPLETE"));
+                ddlBulkAction.Items.Add(new ListItem("Send Reminder", "REMIND"));
+                ddlBulkAction.Items.Add(new ListItem("Export Details", "EXPORT"));
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error initializing bulk actions: {ex.Message}", "error");
+            }
         }
 
         private void LoadDepartments()
         {
             try
             {
+                ddlFilterDepartment.Items.Clear();
+                ddlFilterDepartment.Items.Add(new ListItem("All Departments", ""));
+
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    using (SqlCommand cmd = new SqlCommand("SELECT Id, Name FROM Departments WHERE IsActive = 1 ORDER BY Name", conn))
+
+                    // Use simple query instead of stored procedure for now
+                    string sql = "SELECT Id, Name FROM Departments WHERE IsActive = 1 ORDER BY Name";
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            ddlFilterDepartment.Items.Clear();
-                            ddlFilterDepartment.Items.Add(new ListItem("All Departments", ""));
-
                             while (reader.Read())
                             {
-                                ddlFilterDepartment.Items.Add(new ListItem(reader["Name"].ToString(), reader["Id"].ToString()));
+                                ddlFilterDepartment.Items.Add(new ListItem(
+                                    reader["Name"].ToString(),
+                                    reader["Id"].ToString()
+                                ));
                             }
                         }
                     }
@@ -139,16 +172,44 @@ namespace TPASystem2.HR
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    using (SqlCommand cmd = new SqlCommand("sp_GetOnboardingOverview", conn))
+
+                    // Use simple SQL query for now (can replace with stored procedure later)
+                    string sql = @"
+                        SELECT TOP 50
+                            e.[Id] AS EmployeeId,
+                            e.[EmployeeNumber],
+                            e.[FirstName] + ' ' + e.[LastName] AS FullName,
+                            e.[Position],
+                            e.[HireDate],
+                            ISNULL(d.[Name], 'Unknown') AS DepartmentName,
+                            COUNT(ot.[Id]) AS TotalTasks,
+                            SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedTasks,
+                            SUM(CASE WHEN ot.[Status] = 'PENDING' THEN 1 ELSE 0 END) AS PendingTasks,
+                            SUM(CASE WHEN ot.[Status] = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS InProgressTasks,
+                            SUM(CASE WHEN ot.[Status] != 'COMPLETED' AND ot.[DueDate] < GETUTCDATE() THEN 1 ELSE 0 END) AS OverdueTasks,
+                            CASE 
+                                WHEN COUNT(ot.[Id]) > 0 THEN 
+                                    CAST((SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) * 100.0) / COUNT(ot.[Id]) AS DECIMAL(5,2))
+                                ELSE 0 
+                            END AS CompletionPercentage,
+                            CASE 
+                                WHEN COUNT(ot.[Id]) = 0 THEN 'NO_TASKS'
+                                WHEN SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) = COUNT(ot.[Id]) THEN 'COMPLETED'
+                                WHEN SUM(CASE WHEN ot.[Status] != 'COMPLETED' AND ot.[DueDate] < GETUTCDATE() THEN 1 ELSE 0 END) > 0 THEN 'OVERDUE'
+                                WHEN SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) > 0 THEN 'IN_PROGRESS'
+                                ELSE 'PENDING'
+                            END AS OnboardingStatus,
+                            DATEDIFF(day, e.[HireDate], GETUTCDATE()) AS DaysSinceHire
+                        FROM [dbo].[Employees] e
+                        LEFT JOIN [dbo].[Departments] d ON e.[DepartmentId] = d.[Id]
+                        LEFT JOIN [dbo].[OnboardingTasks] ot ON e.[Id] = ot.[EmployeeId] AND ot.[IsTemplate] = 0
+                        WHERE e.[HireDate] >= DATEADD(year, -1, GETUTCDATE())
+                            AND (e.[Status] IS NULL OR e.[Status] != 'Terminated')
+                        GROUP BY e.[Id], e.[EmployeeNumber], e.[FirstName], e.[LastName], e.[Position], e.[HireDate], d.[Name]
+                        ORDER BY e.[HireDate] DESC";
+
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-
-                        // Add filter parameters
-                        cmd.Parameters.AddWithValue("@DepartmentId",
-                            string.IsNullOrEmpty(ddlFilterDepartment.SelectedValue) ? (object)DBNull.Value : Convert.ToInt32(ddlFilterDepartment.SelectedValue));
-                        cmd.Parameters.AddWithValue("@Status",
-                            string.IsNullOrEmpty(ddlFilterStatus.SelectedValue) ? (object)DBNull.Value : ddlFilterStatus.SelectedValue);
-
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
@@ -171,11 +232,7 @@ namespace TPASystem2.HR
                                     DaysSinceHire = Convert.ToInt32(reader["DaysSinceHire"])
                                 };
 
-                                // Apply additional client-side filters
-                                if (ApplyClientFilters(employee))
-                                {
-                                    employees.Add(employee);
-                                }
+                                employees.Add(employee);
                             }
                         }
                     }
@@ -184,59 +241,75 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in GetOnboardingEmployees: {ex}");
-                throw;
+                ShowNotification($"Error loading employee data: {ex.Message}", "error");
             }
 
             return employees;
         }
 
-        private bool ApplyClientFilters(OnboardingEmployeeInfo employee)
-        {
-            // Search filter
-            if (!string.IsNullOrEmpty(txtSearch.Text))
-            {
-                string searchTerm = txtSearch.Text.ToLower();
-                if (!employee.FullName.ToLower().Contains(searchTerm) &&
-                    !employee.EmployeeNumber.ToLower().Contains(searchTerm) &&
-                    !employee.Position.ToLower().Contains(searchTerm))
-                {
-                    return false;
-                }
-            }
-
-            // Date range filter
-            if (!string.IsNullOrEmpty(txtFromDate.Text))
-            {
-                DateTime fromDate = Convert.ToDateTime(txtFromDate.Text);
-                if (employee.HireDate < fromDate)
-                    return false;
-            }
-
-            if (!string.IsNullOrEmpty(txtToDate.Text))
-            {
-                DateTime toDate = Convert.ToDateTime(txtToDate.Text);
-                if (employee.HireDate > toDate)
-                    return false;
-            }
-
-            return true;
-        }
-
         private void LoadStatistics()
         {
-            //try
-            //{
-                var employees = CurrentEmployeeList;
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
 
-                litTotalEmployees.Text = employees.Count.ToString();
-                litCompletedEmployees.Text = employees.Count(e => e.OnboardingStatus == "COMPLETED").ToString();
-                litInProgressEmployees.Text = employees.Count(e => e.OnboardingStatus == "IN_PROGRESS").ToString();
-                litOverdueEmployees.Text = employees.Count(e => e.OverdueTasks > 0).ToString();
-            //}
-            //catch (Exception ex)
-            //{
-            //    System.Diagnostics.Debug.WriteLine($"Error in LoadStatistics: {ex}");
-            //}
+                    string sql = @"
+                        WITH EmployeeStats AS (
+                            SELECT 
+                                e.[Id],
+                                COUNT(ot.[Id]) AS TotalTasks,
+                                SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedTasks,
+                                SUM(CASE WHEN ot.[Status] != 'COMPLETED' AND ot.[DueDate] < GETUTCDATE() THEN 1 ELSE 0 END) AS OverdueTasks,
+                                CASE 
+                                    WHEN COUNT(ot.[Id]) = 0 THEN 'NO_TASKS'
+                                    WHEN SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) = COUNT(ot.[Id]) THEN 'COMPLETED'
+                                    WHEN SUM(CASE WHEN ot.[Status] != 'COMPLETED' AND ot.[DueDate] < GETUTCDATE() THEN 1 ELSE 0 END) > 0 THEN 'OVERDUE'
+                                    WHEN SUM(CASE WHEN ot.[Status] = 'COMPLETED' THEN 1 ELSE 0 END) > 0 THEN 'IN_PROGRESS'
+                                    ELSE 'PENDING'
+                                END AS OnboardingStatus
+                            FROM [dbo].[Employees] e
+                            LEFT JOIN [dbo].[OnboardingTasks] ot ON e.[Id] = ot.[EmployeeId] AND ot.[IsTemplate] = 0
+                            WHERE e.[HireDate] >= DATEADD(year, -1, GETUTCDATE())
+                                AND (e.[Status] IS NULL OR e.[Status] != 'Terminated')
+                            GROUP BY e.[Id]
+                        )
+                        SELECT 
+                            COUNT(*) AS TotalEmployees,
+                            SUM(CASE WHEN OnboardingStatus = 'COMPLETED' THEN 1 ELSE 0 END) AS CompletedEmployees,
+                            SUM(CASE WHEN OnboardingStatus = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS InProgressEmployees,
+                            SUM(CASE WHEN OnboardingStatus = 'OVERDUE' THEN 1 ELSE 0 END) AS OverdueEmployees
+                        FROM EmployeeStats";
+
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                litTotalEmployees.Text = reader["TotalEmployees"].ToString();
+                                litCompletedEmployees.Text = reader["CompletedEmployees"].ToString();
+                                litInProgressEmployees.Text = reader["InProgressEmployees"].ToString();
+                                litOverdueEmployees.Text = reader["OverdueEmployees"].ToString();
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in LoadStatistics: {ex}");
+                ShowNotification($"Error loading statistics: {ex.Message}", "error");
+            }
+        }
+
+        private void UpdateGridVisibility(bool hasData)
+        {
+            if (pnlEmployeeGrid != null)
+            {
+                pnlEmployeeGrid.Visible = hasData;
+            }
         }
 
         #endregion
@@ -251,22 +324,29 @@ namespace TPASystem2.HR
 
         protected void gvEmployees_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            int employeeId = Convert.ToInt32(e.CommandArgument);
-
-            switch (e.CommandName)
+            try
             {
-                case "ManageOnboarding":
-                    Response.Redirect($"~/HR/ManageEmployeeOnboarding.aspx?employeeId={employeeId}");
-                    break;
+                int employeeId = Convert.ToInt32(e.CommandArgument);
 
-                case "ViewDetails":
-                    // Could open a modal or redirect to employee details
-                    Response.Redirect($"~/HR/EmployeeDetails.aspx?id={employeeId}");
-                    break;
+                switch (e.CommandName)
+                {
+                    case "ManageOnboarding":
+                        Response.Redirect($"~/HR/ManageEmployeeOnboarding.aspx?employeeId={employeeId}");
+                        break;
 
-                case "QuickComplete":
-                    CompleteEmployeeOnboarding(employeeId);
-                    break;
+                    case "ViewDetails":
+                        Response.Redirect($"~/HR/EmployeeDetails.aspx?id={employeeId}");
+                        break;
+
+                    case "QuickComplete":
+                        CompleteEmployeeOnboarding(employeeId);
+                        LoadOnboardingData(); // Refresh grid
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error processing command: {ex.Message}", "error");
             }
         }
 
@@ -286,85 +366,82 @@ namespace TPASystem2.HR
 
         #endregion
 
-        #region Filter Events
-
-        protected void txtSearch_TextChanged(object sender, EventArgs e)
-        {
-            LoadOnboardingData();
-            LoadStatistics();
-        }
-
-        protected void ddlFilterDepartment_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadOnboardingData();
-            LoadStatistics();
-        }
-
-        protected void ddlFilterStatus_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadOnboardingData();
-            LoadStatistics();
-        }
-
-        protected void DateFilter_Changed(object sender, EventArgs e)
-        {
-            LoadOnboardingData();
-            LoadStatistics();
-        }
-
-        protected void btnClearFilters_Click(object sender, EventArgs e)
-        {
-            ClearAllFilters();
-            LoadOnboardingData();
-            LoadStatistics();
-        }
-
-        protected void ddlPageSize_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            gvEmployees.PageSize = Convert.ToInt32(ddlPageSize.SelectedValue);
-            gvEmployees.PageIndex = 0; // Reset to first page
-            LoadOnboardingData();
-        }
-
-        #endregion
-
-        #region Action Events
+        #region Button Events
 
         protected void btnExportReport_Click(object sender, EventArgs e)
         {
-            ExportOnboardingReport();
+            try
+            {
+                ExportOnboardingReport();
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error exporting report: {ex.Message}", "error");
+            }
         }
 
         protected void btnBulkActions_Click(object sender, EventArgs e)
         {
-            pnlQuickActions.Visible = !pnlQuickActions.Visible;
-            pnlQuickActions.CssClass = pnlQuickActions.Visible ? "quick-actions-panel show" : "quick-actions-panel";
+            try
+            {
+                if (pnlQuickActions != null)
+                {
+                    pnlQuickActions.Visible = !pnlQuickActions.Visible;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error showing bulk actions: {ex.Message}", "error");
+            }
         }
 
-        protected void btnCloseQuickActions_Click(object sender, EventArgs e)
+        protected void btnClearFilters_Click(object sender, EventArgs e)
         {
-            pnlQuickActions.Visible = false;
+            try
+            {
+                // Reset all filters
+                txtSearch.Text = "";
+                ddlFilterDepartment.SelectedIndex = 0;
+                ddlFilterStatus.SelectedIndex = 0;
+                SetDefaultFilters();
+
+                // Reload data
+                LoadOnboardingData();
+
+                ShowNotification("Filters cleared", "info");
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error clearing filters: {ex.Message}", "error");
+            }
         }
 
-        protected void btnSendReminders_Click(object sender, EventArgs e)
+        protected void btnExecuteBulkAction_Click(object sender, EventArgs e)
         {
-            SendReminderEmails();
+            try
+            {
+                ExecuteBulkAction();
+            }
+            catch (Exception ex)
+            {
+                ShowNotification($"Error executing bulk action: {ex.Message}", "error");
+            }
         }
 
-        protected void btnGenerateProgressReport_Click(object sender, EventArgs e)
+        protected void btnCloseBulkActions_Click(object sender, EventArgs e)
         {
-            GenerateProgressReport();
-        }
-
-        protected void btnReassignTasks_Click(object sender, EventArgs e)
-        {
-            // Redirect to bulk reassignment page
-            Response.Redirect("~/HR/BulkTaskReassignment.aspx");
+            if (pnlQuickActions != null)
+            {
+                pnlQuickActions.Visible = false;
+            }
         }
 
         protected void btnCloseNotification_Click(object sender, EventArgs e)
         {
-            pnlNotification.Visible = false;
+            if (pnlNotification != null)
+            {
+                pnlNotification.Visible = false;
+            }
         }
 
         #endregion
@@ -378,223 +455,105 @@ namespace TPASystem2.HR
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        UPDATE OnboardingTasks 
-                        SET Status = 'COMPLETED', 
-                            CompletedDate = GETUTCDATE(),
-                            CompletedById = @UserId,
-                            Notes = ISNULL(Notes, '') + ' [Bulk completed by HR]'
-                        WHERE EmployeeId = @EmployeeId AND Status != 'COMPLETED'", conn))
+
+                    // Simple update query (can replace with stored procedure later)
+                    string sql = @"
+                        UPDATE [dbo].[OnboardingTasks] 
+                        SET [Status] = 'COMPLETED',
+                            [CompletedDate] = GETUTCDATE(),
+                            [Notes] = ISNULL([Notes], '') + ' [COMPLETED BY HR]'
+                        WHERE [EmployeeId] = @EmployeeId 
+                            AND [Status] != 'COMPLETED' 
+                            AND [IsTemplate] = 0";
+
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                        cmd.Parameters.AddWithValue("@UserId", Convert.ToInt32(Session["UserId"]));
+                        int rowsAffected = cmd.ExecuteNonQuery();
 
-                        int affectedRows = cmd.ExecuteNonQuery();
-
-                        if (affectedRows > 0)
-                        {
-                            // Update onboarding progress
-                            using (SqlCommand progressCmd = new SqlCommand("EXEC UpdateOnboardingProgress @EmployeeId", conn))
-                            {
-                                progressCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                                progressCmd.ExecuteNonQuery();
-                            }
-
-                            ShowNotification($"Employee onboarding marked as complete ({affectedRows} tasks updated).", "success");
-                        }
-                        else
-                        {
-                            ShowNotification("No pending tasks found to complete.", "info");
-                        }
+                        ShowNotification($"Completed {rowsAffected} tasks for employee", "success");
                     }
                 }
-
-                // Refresh data
-                LoadOnboardingData();
-                LoadStatistics();
             }
             catch (Exception ex)
             {
-                ShowNotification($"Error completing onboarding: {ex.Message}", "error");
-                System.Diagnostics.Debug.WriteLine($"Error in CompleteEmployeeOnboarding: {ex}");
+                throw new Exception($"Failed to complete onboarding: {ex.Message}");
             }
         }
 
         private void ExportOnboardingReport()
         {
-            try
-            {
-                var employees = CurrentEmployeeList;
-                var csv = new StringBuilder();
+            var employees = GetOnboardingEmployees();
 
-                // CSV Headers
-                csv.AppendLine("Employee Number,Full Name,Position,Department,Hire Date,Days Since Hire,Total Tasks,Completed Tasks,Pending Tasks,In Progress Tasks,Overdue Tasks,Completion Percentage,Status");
-
-                // CSV Data
-                foreach (var emp in employees)
-                {
-                    csv.AppendLine($"{emp.EmployeeNumber}," +
-                                  $"\"{emp.FullName}\"," +
-                                  $"\"{emp.Position}\"," +
-                                  $"\"{emp.DepartmentName}\"," +
-                                  $"{emp.HireDate:yyyy-MM-dd}," +
-                                  $"{emp.DaysSinceHire}," +
-                                  $"{emp.TotalTasks}," +
-                                  $"{emp.CompletedTasks}," +
-                                  $"{emp.PendingTasks}," +
-                                  $"{emp.InProgressTasks}," +
-                                  $"{emp.OverdueTasks}," +
-                                  $"{emp.CompletionPercentage:F1}%," +
-                                  $"{emp.OnboardingStatus}");
-                }
-
-                // Download file
-                string fileName = $"OnboardingReport_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                Response.ContentType = "text/csv";
-                Response.AddHeader("Content-Disposition", $"attachment; filename={fileName}");
-                Response.Write(csv.ToString());
-                Response.End();
-            }
-            catch (Exception ex)
-            {
-                ShowNotification($"Error exporting report: {ex.Message}", "error");
-                System.Diagnostics.Debug.WriteLine($"Error in ExportOnboardingReport: {ex}");
-            }
-        }
-
-        private void SendReminderEmails()
-        {
-            try
-            {
-                var overdueEmployees = CurrentEmployeeList.Where(e => e.OverdueTasks > 0).ToList();
-
-                if (overdueEmployees.Count == 0)
-                {
-                    ShowNotification("No employees with overdue tasks found.", "info");
-                    return;
-                }
-
-                int emailsSent = 0;
-
-                foreach (var employee in overdueEmployees)
-                {
-                    // Here you would implement email sending logic
-                    // For now, we'll simulate the process
-                    bool emailSent = SendReminderEmail(employee);
-                    if (emailSent) emailsSent++;
-                }
-
-                ShowNotification($"Reminder emails sent to {emailsSent} employees with overdue tasks.", "success");
-            }
-            catch (Exception ex)
-            {
-                ShowNotification($"Error sending reminder emails: {ex.Message}", "error");
-                System.Diagnostics.Debug.WriteLine($"Error in SendReminderEmails: {ex}");
-            }
-        }
-
-        private bool SendReminderEmail(OnboardingEmployeeInfo employee)
-        {
-            // TODO: Implement actual email sending
-            // This is a placeholder for email functionality
-            try
-            {
-                // Email logic would go here
-                // Return true if email sent successfully
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private void GenerateProgressReport()
-        {
-            try
-            {
-                // Generate detailed progress report
-                var reportData = GetDetailedProgressReport();
-
-                // Create downloadable report
-                var html = GenerateProgressReportHtml(reportData);
-
-                string fileName = $"DetailedProgressReport_{DateTime.Now:yyyyMMdd_HHmmss}.html";
-                Response.ContentType = "text/html";
-                Response.AddHeader("Content-Disposition", $"attachment; filename={fileName}");
-                Response.Write(html);
-                Response.End();
-            }
-            catch (Exception ex)
-            {
-                ShowNotification($"Error generating progress report: {ex.Message}", "error");
-                System.Diagnostics.Debug.WriteLine($"Error in GenerateProgressReport: {ex}");
-            }
-        }
-
-        private string GetDetailedProgressReport()
-        {
-            // This would generate a more detailed analysis
-            // For now, return basic info
-            return "Detailed progress report data";
-        }
-
-        private string GenerateProgressReportHtml(string reportData)
-        {
             var html = new StringBuilder();
             html.AppendLine("<!DOCTYPE html>");
-            html.AppendLine("<html><head>");
-            html.AppendLine("<title>Onboarding Progress Report</title>");
-            html.AppendLine("<style>body{font-family:Arial,sans-serif;margin:20px;}</style>");
+            html.AppendLine("<html><head><title>Onboarding Report</title>");
+            html.AppendLine("<style>table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 8px; }</style>");
             html.AppendLine("</head><body>");
-            html.AppendLine($"<h1>Onboarding Progress Report</h1>");
+            html.AppendLine("<h1>Employee Onboarding Report</h1>");
             html.AppendLine($"<p>Generated: {DateTime.Now:yyyy-MM-dd HH:mm}</p>");
-            html.AppendLine($"<p>{reportData}</p>");
-            html.AppendLine("</body></html>");
 
-            return html.ToString();
+            html.AppendLine("<table>");
+            html.AppendLine("<tr><th>Employee #</th><th>Name</th><th>Position</th><th>Hire Date</th><th>Department</th><th>Progress</th><th>Status</th></tr>");
+
+            foreach (var emp in employees)
+            {
+                html.AppendLine("<tr>");
+                html.AppendLine($"<td>{emp.EmployeeNumber}</td>");
+                html.AppendLine($"<td>{emp.FullName}</td>");
+                html.AppendLine($"<td>{emp.Position}</td>");
+                html.AppendLine($"<td>{emp.HireDate:yyyy-MM-dd}</td>");
+                html.AppendLine($"<td>{emp.DepartmentName}</td>");
+                html.AppendLine($"<td>{emp.CompletionPercentage:F1}%</td>");
+                html.AppendLine($"<td>{emp.OnboardingStatus}</td>");
+                html.AppendLine("</tr>");
+            }
+
+            html.AppendLine("</table></body></html>");
+
+            string fileName = $"OnboardingReport_{DateTime.Now:yyyyMMdd}.html";
+            Response.ContentType = "text/html";
+            Response.AddHeader("Content-Disposition", $"attachment; filename={fileName}");
+            Response.Write(html.ToString());
+            Response.End();
         }
 
-        private void ClearAllFilters()
+        private void ExecuteBulkAction()
         {
-            txtSearch.Text = "";
-            ddlFilterDepartment.SelectedIndex = 0;
-            ddlFilterStatus.SelectedIndex = 0;
-            SetDefaultFilters();
-        }
+            string action = ddlBulkAction.SelectedValue;
+            if (string.IsNullOrEmpty(action))
+            {
+                ShowNotification("Please select an action", "warning");
+                return;
+            }
 
-        private void UpdateGridVisibility(bool hasData)
-        {
-            pnlEmployeeGrid.Visible = hasData;
+            // Get selected employees (this would need checkboxes in the grid)
+            var selectedEmployees = new List<int>();
+
+            // For now, just show a message
+            ShowNotification($"Bulk action '{action}' would be executed for selected employees", "info");
         }
 
         private void ShowNotification(string message, string type)
         {
-            litNotificationMessage.Text = message;
-            pnlNotification.Visible = true;
-            pnlNotification.CssClass = $"notification-panel {type}";
+            try
+            {
+                if (pnlNotification != null && litNotificationMessage != null)
+                {
+                    pnlNotification.Visible = true;
+                    litNotificationMessage.Text = message;
+                    pnlNotification.CssClass = $"notification {type}";
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error showing notification: {ex}");
+            }
         }
 
         #endregion
 
-        #region UI Helper Methods
-
-        protected string GetEmployeeInitials(string fullName)
-        {
-            if (string.IsNullOrEmpty(fullName)) return "??";
-
-            var parts = fullName.Split(' ');
-            if (parts.Length >= 2)
-            {
-                return (parts[0].Substring(0, 1) + parts[1].Substring(0, 1)).ToUpper();
-            }
-            else if (parts.Length == 1 && parts[0].Length >= 2)
-            {
-                return parts[0].Substring(0, 2).ToUpper();
-            }
-
-            return fullName.Substring(0, Math.Min(2, fullName.Length)).ToUpper();
-        }
+        #region Helper Methods for Display (Referenced in ASPX)
 
         protected string GetStatusClass(string status)
         {
@@ -622,18 +581,10 @@ namespace TPASystem2.HR
             }
         }
 
-        private string GetProgressColorClass(decimal percentage)
-        {
-            if (percentage >= 90) return "progress-excellent";
-            if (percentage >= 70) return "progress-good";
-            if (percentage >= 50) return "progress-fair";
-            return "progress-poor";
-        }
-
         #endregion
     }
 
-    #region Data Models - Fixed with Serializable
+    #region Data Models - Serializable for ViewState
 
     [Serializable]
     public class OnboardingEmployeeInfo

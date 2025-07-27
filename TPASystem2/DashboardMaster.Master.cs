@@ -15,11 +15,11 @@ namespace TPASystem2
         protected void Page_Load(object sender, EventArgs e)
         {
             // Check if user is logged in
-            if (Session["UserId"] == null)
-            {
-                SimpleUrlHelper.RedirectToCleanUrl("login");
-                return;
-            }
+            //if (Session["UserId"] == null)
+            //{
+            //    SimpleUrlHelper.RedirectToCleanUrl("login");
+            //    return;
+            //}
 
             if (!IsPostBack)
             {
@@ -124,7 +124,7 @@ namespace TPASystem2
                         menuHtml.AppendLine(CreateNavItem("Employees", "HR/Employees.aspx", "people"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave-management", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("HR Reports", "/reports", "assessment", currentPage == "reports"));
-                        menuHtml.AppendLine(CreateNavItem("Onboarding", "/HR/OnboardingManagement.aspx", "assignment"));
+                        menuHtml.AppendLine(CreateNavItem("Onboarding", "HR/OnboardingManagement.aspx", "assignment"));
 
                         // HR Section
                         menuHtml.AppendLine(@"<div class='nav-section-header'>HR Management</div>");

@@ -159,40 +159,31 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Panel pnlQuickActions;
 
         /// <summary>
-        /// btnCloseQuickActions control.
+        /// btnCloseBulkActions control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCloseQuickActions;
+        protected global::System.Web.UI.WebControls.Button btnCloseBulkActions;
 
         /// <summary>
-        /// btnSendReminders control.
+        /// ddlBulkAction control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSendReminders;
+        protected global::System.Web.UI.WebControls.DropDownList ddlBulkAction;
 
         /// <summary>
-        /// btnGenerateProgressReport control.
+        /// btnExecuteBulkAction control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnGenerateProgressReport;
-
-        /// <summary>
-        /// btnReassignTasks control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnReassignTasks;
+        protected global::System.Web.UI.WebControls.Button btnExecuteBulkAction;
 
         /// <summary>
         /// pnlNotification control.
