@@ -1,11 +1,11 @@
 ﻿<%@ Page Title="Add Benefits Plan" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="AddBenefitsPlan.aspx.cs" Inherits="TPASystem2.HR.AddBenefitsPlan" %>
 
-<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="Content2" ContentPlaceHolderID="DashboardContent" runat="server">
+    
+    <!-- CSS Links -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="~/Content/css/tpa-common.css" rel="stylesheet">
-</asp:Content>
-
-<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
+    <link href="Content/css/tpa-dashboard.css" rel="stylesheet">
+    
     <div class="benefits-container">
         <!-- Page Header -->
         <div class="page-header">
@@ -236,7 +236,7 @@
 
     <script>
         // Show/hide health coverage section based on plan type
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var planTypeDropdown = document.getElementById('<%= ddlPlanType.ClientID %>');
             var healthSection = document.getElementById('healthCoverageSection');
             

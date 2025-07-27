@@ -1,13 +1,11 @@
-﻿<%@ Page Title="Benefits Management" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="BenefitsManagement.aspx.cs" Inherits="TPASystem2.HR.BenefitsManagement" %>
+﻿<%@ Page Title="Benefits Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="BenefitsManagement.aspx.cs" Inherits="TPASystem2.HR.BenefitsManagement" %>
 
-<asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
+<asp:Content ID="Content2" ContentPlaceHolderID="DashboardContent" runat="server">
+    
+    <!-- CSS Links -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="~/Content/css/tpa-common.css" rel="stylesheet">
-</asp:Content>
-
-<asp:Content ID="Content2" ContentPlaceHolderID="MainContent" runat="server">
-
-
+    <link href="Content/css/tpa-dashboard.css" rel="stylesheet">
+    
     <div class="benefits-container">
         <!-- Page Header -->
         <div class="page-header">
@@ -295,7 +293,7 @@
         }
 
         // Close modal when clicking outside of it
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             var modal = document.getElementById('enrollmentModal');
             if (event.target == modal) {
                 modal.style.display = "none";
