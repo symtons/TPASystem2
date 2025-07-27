@@ -129,7 +129,7 @@ namespace TPASystem2
                         // HR Section
                         menuHtml.AppendLine(@"<div class='nav-section-header'>HR Management</div>");
                         menuHtml.AppendLine(CreateNavItem("Performance Reviews", "/hr/performance", "star", currentPage == "performance"));
-                        menuHtml.AppendLine(CreateNavItem("Benefits Management", "/hr/benefits", "favorite", currentPage == "benefits"));
+                        menuHtml.AppendLine(CreateNavItem("Benefits Management", "HR/BenefitsManagement.aspx", "favorite"));
                         menuHtml.AppendLine(CreateNavItem("HR Settings", "/hr/settings", "settings", currentPage == "settings"));
                         break;
 

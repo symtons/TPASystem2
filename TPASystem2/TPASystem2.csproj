@@ -76,7 +76,9 @@
     <Content Include="Dashboard.aspx" />
     <Content Include="Debug.aspx" />
     <Content Include="Global.asax" />
+    <Content Include="HR\AddBenefitsPlan.aspx" />
     <Content Include="HR\AddEmployee.aspx" />
+    <Content Include="HR\BenefitsManagement.aspx" />
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
@@ -110,12 +112,26 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="HR\AddBenefitsPlan.aspx.cs">
+      <DependentUpon>AddBenefitsPlan.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\AddBenefitsPlan.aspx.designer.cs">
+      <DependentUpon>AddBenefitsPlan.aspx</DependentUpon>
+    </Compile>
     <Compile Include="HR\AddEmployee.aspx.cs">
       <DependentUpon>AddEmployee.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="HR\AddEmployee.aspx.designer.cs">
       <DependentUpon>AddEmployee.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="HR\BenefitsManagement.aspx.cs">
+      <DependentUpon>BenefitsManagement.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\BenefitsManagement.aspx.designer.cs">
+      <DependentUpon>BenefitsManagement.aspx</DependentUpon>
     </Compile>
     <Compile Include="HR\Employees.aspx.cs">
       <DependentUpon>Employees.aspx</DependentUpon>
