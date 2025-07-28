@@ -11,26 +11,26 @@ namespace TPASystem2.HR
 {
 
 
-    public partial class BenefitsManagement
+    public partial class TimeManagement
     {
 
         /// <summary>
-        /// btnEnrollEmployee control.
+        /// btnViewReports control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnEnrollEmployee;
+        protected global::System.Web.UI.WebControls.Button btnViewReports;
 
         /// <summary>
-        /// btnAddPlan control.
+        /// btnExportData control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnAddPlan;
+        protected global::System.Web.UI.WebControls.Button btnExportData;
 
         /// <summary>
         /// pnlMessage control.
@@ -51,76 +51,130 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Label lblMessage;
 
         /// <summary>
-        /// lblHealthEnrollments control.
+        /// lblLastUpdated control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblHealthEnrollments;
+        protected global::System.Web.UI.WebControls.Label lblLastUpdated;
 
         /// <summary>
-        /// lblDentalEnrollments control.
+        /// lblClockedIn control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblDentalEnrollments;
+        protected global::System.Web.UI.WebControls.Label lblClockedIn;
 
         /// <summary>
-        /// lblVisionEnrollments control.
+        /// lblClockedOut control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblVisionEnrollments;
+        protected global::System.Web.UI.WebControls.Label lblClockedOut;
 
         /// <summary>
-        /// lblEligibleEmployees control.
+        /// lblOnBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblEligibleEmployees;
+        protected global::System.Web.UI.WebControls.Label lblOnBreak;
 
         /// <summary>
-        /// ddlPlanType control.
+        /// lblLateArrivals control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlPlanType;
+        protected global::System.Web.UI.WebControls.Label lblLateArrivals;
 
         /// <summary>
-        /// ddlPlanCategory control.
+        /// lblAttendanceRate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlPlanCategory;
+        protected global::System.Web.UI.WebControls.Label lblAttendanceRate;
 
         /// <summary>
-        /// txtSearchEmployee control.
+        /// lblOvertimeHours control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSearchEmployee;
+        protected global::System.Web.UI.WebControls.Label lblOvertimeHours;
 
         /// <summary>
-        /// btnSearch control.
+        /// lblPendingTimesheets control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSearch;
+        protected global::System.Web.UI.WebControls.Label lblPendingTimesheets;
+
+        /// <summary>
+        /// lblTotalHours control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblTotalHours;
+
+        /// <summary>
+        /// ddlDepartment control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlDepartment;
+
+        /// <summary>
+        /// ddlTimeFrame control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlTimeFrame;
+
+        /// <summary>
+        /// txtStartDate control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtStartDate;
+
+        /// <summary>
+        /// txtEndDate control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtEndDate;
+
+        /// <summary>
+        /// btnApplyFilter control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnApplyFilter;
 
         /// <summary>
         /// btnClearFilter control.
@@ -132,156 +186,138 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Button btnClearFilter;
 
         /// <summary>
-        /// btnTabPlans control.
+        /// btnTabCurrent control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabPlans;
+        protected global::System.Web.UI.WebControls.Button btnTabCurrent;
 
         /// <summary>
-        /// btnTabEnrollments control.
+        /// btnTabTimesheets control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabEnrollments;
+        protected global::System.Web.UI.WebControls.Button btnTabTimesheets;
 
         /// <summary>
-        /// btnTabReports control.
+        /// btnTabAttendance control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabReports;
+        protected global::System.Web.UI.WebControls.Button btnTabAttendance;
 
         /// <summary>
-        /// pnlPlansTab control.
+        /// btnTabSchedules control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlPlansTab;
+        protected global::System.Web.UI.WebControls.Button btnTabSchedules;
 
         /// <summary>
-        /// gvBenefitsPlans control.
+        /// pnlCurrentTab control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvBenefitsPlans;
+        protected global::System.Web.UI.WebControls.Panel pnlCurrentTab;
 
         /// <summary>
-        /// pnlEnrollmentsTab control.
+        /// btnRefreshStatus control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlEnrollmentsTab;
+        protected global::System.Web.UI.WebControls.Button btnRefreshStatus;
 
         /// <summary>
-        /// gvEmployeeEnrollments control.
+        /// gvCurrentStatus control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvEmployeeEnrollments;
+        protected global::System.Web.UI.WebControls.GridView gvCurrentStatus;
 
         /// <summary>
-        /// pnlReportsTab control.
+        /// pnlTimesheetsTab control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlReportsTab;
+        protected global::System.Web.UI.WebControls.Panel pnlTimesheetsTab;
 
         /// <summary>
-        /// btnGenerateSummaryReport control.
+        /// btnBulkApprove control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnGenerateSummaryReport;
+        protected global::System.Web.UI.WebControls.Button btnBulkApprove;
 
         /// <summary>
-        /// btnGenerateEligibilityReport control.
+        /// gvTimesheets control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnGenerateEligibilityReport;
+        protected global::System.Web.UI.WebControls.GridView gvTimesheets;
 
         /// <summary>
-        /// btnGenerateCostReport control.
+        /// pnlAttendanceTab control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnGenerateCostReport;
+        protected global::System.Web.UI.WebControls.Panel pnlAttendanceTab;
 
         /// <summary>
-        /// ddlEmployee control.
+        /// gvAttendance control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlEmployee;
+        protected global::System.Web.UI.WebControls.GridView gvAttendance;
 
         /// <summary>
-        /// ddlBenefitsPlan control.
+        /// pnlSchedulesTab control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlBenefitsPlan;
+        protected global::System.Web.UI.WebControls.Panel pnlSchedulesTab;
 
         /// <summary>
-        /// txtEnrollmentDate control.
+        /// btnManageSchedules control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtEnrollmentDate;
+        protected global::System.Web.UI.WebControls.Button btnManageSchedules;
 
         /// <summary>
-        /// txtDependentsCount control.
+        /// gvSchedules control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDependentsCount;
-
-        /// <summary>
-        /// txtEnrollmentNotes control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtEnrollmentNotes;
-
-        /// <summary>
-        /// btnSaveEnrollment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveEnrollment;
+        protected global::System.Web.UI.WebControls.GridView gvSchedules;
     }
 }

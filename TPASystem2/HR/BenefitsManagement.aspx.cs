@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
@@ -12,25 +11,33 @@ namespace TPASystem2.HR
     {
         private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
+        #region Page Events
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                LoadBenefitsOverview();
+                InitializePage();
+                LoadBenefitsStats();
                 LoadBenefitsPlans();
                 LoadEmployeeEnrollments();
-                LoadEmployeeDropdown();
-                LoadBenefitsPlansDropdown();
-                SetDefaultEffectiveDate();
-
-                // Set default active tab
+                LoadDropdownData();
                 SetActiveTab("Plans");
             }
         }
 
+        private void InitializePage()
+        {
+            // Set default enrollment date
+            txtEnrollmentDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtDependentsCount.Text = "0";
+        }
+
+        #endregion
+
         #region Data Loading Methods
 
-        private void LoadBenefitsOverview()
+        private void LoadBenefitsStats()
         {
             try
             {
@@ -38,54 +45,61 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
 
-                    // Get benefits enrollment counts by type for full-time employees only
-                    string query = @"
-                        SELECT 
-                            bp.PlanType,
-                            COUNT(ebe.Id) as EnrollmentCount
-                        FROM BenefitsPlans bp
-                        LEFT JOIN EmployeeBenefitsEnrollments ebe ON bp.Id = ebe.BenefitsPlanId AND ebe.Status = 'ACTIVE'
-                        LEFT JOIN Employees e ON ebe.EmployeeId = e.Id AND e.EmployeeType = 'Full-time'
-                        WHERE bp.IsActive = 1
-                        GROUP BY bp.PlanType";
+                    // Load Health Enrollments
+                    string healthQuery = @"
+                        SELECT COUNT(*) 
+                        FROM EmployeeBenefitsEnrollments ebe
+                        INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id
+                        WHERE bp.PlanType = 'HEALTH' AND ebe.Status = 'ACTIVE'";
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlCommand cmd = new SqlCommand(healthQuery, conn))
                     {
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                string planType = reader["PlanType"].ToString();
-                                int count = Convert.ToInt32(reader["EnrollmentCount"]);
-
-                                switch (planType.ToUpper())
-                                {
-                                    case "HEALTH":
-                                        lblHealthEnrollments.Text = count.ToString();
-                                        break;
-                                    case "DENTAL":
-                                        lblDentalEnrollments.Text = count.ToString();
-                                        break;
-                                    case "VISION":
-                                        lblVisionEnrollments.Text = count.ToString();
-                                        break;
-                                }
-                            }
-                        }
+                        object result = cmd.ExecuteScalar();
+                        lblHealthEnrollments.Text = result?.ToString() ?? "0";
                     }
 
-                    // Get eligible employees count (full-time only)
-                    string eligibleQuery = "SELECT COUNT(*) FROM Employees WHERE EmployeeType = 'Full-time' AND Status = 'Active'";
+                    // Load Dental Enrollments
+                    string dentalQuery = @"
+                        SELECT COUNT(*) 
+                        FROM EmployeeBenefitsEnrollments ebe
+                        INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id
+                        WHERE bp.PlanType = 'DENTAL' AND ebe.Status = 'ACTIVE'";
+
+                    using (SqlCommand cmd = new SqlCommand(dentalQuery, conn))
+                    {
+                        object result = cmd.ExecuteScalar();
+                        lblDentalEnrollments.Text = result?.ToString() ?? "0";
+                    }
+
+                    // Load Vision Enrollments
+                    string visionQuery = @"
+                        SELECT COUNT(*) 
+                        FROM EmployeeBenefitsEnrollments ebe
+                        INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id
+                        WHERE bp.PlanType = 'VISION' AND ebe.Status = 'ACTIVE'";
+
+                    using (SqlCommand cmd = new SqlCommand(visionQuery, conn))
+                    {
+                        object result = cmd.ExecuteScalar();
+                        lblVisionEnrollments.Text = result?.ToString() ?? "0";
+                    }
+
+                    // Load Eligible Employees (Full-time employees)
+                    string eligibleQuery = @"
+                        SELECT COUNT(*) 
+                        FROM Employees 
+                        WHERE EmployeeType = 'Full-time' AND IsActive = 1";
+
                     using (SqlCommand cmd = new SqlCommand(eligibleQuery, conn))
                     {
-                        int eligibleCount = Convert.ToInt32(cmd.ExecuteScalar());
-                        lblEligibleEmployees.Text = eligibleCount.ToString();
+                        object result = cmd.ExecuteScalar();
+                        lblEligibleEmployees.Text = result?.ToString() ?? "0";
                     }
                 }
             }
             catch (Exception ex)
             {
-                ShowMessage("Error loading benefits overview: " + ex.Message, "error");
+                ShowMessage($"Error loading benefits statistics: {ex.Message}", "error");
             }
         }
 
@@ -95,51 +109,44 @@ namespace TPASystem2.HR
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    conn.Open();
-
                     string query = @"
-                        SELECT 
-                            Id, PlanName, PlanType, PlanCategory, Description,
-                            MonthlyEmployeeCost, MonthlyEmployerCost, AnnualDeductible,
-                            CoPayOfficeVisit, CoPaySpecialist, CoPayEmergency,
-                            OutOfPocketMax, EffectiveDate, EndDate, IsActive
+                        SELECT Id as PlanId, PlanName, PlanType, PlanCategory, 
+                               MonthlyEmployeeCost, MonthlyEmployerCost, 
+                               AnnualDeductible, IsActive, EffectiveDate
                         FROM BenefitsPlans 
-                        WHERE IsActive = 1";
+                        WHERE 1=1";
 
                     // Apply filters
                     if (!string.IsNullOrEmpty(ddlPlanType.SelectedValue))
                     {
                         query += " AND PlanType = @PlanType";
                     }
-
                     if (!string.IsNullOrEmpty(ddlPlanCategory.SelectedValue))
                     {
                         query += " AND PlanCategory = @PlanCategory";
                     }
 
-                    query += " ORDER BY PlanType, PlanCategory, PlanName";
+                    query += " ORDER BY PlanType, PlanName";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         if (!string.IsNullOrEmpty(ddlPlanType.SelectedValue))
                             cmd.Parameters.AddWithValue("@PlanType", ddlPlanType.SelectedValue);
-
                         if (!string.IsNullOrEmpty(ddlPlanCategory.SelectedValue))
                             cmd.Parameters.AddWithValue("@PlanCategory", ddlPlanCategory.SelectedValue);
 
-                        using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
-                        {
-                            DataTable dt = new DataTable();
-                            adapter.Fill(dt);
-                            gvBenefitsPlans.DataSource = dt;
-                            gvBenefitsPlans.DataBind();
-                        }
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
+
+                        gvBenefitsPlans.DataSource = dt;
+                        gvBenefitsPlans.DataBind();
                     }
                 }
             }
             catch (Exception ex)
             {
-                ShowMessage("Error loading benefits plans: " + ex.Message, "error");
+                ShowMessage($"Error loading benefits plans: {ex.Message}", "error");
             }
         }
 
@@ -149,29 +156,19 @@ namespace TPASystem2.HR
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    conn.Open();
-
                     string query = @"
-                        SELECT 
-                            ebe.Id as EnrollmentId,
-                            ebe.EmployeeId,
-                            e.EmployeeNumber,
-                            e.FirstName + ' ' + e.LastName as EmployeeName,
-                            bp.PlanName,
-                            bp.PlanType,
-                            bp.PlanCategory,
-                            ebe.EnrollmentDate,
-                            ebe.EffectiveDate,
-                            ebe.EndDate,
-                            ebe.Status,
-                            ebe.DependentsCount,
-                            ebe.MonthlyPremium,
-                            ebe.PayrollDeduction,
-                            ebe.Notes
+                        SELECT ebe.Id as EnrollmentId, 
+                               e.FirstName + ' ' + e.LastName AS EmployeeName,
+                               e.EmployeeNumber,
+                               bp.PlanName, bp.PlanType,
+                               ebe.MonthlyPremium as MonthlyEmployeeCost,
+                               ebe.EnrollmentDate,
+                               ebe.DependentsCount,
+                               ebe.Status as EnrollmentStatus
                         FROM EmployeeBenefitsEnrollments ebe
                         INNER JOIN Employees e ON ebe.EmployeeId = e.Id
                         INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id
-                        WHERE ebe.Status = 'ACTIVE' AND e.EmployeeType = 'Full-time'";
+                        WHERE e.EmployeeType = 'Full-time'";
 
                     // Apply search filter
                     if (!string.IsNullOrEmpty(txtSearchEmployee.Text.Trim()))
@@ -179,203 +176,100 @@ namespace TPASystem2.HR
                         query += " AND (e.FirstName + ' ' + e.LastName LIKE @SearchTerm OR e.EmployeeNumber LIKE @SearchTerm)";
                     }
 
-                    // Apply plan type filter
-                    if (!string.IsNullOrEmpty(ddlPlanType.SelectedValue))
-                    {
-                        query += " AND bp.PlanType = @PlanType";
-                    }
-
-                    query += " ORDER BY e.LastName, e.FirstName, bp.PlanType";
+                    query += " ORDER BY ebe.EnrollmentDate DESC";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         if (!string.IsNullOrEmpty(txtSearchEmployee.Text.Trim()))
                             cmd.Parameters.AddWithValue("@SearchTerm", "%" + txtSearchEmployee.Text.Trim() + "%");
 
-                        if (!string.IsNullOrEmpty(ddlPlanType.SelectedValue))
-                            cmd.Parameters.AddWithValue("@PlanType", ddlPlanType.SelectedValue);
+                        SqlDataAdapter da = new SqlDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        da.Fill(dt);
 
-                        using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
-                        {
-                            DataTable dt = new DataTable();
-                            adapter.Fill(dt);
-                            gvEmployeeEnrollments.DataSource = dt;
-                            gvEmployeeEnrollments.DataBind();
-                        }
+                        gvEmployeeEnrollments.DataSource = dt;
+                        gvEmployeeEnrollments.DataBind();
                     }
                 }
             }
             catch (Exception ex)
             {
-                ShowMessage("Error loading employee enrollments: " + ex.Message, "error");
+                ShowMessage($"Error loading employee enrollments: {ex.Message}", "error");
             }
         }
 
-        private void LoadEmployeeDropdown()
+        private void LoadDropdownData()
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    string query = @"
-                        SELECT Id, EmployeeNumber, FirstName + ' ' + LastName + ' (' + EmployeeNumber + ')' as DisplayName
-                        FROM Employees 
-                        WHERE Status = 'Active' AND EmployeeType = 'Full-time'
-                        ORDER BY LastName, FirstName";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        ddlEmployeeSelect.Items.Clear();
-                        ddlEmployeeSelect.Items.Add(new ListItem("Select Full-Time Employee", ""));
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                ddlEmployeeSelect.Items.Add(new ListItem(reader["DisplayName"].ToString(), reader["Id"].ToString()));
-                            }
-                        }
-                    }
-                }
+                LoadEmployeesDropdown();
+                LoadBenefitsPlansDropdown();
             }
             catch (Exception ex)
             {
-                ShowMessage("Error loading employees: " + ex.Message, "error");
+                ShowMessage($"Error loading dropdown data: {ex.Message}", "error");
+            }
+        }
+
+        private void LoadEmployeesDropdown()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = @"
+                    SELECT Id as EmployeeId, FirstName + ' ' + LastName + ' (' + EmployeeNumber + ')' AS EmployeeName
+                    FROM Employees 
+                    WHERE EmployeeType = 'Full-time' AND IsActive = 1
+                    ORDER BY FirstName, LastName";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    ddlEmployee.DataSource = dt;
+                    ddlEmployee.DataTextField = "EmployeeName";
+                    ddlEmployee.DataValueField = "EmployeeId";
+                    ddlEmployee.DataBind();
+
+                    ddlEmployee.Items.Insert(0, new ListItem("Select Employee", ""));
+                }
             }
         }
 
         private void LoadBenefitsPlansDropdown()
         {
-            try
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                string query = @"
+                    SELECT Id as PlanId, PlanName + ' (' + PlanType + ')' AS PlanDisplay
+                    FROM BenefitsPlans 
+                    WHERE IsActive = 1
+                    ORDER BY PlanType, PlanName";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
-                    conn.Open();
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
 
-                    string query = @"
-                        SELECT Id, PlanName + ' (' + PlanType + ' - ' + PlanCategory + ')' as DisplayName, PlanType
-                        FROM BenefitsPlans 
-                        WHERE IsActive = 1 AND (EndDate IS NULL OR EndDate > GETUTCDATE())
-                        ORDER BY PlanType, PlanCategory, PlanName";
+                    ddlBenefitsPlan.DataSource = dt;
+                    ddlBenefitsPlan.DataTextField = "PlanDisplay";
+                    ddlBenefitsPlan.DataValueField = "PlanId";
+                    ddlBenefitsPlan.DataBind();
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        ddlBenefitsPlan.Items.Clear();
-                        ddlBenefitsPlan.Items.Add(new ListItem("Select Benefits Plan", ""));
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                ddlBenefitsPlan.Items.Add(new ListItem(reader["DisplayName"].ToString(), reader["Id"].ToString()));
-                            }
-                        }
-                    }
+                    ddlBenefitsPlan.Items.Insert(0, new ListItem("Select Benefits Plan", ""));
                 }
             }
-            catch (Exception ex)
-            {
-                ShowMessage("Error loading benefits plans: " + ex.Message, "error");
-            }
-        }
-
-        private void SetDefaultEffectiveDate()
-        {
-            txtEffectiveDate.Text = DateTime.Now.Date.ToString("yyyy-MM-dd");
         }
 
         #endregion
 
-        #region Event Handlers
-
-        protected void btnEnrollEmployee_Click(object sender, EventArgs e)
-        {
-            LoadEmployeeDropdown();
-            LoadBenefitsPlansDropdown();
-            SetDefaultEffectiveDate();
-
-            // Show modal using JavaScript
-            ScriptManager.RegisterStartupScript(this, GetType(), "ShowModal", "showEnrollmentModal();", true);
-        }
-
-        protected void btnAddPlan_Click(object sender, EventArgs e)
-        {
-            Response.Redirect("~/HR/AddBenefitsPlan.aspx");
-        }
-
-        protected void btnSaveEnrollment_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(ddlEmployeeSelect.SelectedValue) || string.IsNullOrEmpty(ddlBenefitsPlan.SelectedValue))
-                {
-                    ShowMessage("Please select both an employee and a benefits plan.", "error");
-                    return;
-                }
-
-                int employeeId = Convert.ToInt32(ddlEmployeeSelect.SelectedValue);
-                int benefitsPlanId = Convert.ToInt32(ddlBenefitsPlan.SelectedValue);
-                DateTime effectiveDate = Convert.ToDateTime(txtEffectiveDate.Text);
-                int dependentsCount = string.IsNullOrEmpty(txtDependentsCount.Text) ? 0 : Convert.ToInt32(txtDependentsCount.Text);
-                string notes = txtEnrollmentNotes.Text.Trim();
-
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    using (SqlCommand cmd = new SqlCommand("sp_EnrollEmployeeInBenefits", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                        cmd.Parameters.AddWithValue("@BenefitsPlanId", benefitsPlanId);
-                        cmd.Parameters.AddWithValue("@EffectiveDate", effectiveDate);
-                        cmd.Parameters.AddWithValue("@DependentsCount", dependentsCount);
-                        cmd.Parameters.AddWithValue("@Notes", string.IsNullOrEmpty(notes) ? (object)DBNull.Value : notes);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                string status = reader["Status"].ToString();
-                                string message = reader["Message"].ToString();
-
-                                if (status == "SUCCESS")
-                                {
-                                    ShowMessage("Employee successfully enrolled in benefits plan.", "success");
-                                    LoadBenefitsOverview();
-                                    LoadEmployeeEnrollments();
-
-                                    // Clear form
-                                    ddlEmployeeSelect.SelectedIndex = 0;
-                                    ddlBenefitsPlan.SelectedIndex = 0;
-                                    txtDependentsCount.Text = "0";
-                                    txtEnrollmentNotes.Text = "";
-                                    SetDefaultEffectiveDate();
-
-                                    // Close modal
-                                    ScriptManager.RegisterStartupScript(this, GetType(), "CloseModal", "closeModal();", true);
-                                }
-                                else
-                                {
-                                    ShowMessage("Error: " + message, "error");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowMessage("Error enrolling employee: " + ex.Message, "error");
-            }
-        }
+        #region Filter Events
 
         protected void ddlPlanType_SelectedIndexChanged(object sender, EventArgs e)
         {
             LoadBenefitsPlans();
-            LoadEmployeeEnrollments();
         }
 
         protected void ddlPlanCategory_SelectedIndexChanged(object sender, EventArgs e)
@@ -395,6 +289,28 @@ namespace TPASystem2.HR
             txtSearchEmployee.Text = "";
             LoadBenefitsPlans();
             LoadEmployeeEnrollments();
+        }
+
+        #endregion
+
+        #region Button Events
+
+        protected void btnEnrollEmployee_Click(object sender, EventArgs e)
+        {
+            ScriptManager.RegisterStartupScript(this, GetType(), "showModal", "showEnrollmentModal();", true);
+        }
+
+        protected void btnAddPlan_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/HR/AddBenefitsPlan.aspx");
+        }
+
+        protected void btnSaveEnrollment_Click(object sender, EventArgs e)
+        {
+            if (ValidateEnrollmentForm())
+            {
+                SaveEmployeeEnrollment();
+            }
         }
 
         #endregion
@@ -452,62 +368,31 @@ namespace TPASystem2.HR
 
         protected void gvBenefitsPlans_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            if (e.CommandName == "EditPlan")
+            int planId = Convert.ToInt32(e.CommandArgument);
+
+            switch (e.CommandName)
             {
-                int planId = Convert.ToInt32(e.CommandArgument);
-                Response.Redirect($"~/HR/EditBenefitsPlan.aspx?id={planId}");
-            }
-            else if (e.CommandName == "ViewDetails")
-            {
-                int planId = Convert.ToInt32(e.CommandArgument);
-                Response.Redirect($"~/HR/BenefitsPlanDetails.aspx?id={planId}");
+                case "EditPlan":
+                    Response.Redirect($"~/HR/AddBenefitsPlan.aspx?planId={planId}");
+                    break;
+                case "DeletePlan":
+                    DeleteBenefitsPlan(planId);
+                    break;
             }
         }
 
         protected void gvEmployeeEnrollments_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            if (e.CommandName == "EditEnrollment")
+            int enrollmentId = Convert.ToInt32(e.CommandArgument);
+
+            switch (e.CommandName)
             {
-                int enrollmentId = Convert.ToInt32(e.CommandArgument);
-                Response.Redirect($"~/HR/EditBenefitsEnrollment.aspx?id={enrollmentId}");
-            }
-            else if (e.CommandName == "CancelEnrollment")
-            {
-                try
-                {
-                    int enrollmentId = Convert.ToInt32(e.CommandArgument);
-
-                    using (SqlConnection conn = new SqlConnection(connectionString))
-                    {
-                        conn.Open();
-
-                        string query = @"
-                            UPDATE EmployeeBenefitsEnrollments 
-                            SET Status = 'CANCELLED', EndDate = CAST(GETUTCDATE() AS DATE), UpdatedAt = GETUTCDATE()
-                            WHERE Id = @EnrollmentId";
-
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@EnrollmentId", enrollmentId);
-
-                            int rowsAffected = cmd.ExecuteNonQuery();
-                            if (rowsAffected > 0)
-                            {
-                                ShowMessage("Benefits enrollment cancelled successfully.", "success");
-                                LoadBenefitsOverview();
-                                LoadEmployeeEnrollments();
-                            }
-                            else
-                            {
-                                ShowMessage("Error cancelling enrollment.", "error");
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ShowMessage("Error cancelling enrollment: " + ex.Message, "error");
-                }
+                case "ViewDetails":
+                    Response.Redirect($"~/HR/EnrollmentDetails.aspx?enrollmentId={enrollmentId}");
+                    break;
+                case "TerminateEnrollment":
+                    TerminateEnrollment(enrollmentId);
+                    break;
             }
         }
 
@@ -517,49 +402,363 @@ namespace TPASystem2.HR
 
         protected void btnGenerateSummaryReport_Click(object sender, EventArgs e)
         {
-            Response.Redirect("~/HR/Reports/BenefitsSummaryReport.aspx");
+            try
+            {
+                GenerateBenefitsSummaryReport();
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error generating summary report: {ex.Message}", "error");
+            }
         }
 
         protected void btnGenerateEligibilityReport_Click(object sender, EventArgs e)
         {
-            Response.Redirect("~/HR/Reports/BenefitsEligibilityReport.aspx");
+            try
+            {
+                GenerateEligibilityReport();
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error generating eligibility report: {ex.Message}", "error");
+            }
         }
 
         protected void btnGenerateCostReport_Click(object sender, EventArgs e)
         {
-            Response.Redirect("~/HR/Reports/BenefitsCostReport.aspx");
+            try
+            {
+                GenerateCostAnalysisReport();
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error generating cost report: {ex.Message}", "error");
+            }
         }
 
         #endregion
 
         #region Helper Methods
 
-        protected string GetEmployeeInitials(string fullName)
+        private bool ValidateEnrollmentForm()
         {
-            if (string.IsNullOrEmpty(fullName))
-                return "??";
+            bool isValid = true;
 
-            string[] names = fullName.Split(' ');
-            if (names.Length >= 2)
-                return (names[0].Substring(0, 1) + names[1].Substring(0, 1)).ToUpper();
-            else if (names.Length == 1)
-                return names[0].Substring(0, Math.Min(2, names[0].Length)).ToUpper();
-            else
-                return "??";
+            if (string.IsNullOrEmpty(ddlEmployee.SelectedValue))
+            {
+                ShowMessage("Please select an employee.", "error");
+                isValid = false;
+            }
+
+            if (string.IsNullOrEmpty(ddlBenefitsPlan.SelectedValue))
+            {
+                ShowMessage("Please select a benefits plan.", "error");
+                isValid = false;
+            }
+
+            if (string.IsNullOrEmpty(txtEnrollmentDate.Text))
+            {
+                ShowMessage("Please enter an enrollment date.", "error");
+                isValid = false;
+            }
+
+            return isValid;
         }
 
-        protected string GetStatusCssClass(string status)
+        private void SaveEmployeeEnrollment()
         {
-            switch (status?.ToUpper())
+            try
             {
-                case "ACTIVE":
-                    return "badge badge-success";
-                case "CANCELLED":
-                    return "badge badge-danger";
-                case "INACTIVE":
-                    return "badge badge-secondary";
-                default:
-                    return "badge badge-secondary";
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    using (SqlCommand cmd = new SqlCommand("sp_EnrollEmployeeInBenefits", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@EmployeeId", ddlEmployee.SelectedValue);
+                        cmd.Parameters.AddWithValue("@BenefitsPlanId", ddlBenefitsPlan.SelectedValue);
+                        cmd.Parameters.AddWithValue("@EffectiveDate", DateTime.Parse(txtEnrollmentDate.Text));
+                        cmd.Parameters.AddWithValue("@DependentsCount", int.Parse(txtDependentsCount.Text));
+                        cmd.Parameters.AddWithValue("@Notes", string.IsNullOrEmpty(txtEnrollmentNotes.Text) ? (object)DBNull.Value : txtEnrollmentNotes.Text);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string status = reader["Status"].ToString();
+                                string message = reader["Message"].ToString();
+
+                                if (status == "SUCCESS")
+                                {
+                                    ShowMessage("Employee successfully enrolled in benefits plan!", "success");
+                                    ClearEnrollmentForm();
+                                    LoadBenefitsStats();
+                                    LoadEmployeeEnrollments();
+                                    ScriptManager.RegisterStartupScript(this, GetType(), "closeModal", "closeEnrollmentModal();", true);
+                                }
+                                else
+                                {
+                                    ShowMessage(message, "error");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error enrolling employee: {ex.Message}", "error");
+            }
+        }
+
+        private void ClearEnrollmentForm()
+        {
+            ddlEmployee.SelectedIndex = 0;
+            ddlBenefitsPlan.SelectedIndex = 0;
+            txtEnrollmentDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            txtDependentsCount.Text = "0";
+            txtEnrollmentNotes.Text = "";
+        }
+
+        private void DeleteBenefitsPlan(int planId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    // Check if plan has active enrollments - FIXED: Use correct column names
+                    string checkQuery = @"
+                        SELECT COUNT(*) 
+                        FROM EmployeeBenefitsEnrollments 
+                        WHERE BenefitsPlanId = @PlanId AND Status = 'ACTIVE'";
+
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    {
+                        checkCmd.Parameters.AddWithValue("@PlanId", planId);
+                        conn.Open();
+                        int activeEnrollments = (int)checkCmd.ExecuteScalar();
+
+                        if (activeEnrollments > 0)
+                        {
+                            ShowMessage("Cannot delete plan with active enrollments.", "error");
+                            return;
+                        }
+                    }
+
+                    // Soft delete the plan - FIXED: Use correct column name
+                    string deleteQuery = "UPDATE BenefitsPlans SET IsActive = 0 WHERE Id = @PlanId";
+                    using (SqlCommand deleteCmd = new SqlCommand(deleteQuery, conn))
+                    {
+                        deleteCmd.Parameters.AddWithValue("@PlanId", planId);
+                        deleteCmd.ExecuteNonQuery();
+                    }
+
+                    ShowMessage("Benefits plan deleted successfully!", "success");
+                    LoadBenefitsPlans();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error deleting benefits plan: {ex.Message}", "error");
+            }
+        }
+
+        private void TerminateEnrollment(int enrollmentId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    // FIXED: Use correct column names
+                    string updateQuery = @"
+                        UPDATE EmployeeBenefitsEnrollments 
+                        SET Status = 'TERMINATED', 
+                            UpdatedAt = GETUTCDATE()
+                        WHERE Id = @EnrollmentId";
+
+                    using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EnrollmentId", enrollmentId);
+                        conn.Open();
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    ShowMessage("Enrollment terminated successfully!", "success");
+                    LoadBenefitsStats();
+                    LoadEmployeeEnrollments();
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error terminating enrollment: {ex.Message}", "error");
+            }
+        }
+
+        private void GenerateBenefitsSummaryReport()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                // FIXED: Use correct column names
+                string query = @"
+                    SELECT 
+                        bp.PlanType,
+                        bp.PlanName,
+                        COUNT(ebe.Id) as TotalEnrollments,
+                        SUM(ebe.MonthlyPremium) as TotalEmployeeCosts,
+                        SUM(bp.MonthlyEmployerCost) as TotalEmployerCosts,
+                        AVG(CAST(ebe.DependentsCount as FLOAT)) as AvgDependents
+                    FROM BenefitsPlans bp
+                    LEFT JOIN EmployeeBenefitsEnrollments ebe ON bp.Id = ebe.BenefitsPlanId AND ebe.Status = 'ACTIVE'
+                    WHERE bp.IsActive = 1
+                    GROUP BY bp.PlanType, bp.PlanName, bp.Id
+                    ORDER BY bp.PlanType, bp.PlanName";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    // Export to CSV
+                    ExportToCSV(dt, "BenefitsSummaryReport");
+                }
+            }
+        }
+
+        private void GenerateEligibilityReport()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                // FIXED: Use correct column names and table references
+                string query = @"
+                    SELECT 
+                        e.EmployeeNumber,
+                        e.FirstName + ' ' + e.LastName as EmployeeName,
+                        e.Email,
+                        ISNULL(d.Name, 'No Department') as Department,
+                        e.HireDate,
+                        CASE 
+                            WHEN EXISTS (SELECT 1 FROM EmployeeBenefitsEnrollments ebe 
+                                        INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id 
+                                        WHERE ebe.EmployeeId = e.Id 
+                                        AND bp.PlanType = 'HEALTH' 
+                                        AND ebe.Status = 'ACTIVE') 
+                            THEN 'Yes' ELSE 'No' 
+                        END as HasHealthInsurance,
+                        CASE 
+                            WHEN EXISTS (SELECT 1 FROM EmployeeBenefitsEnrollments ebe 
+                                        INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id 
+                                        WHERE ebe.EmployeeId = e.Id 
+                                        AND bp.PlanType = 'DENTAL' 
+                                        AND ebe.Status = 'ACTIVE') 
+                            THEN 'Yes' ELSE 'No' 
+                        END as HasDentalInsurance,
+                        CASE 
+                            WHEN EXISTS (SELECT 1 FROM EmployeeBenefitsEnrollments ebe 
+                                        INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id 
+                                        WHERE ebe.EmployeeId = e.Id 
+                                        AND bp.PlanType = 'VISION' 
+                                        AND ebe.Status = 'ACTIVE') 
+                            THEN 'Yes' ELSE 'No' 
+                        END as HasVisionInsurance
+                    FROM Employees e
+                    LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                    WHERE e.EmployeeType = 'Full-time' AND e.IsActive = 1
+                    ORDER BY e.FirstName, e.LastName";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    // Export to CSV
+                    ExportToCSV(dt, "EmployeeEligibilityReport");
+                }
+            }
+        }
+
+        private void GenerateCostAnalysisReport()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                // FIXED: Use correct column names and table references
+                string query = @"
+                    SELECT 
+                        ISNULL(d.Name, 'No Department') as Department,
+                        bp.PlanType,
+                        COUNT(ebe.Id) as EnrollmentCount,
+                        SUM(ebe.MonthlyPremium) as MonthlyEmployeeCosts,
+                        SUM(bp.MonthlyEmployerCost) as MonthlyEmployerCosts,
+                        SUM(ebe.MonthlyPremium + bp.MonthlyEmployerCost) as TotalMonthlyCosts,
+                        SUM((ebe.MonthlyPremium + bp.MonthlyEmployerCost) * 12) as TotalAnnualCosts
+                    FROM EmployeeBenefitsEnrollments ebe
+                    INNER JOIN Employees e ON ebe.EmployeeId = e.Id
+                    INNER JOIN BenefitsPlans bp ON ebe.BenefitsPlanId = bp.Id
+                    LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                    WHERE ebe.Status = 'ACTIVE' AND e.EmployeeType = 'Full-time'
+                    GROUP BY d.Name, bp.PlanType
+                    ORDER BY d.Name, bp.PlanType";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    DataTable dt = new DataTable();
+                    da.Fill(dt);
+
+                    // Export to CSV
+                    ExportToCSV(dt, "BenefitsCostAnalysisReport");
+                }
+            }
+        }
+
+        private void ExportToCSV(DataTable dt, string fileName)
+        {
+            try
+            {
+                Response.Clear();
+                Response.Buffer = true;
+                Response.AddHeader("content-disposition", $"attachment;filename={fileName}_{DateTime.Now:yyyyMMdd}.csv");
+                Response.Charset = "";
+                Response.ContentType = "application/text";
+
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+                // Add headers
+                for (int i = 0; i < dt.Columns.Count; i++)
+                {
+                    sb.Append(dt.Columns[i].ColumnName);
+                    if (i < dt.Columns.Count - 1)
+                        sb.Append(",");
+                }
+                sb.AppendLine();
+
+                // Add data rows
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    for (int j = 0; j < dt.Columns.Count; j++)
+                    {
+                        string value = dt.Rows[i][j]?.ToString() ?? "";
+                        // Escape commas and quotes in CSV
+                        if (value.Contains(",") || value.Contains("\""))
+                        {
+                            value = "\"" + value.Replace("\"", "\"\"") + "\"";
+                        }
+                        sb.Append(value);
+                        if (j < dt.Columns.Count - 1)
+                            sb.Append(",");
+                    }
+                    sb.AppendLine();
+                }
+
+                Response.Output.Write(sb.ToString());
+                Response.Flush();
+                Response.End();
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error exporting report: {ex.Message}", "error");
             }
         }
 
@@ -568,24 +767,35 @@ namespace TPASystem2.HR
             pnlMessage.Visible = true;
             lblMessage.Text = message;
 
-            string cssClass = "alert ";
+            // Clear existing CSS classes
+            pnlMessage.CssClass = "alert";
+
+            // Add appropriate CSS class based on type
             switch (type.ToLower())
             {
                 case "success":
-                    cssClass += "alert-success";
+                    pnlMessage.CssClass += " alert-success";
                     break;
                 case "error":
-                    cssClass += "alert-error";
+                    pnlMessage.CssClass += " alert-error";
                     break;
                 case "warning":
-                    cssClass += "alert-warning";
+                    pnlMessage.CssClass += " alert-warning";
+                    break;
+                case "info":
+                    pnlMessage.CssClass += " alert-info";
                     break;
                 default:
-                    cssClass += "alert-info";
+                    pnlMessage.CssClass += " alert-info";
                     break;
             }
 
-            pnlMessage.CssClass = cssClass;
+            // Auto-hide success messages after 5 seconds
+            if (type.ToLower() == "success")
+            {
+                ScriptManager.RegisterStartupScript(this, GetType(), "hideMessage",
+                    "setTimeout(function() { var alert = document.querySelector('.alert'); if(alert) alert.style.display = 'none'; }, 5000);", true);
+            }
         }
 
         #endregion

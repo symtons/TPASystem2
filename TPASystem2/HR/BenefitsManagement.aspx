@@ -4,7 +4,8 @@
     
     <!-- CSS Links -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="../Content/css/tpa-dashboard.css" rel="stylesheet">
+       <link href='<%=ResolveUrl("~/Content/css/tpa-dashboard.css") %>' rel="stylesheet" type="text/css" />
+    <link href='<%=ResolveUrl("~/Content/css/employee-management.css") %>' rel="stylesheet" type="text/css" />
     
     <div class="benefits-container">
         <!-- Page Header -->
@@ -34,7 +35,7 @@
                 </div>
                 <div class="stat-content">
                     <h3><asp:Label ID="lblHealthEnrollments" runat="server">0</asp:Label></h3>
-                    <p>Health Plan Enrollments</p>
+                    <p>Health Enrollments</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -43,7 +44,7 @@
                 </div>
                 <div class="stat-content">
                     <h3><asp:Label ID="lblDentalEnrollments" runat="server">0</asp:Label></h3>
-                    <p>Dental Plan Enrollments</p>
+                    <p>Dental Enrollments</p>
                 </div>
             </div>
             <div class="stat-card">
@@ -52,27 +53,27 @@
                 </div>
                 <div class="stat-content">
                     <h3><asp:Label ID="lblVisionEnrollments" runat="server">0</asp:Label></h3>
-                    <p>Vision Plan Enrollments</p>
+                    <p>Vision Enrollments</p>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon eligible">
-                    <i class="material-icons">people</i>
+                    <i class="material-icons">group</i>
                 </div>
                 <div class="stat-content">
                     <h3><asp:Label ID="lblEligibleEmployees" runat="server">0</asp:Label></h3>
-                    <p>Eligible Full-Time Employees</p>
+                    <p>Eligible Employees</p>
                 </div>
             </div>
         </div>
 
-        <!-- Filter and Search -->
+        <!-- Filter Section -->
         <div class="filter-section">
             <div class="filter-row">
                 <div class="filter-group">
                     <label for="ddlPlanType">Plan Type:</label>
                     <asp:DropDownList ID="ddlPlanType" runat="server" CssClass="form-control" AutoPostBack="true" OnSelectedIndexChanged="ddlPlanType_SelectedIndexChanged">
-                        <asp:ListItem Value="" Text="All Plans"></asp:ListItem>
+                        <asp:ListItem Value="" Text="All Types"></asp:ListItem>
                         <asp:ListItem Value="HEALTH" Text="Health"></asp:ListItem>
                         <asp:ListItem Value="DENTAL" Text="Dental"></asp:ListItem>
                         <asp:ListItem Value="VISION" Text="Vision"></asp:ListItem>
@@ -92,8 +93,10 @@
                     <asp:TextBox ID="txtSearchEmployee" runat="server" CssClass="form-control" placeholder="Enter employee name..."></asp:TextBox>
                 </div>
                 <div class="filter-group">
-                    <asp:Button ID="btnSearch" runat="server" Text="Search" CssClass="btn btn-primary" OnClick="btnSearch_Click" />
-                    <asp:Button ID="btnClearFilter" runat="server" Text="Clear" CssClass="btn btn-secondary" OnClick="btnClearFilter_Click" />
+                    <div class="filter-buttons">
+                        <asp:Button ID="btnSearch" runat="server" Text="Search" CssClass="btn btn-primary" OnClick="btnSearch_Click" />
+                        <asp:Button ID="btnClearFilter" runat="server" Text="Clear" CssClass="btn btn-secondary" OnClick="btnClearFilter_Click" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,10 +136,11 @@
                         <asp:TemplateField HeaderText="Actions">
                             <ItemTemplate>
                                 <div class="action-buttons">
-                                    <asp:LinkButton ID="btnEdit" runat="server" CommandName="EditPlan" CommandArgument='<%# Eval("Id") %>' 
-                                        CssClass="btn btn-sm btn-outline-primary" Text="Edit" />
-                                    <asp:LinkButton ID="btnViewDetails" runat="server" CommandName="ViewDetails" CommandArgument='<%# Eval("Id") %>' 
-                                        CssClass="btn btn-sm btn-outline-secondary" Text="Details" />
+                                    <asp:Button ID="btnEdit" runat="server" Text="Edit" CssClass="btn btn-sm btn-outline-primary" 
+                                        CommandName="EditPlan" CommandArgument='<%# Eval("PlanId") %>' />
+                                    <asp:Button ID="btnDelete" runat="server" Text="Delete" CssClass="btn btn-sm btn-outline-danger" 
+                                        CommandName="DeletePlan" CommandArgument='<%# Eval("PlanId") %>' 
+                                        OnClientClick="return confirm('Are you sure you want to delete this plan?');" />
                                 </div>
                             </ItemTemplate>
                         </asp:TemplateField>
@@ -150,51 +154,46 @@
             <div class="table-container">
                 <div class="table-header">
                     <div class="table-title">
-                        <h3>Employee Benefits Enrollments</h3>
-                        <span>View and manage benefits enrollments for full-time employees</span>
+                        <h3>Employee Enrollments</h3>
+                        <span>View and manage employee benefits enrollments</span>
                     </div>
                 </div>
                 <asp:GridView ID="gvEmployeeEnrollments" runat="server" CssClass="data-table" AutoGenerateColumns="False" 
-                    EmptyDataText="No enrollments found" OnRowCommand="gvEmployeeEnrollments_RowCommand">
+                    EmptyDataText="No employee enrollments found" OnRowCommand="gvEmployeeEnrollments_RowCommand">
                     <Columns>
                         <asp:TemplateField HeaderText="Employee">
                             <ItemTemplate>
                                 <div class="employee-info">
                                     <div class="employee-avatar">
-                                        <div class="avatar-fallback">
-                                            <%# GetEmployeeInitials(Eval("EmployeeName").ToString()) %>
-                                        </div>
+                                        <i class="material-icons">person</i>
                                     </div>
                                     <div class="employee-details">
-                                        <h4><%# Eval("EmployeeName") %></h4>
-                                        <p class="employee-number"><%# Eval("EmployeeNumber") %></p>
-                                        <p class="employee-type">Full-time</p>
+                                        <div class="employee-name"><%# Eval("EmployeeName") %></div>
+                                        <div class="employee-number">ID: <%# Eval("EmployeeNumber") %></div>
                                     </div>
                                 </div>
                             </ItemTemplate>
                         </asp:TemplateField>
-                        <asp:BoundField DataField="PlanName" HeaderText="Plan Name" />
+                        <asp:BoundField DataField="PlanName" HeaderText="Plan" />
                         <asp:BoundField DataField="PlanType" HeaderText="Type" />
-                        <asp:BoundField DataField="EffectiveDate" HeaderText="Effective Date" DataFormatString="{0:MM/dd/yyyy}" />
-                        <asp:BoundField DataField="MonthlyPremium" HeaderText="Monthly Premium" DataFormatString="{0:C}" />
+                        <asp:BoundField DataField="MonthlyEmployeeCost" HeaderText="Employee Cost" DataFormatString="{0:C}" />
+                        <asp:BoundField DataField="EnrollmentDate" HeaderText="Enrolled Date" DataFormatString="{0:MM/dd/yyyy}" />
                         <asp:BoundField DataField="DependentsCount" HeaderText="Dependents" />
                         <asp:TemplateField HeaderText="Status">
                             <ItemTemplate>
-                                <span class='<%# GetStatusCssClass(Eval("Status").ToString()) %>'>
-                                    <%# Eval("Status") %>
+                                <span class='<%# Eval("EnrollmentStatus").ToString() == "ACTIVE" ? "badge badge-success" : "badge badge-warning" %>'>
+                                    <%# Eval("EnrollmentStatus") %>
                                 </span>
                             </ItemTemplate>
                         </asp:TemplateField>
                         <asp:TemplateField HeaderText="Actions">
                             <ItemTemplate>
                                 <div class="action-buttons">
-                                    <asp:LinkButton ID="btnEditEnrollment" runat="server" CommandName="EditEnrollment" 
-                                        CommandArgument='<%# Eval("EnrollmentId") %>' 
-                                        CssClass="btn btn-sm btn-outline-primary" Text="Edit" />
-                                    <asp:LinkButton ID="btnCancelEnrollment" runat="server" CommandName="CancelEnrollment" 
-                                        CommandArgument='<%# Eval("EnrollmentId") %>' 
-                                        CssClass="btn btn-sm btn-outline-danger" Text="Cancel" 
-                                        OnClientClick="return confirm('Are you sure you want to cancel this enrollment?');" />
+                                    <asp:Button ID="btnViewDetails" runat="server" Text="Details" CssClass="btn btn-sm btn-outline-primary" 
+                                        CommandName="ViewDetails" CommandArgument='<%# Eval("EnrollmentId") %>' />
+                                    <asp:Button ID="btnTerminate" runat="server" Text="Terminate" CssClass="btn btn-sm btn-outline-danger" 
+                                        CommandName="TerminateEnrollment" CommandArgument='<%# Eval("EnrollmentId") %>' 
+                                        OnClientClick="return confirm('Are you sure you want to terminate this enrollment?');" />
                                 </div>
                             </ItemTemplate>
                         </asp:TemplateField>
@@ -229,7 +228,7 @@
                 <div class="report-card">
                     <div class="report-header">
                         <h3>Cost Analysis Report</h3>
-                        <p>Analyze benefits costs and trends for the organization</p>
+                        <p>Analyze benefits costs and trends by department and plan type</p>
                     </div>
                     <div class="report-actions">
                         <asp:Button ID="btnGenerateCostReport" runat="server" Text="Generate Report" 
@@ -240,55 +239,54 @@
         </asp:Panel>
     </div>
 
-    <!-- Enrollment Modal -->
+    <!-- Employee Enrollment Modal -->
     <div id="enrollmentModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Enroll Full-Time Employee in Benefits</h3>
-                <span class="close" onclick="closeModal()">&times;</span>
+                <h3>Enroll Employee in Benefits</h3>
+                <span class="close" onclick="closeEnrollmentModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <asp:UpdatePanel ID="upEnrollment" runat="server">
-                    <ContentTemplate>
-                        <div class="form-group">
-                            <label for="ddlEmployeeSelect">Select Full-Time Employee:</label>
-                            <asp:DropDownList ID="ddlEmployeeSelect" runat="server" CssClass="form-control">
-                            </asp:DropDownList>
-                        </div>
-                        <div class="form-group">
-                            <label for="ddlBenefitsPlan">Select Benefits Plan:</label>
-                            <asp:DropDownList ID="ddlBenefitsPlan" runat="server" CssClass="form-control">
-                            </asp:DropDownList>
-                        </div>
-                        <div class="form-group">
-                            <label for="txtEffectiveDate">Effective Date:</label>
-                            <asp:TextBox ID="txtEffectiveDate" runat="server" CssClass="form-control" TextMode="Date"></asp:TextBox>
-                        </div>
-                        <div class="form-group">
-                            <label for="txtDependentsCount">Number of Dependents:</label>
-                            <asp:TextBox ID="txtDependentsCount" runat="server" CssClass="form-control" TextMode="Number" Text="0"></asp:TextBox>
-                        </div>
-                        <div class="form-group">
-                            <label for="txtEnrollmentNotes">Notes:</label>
-                            <asp:TextBox ID="txtEnrollmentNotes" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="3"></asp:TextBox>
-                        </div>
-                    </ContentTemplate>
-                </asp:UpdatePanel>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Employee:</label>
+                        <asp:DropDownList ID="ddlEmployee" runat="server" CssClass="form-control">
+                        </asp:DropDownList>
+                    </div>
+                    <div class="form-group">
+                        <label>Benefits Plan:</label>
+                        <asp:DropDownList ID="ddlBenefitsPlan" runat="server" CssClass="form-control">
+                        </asp:DropDownList>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Enrollment Date:</label>
+                        <asp:TextBox ID="txtEnrollmentDate" runat="server" CssClass="form-control" TextMode="Date"></asp:TextBox>
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Dependents:</label>
+                        <asp:TextBox ID="txtDependentsCount" runat="server" CssClass="form-control" TextMode="Number" min="0"></asp:TextBox>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes:</label>
+                    <asp:TextBox ID="txtEnrollmentNotes" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="3"></asp:TextBox>
+                </div>
             </div>
             <div class="modal-footer">
-                <asp:Button ID="btnSaveEnrollment" runat="server" Text="Enroll Employee" 
-                    CssClass="btn btn-primary" OnClick="btnSaveEnrollment_Click" />
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <asp:Button ID="btnSaveEnrollment" runat="server" Text="Save Enrollment" CssClass="btn btn-primary" OnClick="btnSaveEnrollment_Click" />
+                <button type="button" class="btn btn-secondary" onclick="closeEnrollmentModal()">Cancel</button>
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="text/javascript">
         function showEnrollmentModal() {
             document.getElementById('enrollmentModal').style.display = 'block';
         }
 
-        function closeModal() {
+        function closeEnrollmentModal() {
             document.getElementById('enrollmentModal').style.display = 'none';
         }
 
@@ -296,8 +294,9 @@
         window.onclick = function (event) {
             var modal = document.getElementById('enrollmentModal');
             if (event.target == modal) {
-                modal.style.display = "none";
+                modal.style.display = 'none';
             }
         }
     </script>
+
 </asp:Content>
