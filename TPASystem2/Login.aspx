@@ -84,13 +84,8 @@
                         </div>
                     </div>
                     
-                    <!-- Remember Me -->
-                    <div class="form-group">
-                        <label class="remember-me-label">
-                            <asp:CheckBox ID="chkRememberMe" runat="server" />
-                            <span>Remember me for 30 days</span>
-                        </label>
-                    </div>
+                    
+                    
                     
                     <!-- Login Button -->
                     <asp:Button ID="Button1" runat="server" CssClass="btn-tpa" 
