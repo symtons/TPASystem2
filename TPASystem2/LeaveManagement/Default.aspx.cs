@@ -630,13 +630,7 @@ namespace TPASystem2.LeaveManagement
 
     #region Data Models
 
-    public class LeaveBalance
-    {
-        public string LeaveType { get; set; }
-        public int Available { get; set; }
-        public int Used { get; set; }
-        public int Total { get; set; }
-    }
+   
 
     #endregion
 }

@@ -73,6 +73,7 @@
     <Content Include="Content\css\tpa-dashboard.css" />
     <Content Include="Content\js\tpa-common.js" />
     <Content Include="Content\js\tpa-dashboard.js" />
+    <Content Include="Content\logo.png" />
     <Content Include="Dashboard.aspx" />
     <Content Include="Debug.aspx" />
     <Content Include="Global.asax" />
@@ -84,7 +85,11 @@
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
     <Content Include="HR\OnboardingManagement.aspx" />
     <Content Include="HR\TimeManagement.aspx" />
+    <Content Include="LeaveManagement\ApproveLeaves.aspx" />
     <Content Include="LeaveManagement\Default.aspx" />
+    <Content Include="LeaveManagement\LeaveCalendar.aspx" />
+    <Content Include="LeaveManagement\MyLeaves.aspx" />
+    <Content Include="LeaveManagement\RequestLeave.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
     <Content Include="Web.config" />
@@ -163,12 +168,40 @@
     <Compile Include="HR\TimeManagement.aspx.designer.cs">
       <DependentUpon>TimeManagement.aspx</DependentUpon>
     </Compile>
+    <Compile Include="LeaveManagement\ApproveLeaves.aspx.cs">
+      <DependentUpon>ApproveLeaves.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LeaveManagement\ApproveLeaves.aspx.designer.cs">
+      <DependentUpon>ApproveLeaves.aspx</DependentUpon>
+    </Compile>
     <Compile Include="LeaveManagement\Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="LeaveManagement\Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="LeaveManagement\LeaveCalendar.aspx.cs">
+      <DependentUpon>LeaveCalendar.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LeaveManagement\LeaveCalendar.aspx.designer.cs">
+      <DependentUpon>LeaveCalendar.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="LeaveManagement\MyLeaves.aspx.cs">
+      <DependentUpon>MyLeaves.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LeaveManagement\MyLeaves.aspx.designer.cs">
+      <DependentUpon>MyLeaves.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="LeaveManagement\RequestLeave.aspx.cs">
+      <DependentUpon>RequestLeave.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LeaveManagement\RequestLeave.aspx.designer.cs">
+      <DependentUpon>RequestLeave.aspx</DependentUpon>
     </Compile>
     <Compile Include="Login.aspx.cs">
       <DependentUpon>Login.aspx</DependentUpon>

@@ -28,8 +28,7 @@
                 <div class="brand-side">
                     <div class="tpa-logo-container">
                         <div class="tpa-logo">
-                            <div class="tpa-logo-text">TPA</div>
-                            <i class="material-icons tpa-logo-icon">people</i>
+                            <asp:Image ID="Image1" runat="server"  ImageUrl="~/Content/logo.png"/>
                         </div>
                         <div class="tpa-name">TENNESSEE<br>PERSONAL<br>ASSISTANCE<br><small>INC</small></div>
                     </div>
