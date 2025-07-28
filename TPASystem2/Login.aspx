@@ -1,6 +1,4 @@
-﻿
-
-<%@ Page Title="Login" Language="C#" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="TPASystem2.Login" %>
+﻿<%@ Page Title="Login" Language="C#" AutoEventWireup="true" CodeBehind="Login.aspx.cs" Inherits="TPASystem2.Login" %>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -27,10 +25,9 @@
                 <!-- Left Side - TPA Branding -->
                 <div class="brand-side">
                     <div class="tpa-logo-container">
-                        <div class="tpa-logo">
-                            <asp:Image ID="Image1" runat="server"  ImageUrl="~/Content/logo.png"/>
-                        </div>
-                        <div class="tpa-name">TENNESSEE<br>PERSONAL<br>ASSISTANCE<br><small>INC</small></div>
+                        
+                            <asp:Image ID="imgLogo" runat="server" ImageUrl="~/Content/logo.png" CssClass="tpa-logo-image" AlternateText="TPA Logo" Width="115px"  />
+                       
                     </div>
                     
                     <h2 class="tpa-full-name">TPA</h2>
@@ -79,55 +76,36 @@
                                        placeholder="Password *" TextMode="Password" ClientIDMode="Static"
                                        autocomplete="current-password" required="true"></asp:TextBox>
                             <button type="button" class="password-toggle" onclick="togglePassword('txtPassword')">
-                                <i class="material-icons" id="passwordIcon">visibility</i>
+                                <i class="material-icons">visibility</i>
                             </button>
                         </div>
                     </div>
                     
-                    
-                    
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="form-options">
+                        <label class="remember-me-label">
+                            <asp:CheckBox ID="chkRememberMe" runat="server" />
+                            Remember me
+                        </label>
+                        <a href="#" class="form-link">Forgot Password?</a>
+                    </div>
                     
                     <!-- Login Button -->
-                    <asp:Button ID="Button1" runat="server" CssClass="btn-tpa" 
-                               Text="Sign In to TPA" OnClick="Button1_Click" ClientIDMode="Static" />
-                    
-                    <!-- Divider -->
-                    <div class="form-divider">
-                        <span>OR</span>
-                    </div>
+                    <asp:Button ID="btnLogin" runat="server" Text="Sign In" CssClass="btn-tpa" 
+                              OnClick="btnLogin_Click" ClientIDMode="Static" />
                     
                     <!-- Additional Options -->
-                    <div class="form-links">
-                        <a href="#" class="form-link">Forgot your password?</a>
-                        <span class="link-separator">•</span>
-                        <a href="#" class="form-link">Need help?</a>
-                    </div>
-                    
-                    <!-- Demo Access Info -->
-                    <div class="demo-access">
-                        <i class="material-icons">info</i>
-                        <div class="demo-content">
-                            <div class="demo-title">Demo Access Available</div>
-                            <div class="demo-subtitle">Contact your administrator for login credentials</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Footer -->
-                    <div class="auth-footer">
-                        <p class="footer-text">
-                            © 2025 Tennessee Personal Assistance. All rights reserved.<br>
-                            <span class="footer-version">TPA HR System v1.0</span>
-                        </p>
+                    <div class="form-footer">
+                        <p>Need help? <a href="#" class="form-link">Contact Support</a></p>
                     </div>
                 </div>
             </div>
         </div>
     </form>
-     <script src="~/Content/js/tpa-common.js"></script>
 
     <!-- Materialize JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <!-- Custom JavaScript -->
-   
+    <script src="~/Content/js/tpa-common.js"></script>
 </body>
 </html>

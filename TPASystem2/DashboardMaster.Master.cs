@@ -339,7 +339,7 @@ namespace TPASystem2
                 FormsAuthentication.SignOut();
 
                 // Redirect to login
-                SimpleUrlHelper.RedirectToCleanUrl("login");
+                SimpleUrlHelper.RedirectToCleanUrl("Login.aspx");
             }
             catch (Exception ex)
             {

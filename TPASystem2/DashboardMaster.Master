@@ -12,10 +12,9 @@
         <!-- Sidebar Header -->
         <div class="sidebar-header">
             <div class="tpa-logo">
-                <div class="tpa-logo-text">TPA</div>
-                <i class="material-icons tpa-logo-icon">people</i>
+                <asp:Image ID="imgSidebarLogo" runat="server" ImageUrl="~/Content/logo.png" CssClass="tpa-logo-image-sidebar" AlternateText="TPA Logo" Width="65px" />
             </div>
-            <h6 class="sidebar-brand">Tennessee Personal Assistance</h6>
+           
         </div>
         
         <!-- User Info -->
@@ -132,12 +131,12 @@
         <li class="divider"></li>
         <li><a href="/profile"><i class="material-icons">person</i>My Profile</a></li>
         <li><a href="/settings"><i class="material-icons">settings</i>Settings</a></li>
-        <li><a href="/help"><i class="material-icons">help</i>Help & Support</a></li>
+       
         <li class="divider"></li>
         <li>
-            <%--<asp:LinkButton ID="btnLogout" runat="server" OnClick="btnLogout_Click" CssClass="logout-link">
+            <asp:LinkButton ID="btnLogout" runat="server" OnClick="btnLogout_Click" CssClass="logout-link">
                 <i class="material-icons">exit_to_app</i>Sign Out
-            </asp:LinkButton>--%>
+            </asp:LinkButton>
         </li>
     </ul>
     

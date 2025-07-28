@@ -59,8 +59,8 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.15"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-        opacity: 0.3;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="0.5" fill="white" opacity="0.05"/><circle cx="75" cy="75" r="0.5" fill="white" opacity="0.05"/><circle cx="50" cy="10" r="0.3" fill="white" opacity="0.08"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.2;
     }
 
 .tpa-logo-container {
@@ -69,28 +69,39 @@
     padding: 20px;
     margin-bottom: 40px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    width: 200px;
-    height: 240px;
+    width: 220px;
+    height: 260px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     position: relative;
     z-index: 1;
 }
 
 .tpa-logo {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     background: linear-gradient(135deg, #FF8C42 0%, #FFA726 100%);
     border-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     position: relative;
     box-shadow: 0 4px 16px rgba(255, 140, 66, 0.3);
+    overflow: hidden;
+}
+
+.tpa-logo-image {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    border-radius: 12px;
+    background: white;
+    padding: 8px;
+    box-sizing: border-box;
 }
 
 .tpa-logo-text {
@@ -99,6 +110,11 @@
     color: white;
     letter-spacing: 1px;
     margin-bottom: 8px;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .tpa-logo-icon {
@@ -107,16 +123,18 @@
 }
 
 .tpa-name {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: var(--text-primary);
     text-align: center;
-    line-height: 1.3;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
 }
 
     .tpa-name small {
-        font-size: 10px;
-        opacity: 0.7;
+        font-size: 12px;
+        opacity: 0.8;
+        font-weight: 500;
     }
 
 .tpa-full-name {
@@ -275,6 +293,14 @@
         color: var(--text-primary);
     }
 
+/* Form Options */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
 /* Remember Me */
 .remember-me-label {
     display: flex;
@@ -289,6 +315,20 @@
         width: 18px;
         height: 18px;
         margin: 0;
+    }
+
+/* Form Links */
+.form-link {
+    color: #4A90E2;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color var(--transition-fast);
+}
+
+    .form-link:hover {
+        color: #1976d2;
+        text-decoration: underline;
     }
 
 /* ===============================================
@@ -318,122 +358,65 @@
         background: linear-gradient(135deg, #1976d2 0%, #ff9800 100%);
     }
 
+    .btn-tpa:active {
+        transform: translateY(0);
+    }
+
     .btn-tpa:disabled {
         opacity: 0.6;
         cursor: not-allowed;
-        transform: none;
-    }
-
-    .btn-tpa:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+        transform: none !important;
     }
 
 /* ===============================================
-   Form Elements
+   Form Footer
    =============================================== */
 
-.form-divider {
+.form-footer {
     text-align: center;
-    margin: 24px 0;
-    position: relative;
-    color: var(--text-disabled);
-    font-size: 14px;
+    padding-top: 24px;
+    border-top: 1px solid #E0E0E0;
 }
 
-    .form-divider::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: #e0e0e0;
-        z-index: 1;
+    .form-footer p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-secondary);
     }
 
-    .form-divider span {
-        background: white;
-        padding: 0 16px;
-        position: relative;
-        z-index: 2;
-    }
+/* ===============================================
+   Alert Messages
+   =============================================== */
 
-.form-links {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.form-link {
-    color: #4A90E2;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    transition: color var(--transition-fast);
-}
-
-    .form-link:hover {
-        color: #1976d2;
-        text-decoration: underline;
-    }
-
-.link-separator {
-    color: var(--text-disabled);
-    margin: 0 8px;
-}
-
-/* Demo Access */
-.demo-access {
-    background: #FFF8E1;
-    border: 1px solid #FFE082;
-    border-radius: 12px;
+.alert {
     padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    border-radius: 8px;
     margin-bottom: 24px;
-}
-
-    .demo-access i {
-        color: #F57C00;
-        font-size: 20px;
-        flex-shrink: 0;
-    }
-
-.demo-content {
-    flex: 1;
-}
-
-.demo-title {
-    font-weight: 600;
-    color: #F57C00;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
     font-size: 14px;
-    margin-bottom: 4px;
 }
 
-.demo-subtitle {
-    font-size: 12px;
-    color: #E65100;
-    line-height: 1.4;
+.alert-error {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
 }
 
-/* Footer */
-.auth-footer {
-    border-top: 1px solid #e0e0e0;
-    padding-top: 20px;
-    text-align: center;
+.alert-success {
+    background: #e8f5e8;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
 }
 
-.footer-text {
-    font-size: 12px;
-    color: var(--text-disabled);
-    margin: 0;
-    line-height: 1.5;
+.alert-icon {
+    font-size: 20px;
+    margin-top: -2px;
 }
 
-.footer-version {
-    color: #4A90E2;
-    font-weight: 500;
+.alert-content {
+    flex: 1;
 }
 
 /* ===============================================
@@ -459,6 +442,12 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
 
 /* ===============================================
    Responsive Design
@@ -507,6 +496,12 @@
 
     .tpa-subtitle {
         font-size: 16px;
+    }
+
+    .form-options {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
     }
 }
 
