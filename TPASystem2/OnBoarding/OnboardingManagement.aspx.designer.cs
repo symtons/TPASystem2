@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace TPASystem2.HR
+namespace TPASystem2.OnBoarding
 {
 
 

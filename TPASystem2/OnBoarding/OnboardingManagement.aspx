@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Employee Onboarding Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="OnboardingManagement.aspx.cs" Inherits="TPASystem2.HR.OnboardingManagement" %>
+﻿<%@ Page Title="" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="OnboardingManagement.aspx.cs" Inherits="TPASystem2.OnBoarding.OnboardingManagement" %>
 
 <asp:Content ID="OnboardingContent" ContentPlaceHolderID="DashboardContent" runat="server">
 

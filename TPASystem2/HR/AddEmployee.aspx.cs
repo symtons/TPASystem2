@@ -4,6 +4,8 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.Security.Cryptography;
+using System.Text;
 using TPASystem2.Helpers;
 
 namespace TPASystem2.HR
@@ -95,8 +97,8 @@ namespace TPASystem2.HR
                         SELECT e.Id, e.FirstName + ' ' + e.LastName as FullName
                         FROM Employees e
                         INNER JOIN Users u ON e.UserId = u.Id
-                        WHERE e.IsActive = 1 
-                        AND e.Status = 'Active'
+                        WHERE e.Status = 'Active'
+                        AND u.IsActive = 1
                         AND (u.Role LIKE '%Manager%' OR u.Role LIKE '%Director%' OR u.Role LIKE '%Admin%')
                         ORDER BY e.FirstName, e.LastName";
 
@@ -167,6 +169,19 @@ namespace TPASystem2.HR
             Response.Redirect("~/HR/Employees.aspx");
         }
 
+        protected void btnSaveEmployeeBottom_Click(object sender, EventArgs e)
+        {
+            if (Page.IsValid)
+            {
+                SaveEmployee(false);
+            }
+        }
+
+        protected void btnCancelBottom_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/HR/Employees.aspx");
+        }
+
         #endregion
 
         #region Employee Creation Methods
@@ -186,16 +201,13 @@ namespace TPASystem2.HR
                                $"Created employee: {txtFirstName.Text} {txtLastName.Text} ({result.EmployeeNumber})",
                                GetClientIP());
 
+                    // Always show success modal
+                    ShowSuccessModal(result.EmployeeNumber, result.EmployeeName, result.Department, result.OnboardingTasksCount);
+
                     if (addAnother)
                     {
-                        ShowMessage($"Employee {result.EmployeeNumber} created successfully! You can add another employee below.", "success");
+                        // Clear form for adding another employee
                         ClearForm();
-                    }
-                    else
-                    {
-                        // Redirect to the employee list with success message
-                        Session["SuccessMessage"] = $"Employee {result.EmployeeNumber} created successfully with {result.OnboardingTasksCount} onboarding tasks assigned.";
-                        Response.Redirect("~/HR/Employees.aspx");
                     }
                 }
                 else
@@ -210,86 +222,129 @@ namespace TPASystem2.HR
             }
         }
 
-        private EmployeeCreationResult CreateEmployeeWithOnboarding(int createdByUserId)
+        private dynamic CreateEmployeeWithOnboarding(int createdByUserId)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                conn.Open();
-
-                using (SqlCommand cmd = new SqlCommand("sp_CreateEmployeeWithOnboarding", conn))
+                try
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
+                    conn.Open();
 
-                    // Add parameters matching the stored procedure
-                    cmd.Parameters.AddWithValue("@FirstName", txtFirstName.Text.Trim());
-                    cmd.Parameters.AddWithValue("@LastName", txtLastName.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Position", txtPosition.Text.Trim());
-                    cmd.Parameters.AddWithValue("@DepartmentId", Convert.ToInt32(ddlDepartment.SelectedValue));
-                    cmd.Parameters.AddWithValue("@TemporaryPassword",
-                        string.IsNullOrEmpty(txtTemporaryPassword.Text) ? "TempPass123!" : txtTemporaryPassword.Text);
-                    cmd.Parameters.AddWithValue("@PhoneNumber",
-                        string.IsNullOrEmpty(txtPhoneNumber.Text) ? (object)DBNull.Value : txtPhoneNumber.Text.Trim());
-                    cmd.Parameters.AddWithValue("@EmployeeType", ddlEmployeeType.SelectedValue);
-                    cmd.Parameters.AddWithValue("@HireDate", Convert.ToDateTime(txtHireDate.Text));
-                    cmd.Parameters.AddWithValue("@Status", ddlStatus.SelectedValue);
-                    cmd.Parameters.AddWithValue("@ManagerId",
-                        string.IsNullOrEmpty(ddlManager.SelectedValue) ? (object)DBNull.Value : Convert.ToInt32(ddlManager.SelectedValue));
-                    cmd.Parameters.AddWithValue("@WorkLocation",
-                        string.IsNullOrEmpty(txtWorkLocation.Text) ? "Office" : txtWorkLocation.Text.Trim());
-                    cmd.Parameters.AddWithValue("@Salary",
-                        string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : Convert.ToDecimal(txtSalary.Text));
-                    cmd.Parameters.AddWithValue("@Address",
-                        string.IsNullOrEmpty(txtAddress.Text) ? (object)DBNull.Value : txtAddress.Text.Trim());
-                    cmd.Parameters.AddWithValue("@City",
-                        string.IsNullOrEmpty(txtCity.Text) ? (object)DBNull.Value : txtCity.Text.Trim());
-                    cmd.Parameters.AddWithValue("@State",
-                        string.IsNullOrEmpty(txtState.Text) ? (object)DBNull.Value : txtState.Text.Trim());
-                    cmd.Parameters.AddWithValue("@ZipCode",
-                        string.IsNullOrEmpty(txtZipCode.Text) ? (object)DBNull.Value : txtZipCode.Text.Trim());
-                    cmd.Parameters.AddWithValue("@DateOfBirth",
-                        string.IsNullOrEmpty(txtDateOfBirth.Text) ? (object)DBNull.Value : Convert.ToDateTime(txtDateOfBirth.Text));
-                    cmd.Parameters.AddWithValue("@Gender",
-                        string.IsNullOrEmpty(ddlGender.SelectedValue) ? (object)DBNull.Value : ddlGender.SelectedValue);
-                    cmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
-                    cmd.Parameters.AddWithValue("@CreatedByUserId", createdByUserId);
+                    // Generate salt and hash password using TPASystem2 method
+                    string tempPassword = string.IsNullOrEmpty(txtTemporaryPassword.Text) ? "TempPass123!" : txtTemporaryPassword.Text.Trim();
+                    string salt = PasswordHelper.GenerateSalt();
+                    string passwordHash = PasswordHelper.ComputeHash(tempPassword, salt);
 
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    using (SqlCommand cmd = new SqlCommand("sp_CreateEmployeeWithOnboarding", conn))
                     {
-                        if (reader.Read())
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.CommandTimeout = 60; // Increase timeout for complex operations
+
+                        // Add parameters matching the stored procedure
+                        cmd.Parameters.AddWithValue("@FirstName", txtFirstName.Text.Trim());
+                        cmd.Parameters.AddWithValue("@LastName", txtLastName.Text.Trim());
+                        cmd.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
+                        cmd.Parameters.AddWithValue("@Position", txtPosition.Text.Trim());
+                        cmd.Parameters.AddWithValue("@DepartmentId", Convert.ToInt32(ddlDepartment.SelectedValue));
+                        cmd.Parameters.AddWithValue("@TemporaryPassword", tempPassword);
+                        cmd.Parameters.AddWithValue("@PhoneNumber",
+                            string.IsNullOrEmpty(txtPhoneNumber.Text) ? (object)DBNull.Value : txtPhoneNumber.Text.Trim());
+                        cmd.Parameters.AddWithValue("@EmployeeType", ddlEmployeeType.SelectedValue);
+                        cmd.Parameters.AddWithValue("@HireDate", Convert.ToDateTime(txtHireDate.Text));
+                        cmd.Parameters.AddWithValue("@Status", ddlStatus.SelectedValue);
+                        cmd.Parameters.AddWithValue("@ManagerId",
+                            string.IsNullOrEmpty(ddlManager.SelectedValue) || ddlManager.SelectedValue == "0" ?
+                            (object)DBNull.Value : Convert.ToInt32(ddlManager.SelectedValue));
+                        cmd.Parameters.AddWithValue("@WorkLocation",
+                            string.IsNullOrEmpty(txtWorkLocation.Text) ? "Office" : txtWorkLocation.Text.Trim());
+                        cmd.Parameters.AddWithValue("@Salary",
+                            string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : Convert.ToDecimal(txtSalary.Text));
+                        cmd.Parameters.AddWithValue("@Address",
+                            string.IsNullOrEmpty(txtAddress.Text) ? (object)DBNull.Value : txtAddress.Text.Trim());
+                        cmd.Parameters.AddWithValue("@City",
+                            string.IsNullOrEmpty(txtCity.Text) ? (object)DBNull.Value : txtCity.Text.Trim());
+                        cmd.Parameters.AddWithValue("@State",
+                            string.IsNullOrEmpty(txtState.Text) ? (object)DBNull.Value : txtState.Text.Trim());
+                        cmd.Parameters.AddWithValue("@ZipCode",
+                            string.IsNullOrEmpty(txtZipCode.Text) ? (object)DBNull.Value : txtZipCode.Text.Trim());
+                        cmd.Parameters.AddWithValue("@DateOfBirth",
+                            string.IsNullOrEmpty(txtDateOfBirth.Text) ? (object)DBNull.Value : Convert.ToDateTime(txtDateOfBirth.Text));
+                        cmd.Parameters.AddWithValue("@Gender",
+                            string.IsNullOrEmpty(ddlGender.SelectedValue) || ddlGender.SelectedValue == "0" ?
+                            (object)DBNull.Value : ddlGender.SelectedValue);
+                        cmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
+                        cmd.Parameters.AddWithValue("@CreatedByUserId", createdByUserId);
+
+                        // Add the generated salt and password hash
+                        cmd.Parameters.AddWithValue("@Salt", salt);
+                        cmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
+
+                        // Execute and get the result
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            // Check if creation was successful
-                            if (reader["ErrorMessage"] != DBNull.Value)
+                            if (reader.Read())
                             {
-                                return new EmployeeCreationResult
+                                // Create anonymous object to return results
+                                return new
                                 {
-                                    Success = false,
-                                    ErrorMessage = reader["ErrorMessage"].ToString()
+                                    EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
+                                    EmployeeNumber = reader["EmployeeNumber"].ToString(),
+                                    EmployeeName = reader["EmployeeName"].ToString(),
+                                    OnboardingTasksCount = Convert.ToInt32(reader["OnboardingTasks"]),
+                                    Department = reader["Department"].ToString(),
+                                    Message = reader["Message"].ToString(),
+                                    ErrorMessage = reader["ErrorMessage"].ToString(),
+                                    Success = Convert.ToInt32(reader["EmployeeId"]) > 0 && string.IsNullOrEmpty(reader["ErrorMessage"].ToString())
                                 };
                             }
-
-                            return new EmployeeCreationResult
+                            else
                             {
-                                Success = true,
-                                EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
-                                EmployeeNumber = reader["EmployeeNumber"].ToString(),
-                                EmployeeName = reader["EmployeeName"].ToString(),
-                                OnboardingTasksCount = Convert.ToInt32(reader["OnboardingTasks"]),
-                                Department = reader["Department"].ToString(),
-                                Message = reader["Message"].ToString()
-                            };
-                        }
-                        else
-                        {
-                            return new EmployeeCreationResult
-                            {
-                                Success = false,
-                                ErrorMessage = "No result returned from stored procedure"
-                            };
+                                return new
+                                {
+                                    EmployeeId = 0,
+                                    EmployeeNumber = "",
+                                    EmployeeName = "",
+                                    OnboardingTasksCount = 0,
+                                    Department = "",
+                                    Message = "",
+                                    ErrorMessage = "No result returned from stored procedure",
+                                    Success = false
+                                };
+                            }
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    return new
+                    {
+                        EmployeeId = 0,
+                        EmployeeNumber = "",
+                        EmployeeName = "",
+                        OnboardingTasksCount = 0,
+                        Department = "",
+                        Message = "",
+                        ErrorMessage = ex.Message,
+                        Success = false
+                    };
+                }
             }
+        }
+
+        // Method to show the success modal - Alternative approach
+        private void ShowSuccessModal(string employeeNumber, string employeeName, string department, int taskCount)
+        {
+            // Escape single quotes in the data to prevent JavaScript errors
+            string safeEmployeeNumber = employeeNumber.Replace("'", "\\'");
+            string safeEmployeeName = employeeName.Replace("'", "\\'");
+            string safeDepartment = department.Replace("'", "\\'");
+
+            string script = $@"
+                setTimeout(function() {{
+                    showSuccessModal('{safeEmployeeNumber}', '{safeEmployeeName}', '{safeDepartment}', {taskCount});
+                }}, 100);";
+
+            ClientScript.RegisterStartupScript(this.GetType(), "ShowSuccessModal", script, true);
         }
 
         private void ClearForm()
@@ -310,18 +365,27 @@ namespace TPASystem2.HR
             txtDateOfBirth.Text = "";
 
             // Reset dropdowns to default
-            ddlDepartment.SelectedIndex = 0;
-            ddlEmployeeType.SelectedValue = "Full-time";
-            ddlManager.SelectedIndex = 0;
-            ddlStatus.SelectedValue = "Active";
-            ddlGender.SelectedIndex = 0;
+            if (ddlDepartment.Items.Count > 0)
+                ddlDepartment.SelectedIndex = 0;
+
+            if (ddlEmployeeType.Items.Count > 0)
+                ddlEmployeeType.SelectedValue = "Full-time";
+
+            if (ddlManager.Items.Count > 0)
+                ddlManager.SelectedIndex = 0;
+
+            if (ddlStatus.Items.Count > 0)
+                ddlStatus.SelectedValue = "Active";
+
+            if (ddlGender.Items.Count > 0)
+                ddlGender.SelectedIndex = 0;
 
             // Reset date and checkbox
             txtHireDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
             chkMustChangePassword.Checked = true;
 
-            // Focus on first field
-            txtFirstName.Focus();
+            // Clear any existing messages
+            pnlMessage.Visible = false;
         }
 
         #endregion
@@ -350,8 +414,8 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
                     string query = @"
-                        INSERT INTO ActivityLogs (UserId, Action, EntityType, Description, IPAddress, Timestamp)
-                        VALUES (@UserId, @Action, @EntityType, @Description, @IPAddress, @Timestamp)";
+                        INSERT INTO ApplicationLogs (UserId, Action, EntityType, EntityId, Description, IPAddress, Timestamp)
+                        VALUES (@UserId, @Action, @EntityType, NULL, @Description, @IPAddress, GETUTCDATE())";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -360,7 +424,6 @@ namespace TPASystem2.HR
                         cmd.Parameters.AddWithValue("@EntityType", entityType);
                         cmd.Parameters.AddWithValue("@Description", description);
                         cmd.Parameters.AddWithValue("@IPAddress", ipAddress);
-                        cmd.Parameters.AddWithValue("@Timestamp", DateTime.UtcNow);
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -373,28 +436,22 @@ namespace TPASystem2.HR
 
         private string GetClientIP()
         {
-            string ipAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
-            if (string.IsNullOrEmpty(ipAddress))
-                ipAddress = Request.ServerVariables["REMOTE_ADDR"];
-            return ipAddress ?? "Unknown";
+            string ip = "";
+            try
+            {
+                ip = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+                if (string.IsNullOrEmpty(ip) || ip.ToLower() == "unknown")
+                {
+                    ip = Request.ServerVariables["REMOTE_ADDR"];
+                }
+            }
+            catch
+            {
+                ip = "Unknown";
+            }
+            return ip;
         }
 
         #endregion
     }
-
-    #region Helper Classes
-
-    public class EmployeeCreationResult
-    {
-        public bool Success { get; set; }
-        public int EmployeeId { get; set; }
-        public string EmployeeNumber { get; set; }
-        public string EmployeeName { get; set; }
-        public int OnboardingTasksCount { get; set; }
-        public string Department { get; set; }
-        public string Message { get; set; }
-        public string ErrorMessage { get; set; }
-    }
-
-    #endregion
 }

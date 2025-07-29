@@ -128,7 +128,7 @@ namespace TPASystem2
                         menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management",  $"{appPath}/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("HR Reports", "/reports", "assessment", currentPage == "reports"));
-                        menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/HR/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
+                        menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 
                         // HR Section
                         menuHtml.AppendLine(@"<div class='nav-section-header'>HR Management</div>");

@@ -83,7 +83,6 @@
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
-    <Content Include="HR\OnboardingManagement.aspx" />
     <Content Include="HR\TimeManagement.aspx" />
     <Content Include="LeaveManagement\ApproveLeaves.aspx" />
     <Content Include="LeaveManagement\Default.aspx" />
@@ -92,6 +91,7 @@
     <Content Include="LeaveManagement\RequestLeave.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
+    <Content Include="OnBoarding\OnboardingManagement.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -154,13 +154,6 @@
     <Compile Include="HR\ManageEmployeeOnboarding.aspx.designer.cs">
       <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
     </Compile>
-    <Compile Include="HR\OnboardingManagement.aspx.cs">
-      <DependentUpon>OnboardingManagement.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="HR\OnboardingManagement.aspx.designer.cs">
-      <DependentUpon>OnboardingManagement.aspx</DependentUpon>
-    </Compile>
     <Compile Include="HR\TimeManagement.aspx.cs">
       <DependentUpon>TimeManagement.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -217,6 +210,14 @@
     <Compile Include="NotFound.aspx.designer.cs">
       <DependentUpon>NotFound.aspx</DependentUpon>
     </Compile>
+    <Compile Include="OnBoarding\OnboardingManagement.aspx.cs">
+      <DependentUpon>OnboardingManagement.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="OnBoarding\OnboardingManagement.aspx.designer.cs">
+      <DependentUpon>OnboardingManagement.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\PasswordHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>
@@ -240,7 +241,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Models\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

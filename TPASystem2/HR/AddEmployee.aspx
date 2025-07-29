@@ -5,7 +5,13 @@
     <!-- CSS Links -->
     <link href='<%=ResolveUrl("~/Content/css/tpa-dashboard.css") %>' rel="stylesheet" type="text/css" />
     <link href='<%=ResolveUrl("~/Content/css/employee-management.css") %>' rel="stylesheet" type="text/css" />
+    <link href='<%=ResolveUrl("~/Content/css/tpa-common.css") %>' rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Message Panel -->
+    <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert">
+        <asp:Literal ID="litMessage" runat="server"></asp:Literal>
+    </asp:Panel>
     
     <!-- Page Header -->
     <div class="page-header">
@@ -16,6 +22,8 @@
         <div class="page-header-actions">
             <asp:Button ID="btnCancel" runat="server" Text="Cancel" 
                         CssClass="btn btn-outline" OnClick="btnCancel_Click" CausesValidation="false" />
+            <asp:Button ID="btnSaveAndNew" runat="server" Text="Save & Add Another" 
+                        CssClass="btn btn-secondary" OnClick="btnSaveAndNew_Click" />
             <asp:Button ID="btnSaveEmployee" runat="server" Text="Create Employee" 
                         CssClass="btn btn-primary" OnClick="btnSaveEmployee_Click" />
         </div>
@@ -53,30 +61,30 @@
                                                    CssClass="error-message" Display="Dynamic" />
                     </div>
                 </div>
-
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtEmail.ClientID %>">Email Address <span class="required">*</span></label>
                         <asp:TextBox ID="txtEmail" runat="server" CssClass="form-control" 
-                                     TextMode="Email" placeholder="employee@company.com" MaxLength="255" required></asp:TextBox>
+                                     placeholder="Enter email address" TextMode="Email" MaxLength="255" required></asp:TextBox>
                         <asp:RequiredFieldValidator ID="rfvEmail" runat="server" 
                                                    ControlToValidate="txtEmail" 
                                                    ErrorMessage="Email is required" 
                                                    CssClass="error-message" Display="Dynamic" />
                         <asp:RegularExpressionValidator ID="revEmail" runat="server" 
-                                                       ControlToValidate="txtEmail"
-                                                       ValidationExpression="^[^\s@]+@[^\s@]+\.[^\s@]+$"
+                                                       ControlToValidate="txtEmail" 
                                                        ErrorMessage="Please enter a valid email address" 
+                                                       ValidationExpression="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" 
                                                        CssClass="error-message" Display="Dynamic" />
                     </div>
                     
                     <div class="form-group">
                         <label for="<%= txtPhoneNumber.ClientID %>">Phone Number</label>
                         <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-control" 
-                                     placeholder="(555) 123-4567" MaxLength="20" TextMode="Phone"></asp:TextBox>
+                                     placeholder="Enter phone number" MaxLength="20"></asp:TextBox>
                     </div>
                 </div>
-
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtDateOfBirth.ClientID %>">Date of Birth</label>
@@ -87,11 +95,11 @@
                     <div class="form-group">
                         <label for="<%= ddlGender.ClientID %>">Gender</label>
                         <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-control">
-                            <asp:ListItem Value="">Select Gender</asp:ListItem>
-                            <asp:ListItem Value="Male">Male</asp:ListItem>
-                            <asp:ListItem Value="Female">Female</asp:ListItem>
-                            <asp:ListItem Value="Other">Other</asp:ListItem>
-                            <asp:ListItem Value="Prefer not to say">Prefer not to say</asp:ListItem>
+                            <asp:ListItem Text="Select Gender" Value=""></asp:ListItem>
+                            <asp:ListItem Text="Male" Value="Male"></asp:ListItem>
+                            <asp:ListItem Text="Female" Value="Female"></asp:ListItem>
+                            <asp:ListItem Text="Other" Value="Other"></asp:ListItem>
+                            <asp:ListItem Text="Prefer not to say" Value="NotSpecified"></asp:ListItem>
                         </asp:DropDownList>
                     </div>
                 </div>
@@ -100,35 +108,33 @@
             <!-- Address Information Section -->
             <div class="form-section">
                 <div class="section-header">
-                    <h3><i class="material-icons">home</i> Address Information</h3>
-                    <p>Employee residential address</p>
+                    <h3><i class="material-icons">location_on</i> Address Information</h3>
+                    <p>Employee residential address details</p>
                 </div>
                 
-                <div class="form-row">
-                    <div class="form-group full-width">
-                        <label for="<%= txtAddress.ClientID %>">Street Address</label>
-                        <asp:TextBox ID="txtAddress" runat="server" CssClass="form-control" 
-                                     placeholder="123 Main Street" MaxLength="255"></asp:TextBox>
-                    </div>
+                <div class="form-group">
+                    <label for="<%= txtAddress.ClientID %>">Street Address</label>
+                    <asp:TextBox ID="txtAddress" runat="server" CssClass="form-control" 
+                                 placeholder="Enter street address" MaxLength="255"></asp:TextBox>
                 </div>
-
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtCity.ClientID %>">City</label>
                         <asp:TextBox ID="txtCity" runat="server" CssClass="form-control" 
-                                     placeholder="City name" MaxLength="100"></asp:TextBox>
+                                     placeholder="Enter city" MaxLength="100"></asp:TextBox>
                     </div>
                     
                     <div class="form-group">
                         <label for="<%= txtState.ClientID %>">State</label>
                         <asp:TextBox ID="txtState" runat="server" CssClass="form-control" 
-                                     placeholder="State/Province" MaxLength="50"></asp:TextBox>
+                                     placeholder="Enter state" MaxLength="50"></asp:TextBox>
                     </div>
                     
                     <div class="form-group">
                         <label for="<%= txtZipCode.ClientID %>">ZIP Code</label>
                         <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-control" 
-                                     placeholder="12345" MaxLength="10"></asp:TextBox>
+                                     placeholder="Enter ZIP code" MaxLength="10"></asp:TextBox>
                     </div>
                 </div>
             </div>
@@ -137,14 +143,14 @@
             <div class="form-section">
                 <div class="section-header">
                     <h3><i class="material-icons">work</i> Employment Information</h3>
-                    <p>Job details and organizational structure</p>
+                    <p>Job position, department, and employment details</p>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtPosition.ClientID %>">Position/Job Title <span class="required">*</span></label>
                         <asp:TextBox ID="txtPosition" runat="server" CssClass="form-control" 
-                                     placeholder="e.g., Software Developer, HR Specialist" MaxLength="100" required></asp:TextBox>
+                                     placeholder="Enter job position" MaxLength="100" required></asp:TextBox>
                         <asp:RequiredFieldValidator ID="rfvPosition" runat="server" 
                                                    ControlToValidate="txtPosition" 
                                                    ErrorMessage="Position is required" 
@@ -154,7 +160,7 @@
                     <div class="form-group">
                         <label for="<%= ddlDepartment.ClientID %>">Department <span class="required">*</span></label>
                         <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-control" required>
-                            <asp:ListItem Value="">Select Department</asp:ListItem>
+                            <asp:ListItem Text="Select Department" Value=""></asp:ListItem>
                         </asp:DropDownList>
                         <asp:RequiredFieldValidator ID="rfvDepartment" runat="server" 
                                                    ControlToValidate="ddlDepartment" 
@@ -162,17 +168,16 @@
                                                    CssClass="error-message" Display="Dynamic" />
                     </div>
                 </div>
-
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= ddlEmployeeType.ClientID %>">Employee Type <span class="required">*</span></label>
                         <asp:DropDownList ID="ddlEmployeeType" runat="server" CssClass="form-control" required>
-                            <asp:ListItem Value="">Select Type</asp:ListItem>
-                            <asp:ListItem Value="Full-time" Selected="True">Full-time</asp:ListItem>
-                            <asp:ListItem Value="Part-time">Part-time</asp:ListItem>
-                            <asp:ListItem Value="Contract">Contract</asp:ListItem>
-                            <asp:ListItem Value="Temporary">Temporary</asp:ListItem>
-                            <asp:ListItem Value="Intern">Intern</asp:ListItem>
+                            <asp:ListItem Text="Full-time" Value="Full-time"></asp:ListItem>
+                            <asp:ListItem Text="Part-time" Value="Part-time"></asp:ListItem>
+                            <asp:ListItem Text="Contract" Value="Contract"></asp:ListItem>
+                            <asp:ListItem Text="Temporary" Value="Temporary"></asp:ListItem>
+                            <asp:ListItem Text="Intern" Value="Intern"></asp:ListItem>
                         </asp:DropDownList>
                         <asp:RequiredFieldValidator ID="rfvEmployeeType" runat="server" 
                                                    ControlToValidate="ddlEmployeeType" 
@@ -190,86 +195,59 @@
                                                    CssClass="error-message" Display="Dynamic" />
                     </div>
                 </div>
-
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= ddlManager.ClientID %>">Manager</label>
                         <asp:DropDownList ID="ddlManager" runat="server" CssClass="form-control">
-                            <asp:ListItem Value="">Select Manager</asp:ListItem>
+                            <asp:ListItem Text="Select Manager" Value=""></asp:ListItem>
                         </asp:DropDownList>
                     </div>
                     
                     <div class="form-group">
                         <label for="<%= txtWorkLocation.ClientID %>">Work Location</label>
                         <asp:TextBox ID="txtWorkLocation" runat="server" CssClass="form-control" 
-                                     placeholder="e.g., Office, Remote, Hybrid" MaxLength="100"></asp:TextBox>
+                                     placeholder="Enter work location" MaxLength="100"></asp:TextBox>
                     </div>
                 </div>
-
+                
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="<%= txtSalary.ClientID %>">Annual Salary</label>
+                        <label for="<%= txtSalary.ClientID %>">Salary</label>
                         <asp:TextBox ID="txtSalary" runat="server" CssClass="form-control" 
-                                     placeholder="50000.00" TextMode="Number" step="0.01"></asp:TextBox>
+                                     placeholder="Enter salary amount" TextMode="Number" step="0.01"></asp:TextBox>
                     </div>
                     
                     <div class="form-group">
-                        <label for="<%= ddlStatus.ClientID %>">Employment Status</label>
+                        <label for="<%= ddlStatus.ClientID %>">Status</label>
                         <asp:DropDownList ID="ddlStatus" runat="server" CssClass="form-control">
-                            <asp:ListItem Value="Active" Selected="True">Active</asp:ListItem>
-                            <asp:ListItem Value="Inactive">Inactive</asp:ListItem>
-                            <asp:ListItem Value="On Leave">On Leave</asp:ListItem>
-                            <asp:ListItem Value="Terminated">Terminated</asp:ListItem>
+                            <asp:ListItem Text="Active" Value="Active"></asp:ListItem>
+                            <asp:ListItem Text="Inactive" Value="Inactive"></asp:ListItem>
+                            <asp:ListItem Text="Pending" Value="Pending"></asp:ListItem>
                         </asp:DropDownList>
                     </div>
                 </div>
             </div>
 
-            <!-- System Access Section -->
+            <!-- Account Setup Section -->
             <div class="form-section">
                 <div class="section-header">
-                    <h3><i class="material-icons">security</i> System Access</h3>
-                    <p>User account and system access configuration</p>
+                    <h3><i class="material-icons">security</i> Account Setup</h3>
+                    <p>Login credentials and account security settings</p>
                 </div>
                 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="<%= txtTemporaryPassword.ClientID %>">Temporary Password</label>
                         <asp:TextBox ID="txtTemporaryPassword" runat="server" CssClass="form-control" 
-                                     placeholder="Leave blank for default (TempPass123!)" MaxLength="50"></asp:TextBox>
+                                     placeholder="Leave blank for default password" MaxLength="255"></asp:TextBox>
                         <small class="form-text">If left blank, default password "TempPass123!" will be used</small>
                     </div>
                     
-                    <div class="form-group checkbox-group">
-                        <asp:CheckBox ID="chkMustChangePassword" runat="server" CssClass="form-check-input" Checked="true" />
-                        <label for="<%= chkMustChangePassword.ClientID %>" class="form-check-label">
-                            Must change password on first login
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Onboarding Preview Section -->
-            <div class="form-section">
-                <div class="section-header">
-                    <h3><i class="material-icons">assignment</i> Onboarding Workflow</h3>
-                    <p>Automatic onboarding tasks will be created based on department</p>
-                </div>
-                
-                <div class="onboarding-preview">
-                    <div class="preview-card">
-                        <div class="preview-icon">
-                            <i class="material-icons">checklist</i>
-                        </div>
-                        <div class="preview-content">
-                            <h4>Automated Task Assignment</h4>
-                            <p>Upon creation, this employee will automatically be assigned department-specific onboarding tasks. This includes:</p>
-                            <ul>
-                                <li>Department-specific orientation tasks</li>
-                                <li>Required documentation and forms</li>
-                                <li>Equipment setup and system access</li>
-                                <li>Training modules and meetings</li>
-                            </ul>
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <asp:CheckBox ID="chkMustChangePassword" runat="server" />
+                            <label for="<%= chkMustChangePassword.ClientID %>">Require password change on first login</label>
                         </div>
                     </div>
                 </div>
@@ -280,138 +258,97 @@
         <div class="form-actions">
             <asp:Button ID="btnCancelBottom" runat="server" Text="Cancel" 
                         CssClass="btn btn-outline" OnClick="btnCancel_Click" CausesValidation="false" />
-            <asp:Button ID="btnSaveAndNew" runat="server" Text="Save & Add Another" 
-                        CssClass="btn btn-secondary" OnClick="btnSaveAndNew_Click" />
             <asp:Button ID="btnSaveEmployeeBottom" runat="server" Text="Create Employee" 
                         CssClass="btn btn-primary" OnClick="btnSaveEmployee_Click" />
         </div>
     </div>
 
-    <!-- Success/Error Messages -->
-    <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert">
-        <asp:Literal ID="litMessage" runat="server"></asp:Literal>
-    </asp:Panel>
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header success-header">
+                    <div class="success-icon">
+                        <i class="material-icons">check_circle</i>
+                    </div>
+                    <h4 class="modal-title">Employee Created Successfully!</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="success-details">
+                        <p><strong>Employee Number:</strong> <span id="successEmployeeNumber"></span></p>
+                        <p><strong>Name:</strong> <span id="successEmployeeName"></span></p>
+                        <p><strong>Department:</strong> <span id="successDepartment"></span></p>
+                        <p><strong>Onboarding Tasks:</strong> <span id="successTaskCount"></span> tasks assigned</p>
+                    </div>
+                    <div class="success-message">
+                        <p>The employee has been successfully created with onboarding tasks assigned. The employee will receive login credentials via email.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="redirectToEmployeeList()">
+                        <i class="material-icons">list</i> View Employee List
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="addAnotherEmployee()">
+                        <i class="material-icons">person_add</i> Add Another Employee
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- JavaScript for form functionality -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Initialize form validation
-            initializeFormValidation();
+    <!-- JavaScript for Modal Functionality -->
+    <script type="text/javascript">
+        function showSuccessModal(employeeNumber, employeeName, department, taskCount) {
+            // Update modal content
+            document.getElementById('successEmployeeNumber').textContent = employeeNumber;
+            document.getElementById('successEmployeeName').textContent = employeeName;
+            document.getElementById('successDepartment').textContent = department;
+            document.getElementById('successTaskCount').textContent = taskCount;
+            
+            // Show modal
+            document.getElementById('successModal').style.display = 'flex';
+            
+            // Add body class to prevent scrolling
+            document.body.style.overflow = 'hidden';
+            
+            // Auto-hide modal after 10 seconds (optional)
+            setTimeout(function() {
+                if (document.getElementById('successModal').style.display === 'flex') {
+                    redirectToEmployeeList();
+                }
+            }, 10000);
+        }
 
-            // Set default hire date to today
-            setDefaultHireDate();
+        function hideSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
 
-            // Initialize department-based features
-            initializeDepartmentFeatures();
+        function redirectToEmployeeList() {
+            hideSuccessModal();
+            window.location.href = '<%= ResolveUrl("~/HR/Employees.aspx") %>';
+        }
+
+        function addAnotherEmployee() {
+            hideSuccessModal();
+            // Simply reload the page to clear the form
+            window.location.href = '<%= ResolveUrl("~/HR/AddEmployee.aspx") %>';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function (event) {
+            var modal = document.getElementById('successModal');
+            if (event.target === modal) {
+                hideSuccessModal();
+            }
         });
 
-        function initializeFormValidation() {
-            const form = document.querySelector('form');
-            if (form) {
-                // Add real-time validation
-                const requiredFields = form.querySelectorAll('input[required], select[required]');
-                requiredFields.forEach(field => {
-                    field.addEventListener('blur', validateField);
-                    field.addEventListener('input', clearFieldError);
-                });
-            }
-        }
-
-        function validateField(event) {
-            const field = event.target;
-            const value = field.value.trim();
-
-            if (field.hasAttribute('required') && !value) {
-                showFieldError(field, 'This field is required');
-                return false;
-            }
-
-            // Email validation
-            if (field.type === 'email' && value) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(value)) {
-                    showFieldError(field, 'Please enter a valid email address');
-                    return false;
-                }
-            }
-
-            // Salary validation
-            if (field.getAttribute('id') && field.getAttribute('id').includes('Salary') && value) {
-                const salaryValue = parseFloat(value);
-                if (salaryValue < 0) {
-                    showFieldError(field, 'Salary must be a positive number');
-                    return false;
-                }
-            }
-
-            clearFieldError(field);
-            return true;
-        }
-
-        function showFieldError(field, message) {
-            clearFieldError(field);
-
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'field-error';
-            errorDiv.textContent = message;
-            errorDiv.style.color = '#dc3545';
-            errorDiv.style.fontSize = '0.8rem';
-            errorDiv.style.marginTop = '0.25rem';
-
-            field.style.borderColor = '#dc3545';
-            field.parentNode.appendChild(errorDiv);
-        }
-
-        function clearFieldError(field) {
-            const existingError = field.parentNode.querySelector('.field-error');
-            if (existingError) {
-                existingError.remove();
-            }
-            field.style.borderColor = '';
-        }
-
-        function setDefaultHireDate() {
-            const hireDateField = document.querySelector('input[type="date"]');
-            if (hireDateField && !hireDateField.value) {
-                const today = new Date().toISOString().split('T')[0];
-                hireDateField.value = today;
-            }
-        }
-
-        function initializeDepartmentFeatures() {
-            const departmentSelect = document.querySelector('select[id*="Department"]');
-            if (departmentSelect) {
-                departmentSelect.addEventListener('change', function () {
-                    updateOnboardingPreview(this.value);
-                });
-            }
-        }
-
-        function updateOnboardingPreview(departmentId) {
-            // This could be enhanced to show department-specific onboarding tasks
-            // For now, just update the preview text
-            console.log('Department selected:', departmentId);
-        }
-
-        // Format phone number as user types
-        function formatPhoneNumber(input) {
-            let value = input.value.replace(/\D/g, '');
-            if (value.length >= 6) {
-                value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-            } else if (value.length >= 3) {
-                value = value.replace(/(\d{3})(\d{0,3})/, '($1) $2');
-            }
-            input.value = value;
-        }
-
-        // Add phone formatting to phone field
-        document.addEventListener('DOMContentLoaded', function () {
-            const phoneField = document.querySelector('input[type="tel"], input[id*="Phone"]');
-            if (phoneField) {
-                phoneField.addEventListener('input', function () {
-                    formatPhoneNumber(this);
-                });
+        // Close modal with ESC key
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                hideSuccessModal();
             }
         });
     </script>
+
 </asp:Content>

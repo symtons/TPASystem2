@@ -219,6 +219,210 @@ a {
 }
 
 /* ===============================================
+   SUCCESS MODAL STYLES
+   Add this CSS to your tpa-common.css file
+   =============================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-dialog {
+    max-width: 500px;
+    width: 90%;
+    margin: 0 auto;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.success-header {
+    background: linear-gradient(135deg, #4caf50, #66bb6a);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    border: none;
+}
+
+.success-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+    .success-icon i {
+        font-size: 4rem;
+        opacity: 0.9;
+    }
+
+.modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.success-details {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #4caf50;
+}
+
+    .success-details p {
+        margin: 0.5rem 0;
+        font-size: 0.95rem;
+    }
+
+    .success-details strong {
+        color: #333;
+        font-weight: 600;
+    }
+
+.success-message {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.modal-footer {
+    padding: 1.5rem 2rem;
+    background: #f8f9fa;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+    .modal-footer .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+
+.btn-primary {
+    background: #1976d2;
+    color: white;
+}
+
+    .btn-primary:hover {
+        background: #1565c0;
+        transform: translateY(-1px);
+    }
+
+.btn-outline {
+    background: transparent;
+    color: #1976d2;
+    border: 2px solid #1976d2;
+}
+
+    .btn-outline:hover {
+        background: #1976d2;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+.modal-footer .material-icons {
+    font-size: 1.1rem;
+}
+
+/* Responsive Design for Modal */
+@media (max-width: 768px) {
+    .modal-dialog {
+        width: 95%;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+        .modal-footer .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+    .success-header {
+        padding: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+    }
+
+    .success-icon {
+        font-size: 3rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .success-icon i {
+            font-size: 3rem;
+        }
+}
+
+@media (max-width: 480px) {
+    .modal-dialog {
+        width: 98%;
+    }
+
+    .success-header {
+        padding: 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 1rem;
+    }
+
+    .success-details {
+        padding: 1rem;
+    }
+}
+
+/* ===============================================
    Cards
    =============================================== */
 

@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.IO;
-using System.Text;
 
-namespace TPASystem2.HR
+namespace TPASystem2.OnBoarding
 {
     public partial class OnboardingManagement : System.Web.UI.Page
     {
@@ -604,6 +602,5 @@ namespace TPASystem2.HR
         public string OnboardingStatus { get; set; }
         public int DaysSinceHire { get; set; }
     }
-
-    #endregion
 }
+#endregion
