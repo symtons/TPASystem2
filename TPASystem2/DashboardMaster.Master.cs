@@ -1,39 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
-using System.Web.Security;
 using System.Web.UI;
-using TPASystem2.Helpers;
 
 namespace TPASystem2
 {
     public partial class DashboardMaster : System.Web.UI.MasterPage
     {
+        #region Properties and Fields
+
         private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+
+        #endregion
+
+        #region Page Events
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Check if user is logged in
-            //if (Session["UserId"] == null)
-            //{
-            //    SimpleUrlHelper.RedirectToCleanUrl("login");
-            //    return;
-            //}
-
             if (!IsPostBack)
             {
-                LoadMasterPageData();
+                LoadDashboardData();
             }
         }
 
-        private void LoadMasterPageData()
+        protected void btnLogout_Click(object sender, EventArgs e)
+        {
+            Session.Clear();
+            Session.Abandon();
+            Response.Redirect("~/Login.aspx");
+        }
+
+        #endregion
+
+        #region Data Loading Methods
+
+        private void LoadDashboardData()
         {
             try
             {
-                // Get user information from session
                 string userEmail = Session["UserEmail"]?.ToString() ?? "";
                 string userRole = Session["UserRole"]?.ToString() ?? "";
                 string userName = Session["UserName"]?.ToString() ?? userEmail;
@@ -62,7 +68,6 @@ namespace TPASystem2
             string initials = GetUserInitials(userName);
 
             // Set user info in sidebar
-            //litSidebarUserInitial.Text = initials;
             litSidebarUserName.Text = userName;
             litSidebarUserRole.Text = userRole;
 
@@ -78,8 +83,8 @@ namespace TPASystem2
 
         private void LoadNavigationMenu(string userRole)
         {
-            try
-            {
+            //try
+            //{
                 var menuHtml = new StringBuilder();
                 string currentPage = GetCurrentPageName();
 
@@ -99,7 +104,7 @@ namespace TPASystem2
                         menuHtml.AppendLine(CreateNavItem("Employee Management", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("Reports & Analytics", "/reports", "assessment", currentPage == "reports"));
-                        menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/HR/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
+                        menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 
                         // Admin Section
                         menuHtml.AppendLine(@"<div class='nav-section-header'>System Administration</div>");
@@ -114,7 +119,7 @@ namespace TPASystem2
                         menuHtml.AppendLine(CreateNavItem("Employee Management", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("Reports & Analytics", "/reports", "assessment", currentPage == "reports"));
-                        menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/HR/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
+                        menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 
                         // Admin Section
                         menuHtml.AppendLine(@"<div class='nav-section-header'>Administration</div>");
@@ -126,7 +131,7 @@ namespace TPASystem2
                         // HR Admin gets HR-focused functionality - DYNAMIC PATHS
                         menuHtml.AppendLine(CreateNavItem("Employees", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
                         menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
-                        menuHtml.AppendLine(CreateNavItem("Leave Management",  $"{appPath}/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                        menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("HR Reports", "/reports", "assessment", currentPage == "reports"));
                         menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 
@@ -165,13 +170,24 @@ namespace TPASystem2
 
                     case "EMPLOYEE":
                     default:
-                        menuHtml.AppendLine(CreateNavItem("My Leave", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
-                        menuHtml.AppendLine(CreateNavItem("My Reports", "/reports/personal", "assessment", currentPage == "reports"));
+                        // Check if employee has onboarding tasks
+                        bool hasOnboardingTasks = HasEmployeeOnboardingTasks();
 
-                        // Employee Section
-                        menuHtml.AppendLine(@"<div class='nav-section-header'>My Tools</div>");
-                        menuHtml.AppendLine(CreateNavItem("My Tasks", "/tasks", "task", currentPage == "tasks"));
-                        menuHtml.AppendLine(CreateNavItem("My Documents", "/documents", "folder", currentPage == "documents"));
+                        if (hasOnboardingTasks)
+                        {
+                            menuHtml.AppendLine(CreateNavItem("My Onboarding", $"{appPath}/OnBoarding/MyOnboarding.aspx", "assignment_ind", currentPage == "my-onboarding"));
+                        }
+                        else
+                        {
+                            menuHtml.AppendLine(CreateNavItem("My Leave", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                            menuHtml.AppendLine(CreateNavItem("My Reports", "/reports/personal", "assessment", currentPage == "reports"));
+
+                            // Employee Section
+                            menuHtml.AppendLine(@"<div class='nav-section-header'>My Tools</div>");
+                            menuHtml.AppendLine(CreateNavItem("My Tasks", "/tasks", "task", currentPage == "tasks"));
+                            menuHtml.AppendLine(CreateNavItem("My Documents", "/documents", "folder", currentPage == "documents"));
+
+                        }
                         break;
                 }
 
@@ -183,12 +199,47 @@ namespace TPASystem2
                 menuHtml.AppendLine(CreateNavItem("Help & Support", "/help", "help", currentPage == "help"));
 
                 litNavigation.Text = menuHtml.ToString();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading navigation menu: {ex.Message}");
-                litNavigation.Text = CreateDefaultMenu(userRole);
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Diagnostics.Debug.WriteLine($"Error loading navigation menu: {ex.Message}");
+            //    litNavigation.Text = CreateDefaultMenu(userRole);
+            //}
+        }
+
+        private bool HasEmployeeOnboardingTasks()
+        {
+            //try
+            //{
+                int userId = Session["UserId"] != null ? Convert.ToInt32(Session["UserId"]) : 0;
+
+                if (userId == 0) return false;
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string query = @"
+                        SELECT COUNT(*) 
+                        FROM [dbo].[OnboardingTasks] ot
+                        INNER JOIN [dbo].[Employees] e ON ot.EmployeeId = e.Id
+                        WHERE e.UserId = @UserId 
+                          AND ot.IsTemplate = 0 
+                          AND ot.Status != 'COMPLETED'";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        int taskCount = Convert.ToInt32(cmd.ExecuteScalar());
+                        return taskCount > 0;
+                    }
+                }
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Diagnostics.Debug.WriteLine($"Error checking employee onboarding tasks: {ex.Message}");
+            //    return false;
+            //}
         }
 
         // NEW METHOD: Get application path dynamically from IIS
@@ -261,96 +312,50 @@ namespace TPASystem2
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading notifications: {ex.Message}");
-                litNotifications.Text = @"<li class='notification-item'><div class='notification-content'><div class='notification-message'>Unable to load notifications</div></div></li>";
+                litNotifications.Text = @"
+                    <li class='notification-item no-notifications'>
+                        <div class='notification-content'>
+                            <div class='notification-message'>Unable to load notifications</div>
+                        </div>
+                    </li>";
                 litNotificationCount.Text = "0";
                 pnlNotificationBadge.Visible = false;
             }
         }
 
-        private void GenerateBreadcrumbs()
-        {
-            try
-            {
-                var breadcrumbsHtml = new StringBuilder();
-                string currentPage = Request.CurrentExecutionFilePath.ToLower();
-                string appPath = GetApplicationPath();
-
-                // Start with Dashboard
-                breadcrumbsHtml.AppendLine($@"<a href='{appPath}/Dashboard.aspx' class='breadcrumb-item'><i class='material-icons'>home</i> Dashboard</a>");
-
-                // Generate breadcrumbs based on current path
-                if (currentPage.Contains("/hr/"))
-                {
-                    breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-separator'>></span>");
-                    breadcrumbsHtml.AppendLine(@"<a href='/hr' class='breadcrumb-item'>HR Management</a>");
-
-                    if (currentPage.Contains("employees"))
-                    {
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-separator'>></span>");
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-item active'>Employees</span>");
-                    }
-                    else if (currentPage.Contains("onboarding"))
-                    {
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-separator'>></span>");
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-item active'>Onboarding</span>");
-                    }
-                    else if (currentPage.Contains("benefits"))
-                    {
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-separator'>></span>");
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-item active'>Benefits</span>");
-                    }
-                    else if (currentPage.Contains("timemanagement"))
-                    {
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-separator'>></span>");
-                        breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-item active'>Time Management</span>");
-                    }
-                }
-                else if (currentPage.Contains("/reports"))
-                {
-                    breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-separator'>></span>");
-                    breadcrumbsHtml.AppendLine(@"<span class='breadcrumb-item active'>Reports</span>");
-                }
-
-                litBreadcrumbs.Text = breadcrumbsHtml.ToString();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error generating breadcrumbs: {ex.Message}");
-                litBreadcrumbs.Text = @"<span class='breadcrumb-item active'>Dashboard</span>";
-            }
-        }
-
-        protected void btnLogout_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // Log the logout activity
-                if (Session["UserId"] != null)
-                {
-                    int userId = Convert.ToInt32(Session["UserId"]);
-                    LogUserActivity(userId, "Logout", "User", "User logged out", GetClientIP());
-                }
-
-                // Clear session
-                Session.Clear();
-                Session.Abandon();
-
-                // Clear authentication
-                FormsAuthentication.SignOut();
-
-                // Redirect to login
-                SimpleUrlHelper.RedirectToCleanUrl("Login.aspx");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error during logout: {ex.Message}");
-                SimpleUrlHelper.RedirectToCleanUrl("login");
-            }
-        }
+        #endregion
 
         #region Helper Methods
 
-        // SIMPLIFIED CreateNavItem - NO URL resolution, use exactly what's passed in
+        private string GetCurrentPageName()
+        {
+            try
+            {
+                string pageName = System.IO.Path.GetFileNameWithoutExtension(Request.Url.AbsolutePath).ToLower();
+
+                // Map specific pages to menu identifiers
+                switch (pageName)
+                {
+                    case "dashboard": return "dashboard";
+                    case "employees": return "employees";
+                    case "timemanagement": return "time-management";
+                    case "default":
+                        if (Request.Url.AbsolutePath.Contains("LeaveManagement"))
+                            return "leave-management";
+                        break;
+                    case "onboardingmanagement": return "onboarding";
+                    case "myonboarding": return "my-onboarding";
+                    case "benefitsmanagement": return "benefits";
+                }
+
+                return pageName;
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
         private string CreateNavItem(string title, string url, string icon, bool isActive = false)
         {
             string activeClass = isActive ? " active" : "";
@@ -384,7 +389,7 @@ namespace TPASystem2
             }
 
             // Leave Management (everyone)
-            menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/ LeaveManagement", "event_available"));
+            menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement", "event_available"));
 
             // Reports (Admin, HR, Manager only)
             if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
@@ -445,25 +450,17 @@ namespace TPASystem2
                 switch (role.ToLower())
                 {
                     case "admin":
-                        if (userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
-                            userRole.Equals("HRAdmin", StringComparison.OrdinalIgnoreCase))
+                        if (userRole.Equals("Administrator", StringComparison.OrdinalIgnoreCase))
                             return true;
                         break;
                     case "hr":
-                        if (userRole.Equals("HRAdmin", StringComparison.OrdinalIgnoreCase))
+                        if (userRole.Equals("HRAdmin", StringComparison.OrdinalIgnoreCase) ||
+                            userRole.Equals("HRManager", StringComparison.OrdinalIgnoreCase))
                             return true;
                         break;
                     case "manager":
                         if (userRole.Equals("ProgramDirector", StringComparison.OrdinalIgnoreCase) ||
                             userRole.Equals("ProgramCoordinator", StringComparison.OrdinalIgnoreCase))
-                            return true;
-                        break;
-                    case "director":
-                        if (userRole.Equals("ProgramDirector", StringComparison.OrdinalIgnoreCase))
-                            return true;
-                        break;
-                    case "coordinator":
-                        if (userRole.Equals("ProgramCoordinator", StringComparison.OrdinalIgnoreCase))
                             return true;
                         break;
                 }
@@ -472,22 +469,27 @@ namespace TPASystem2
             return false;
         }
 
-        private string GetUserInitials(string name)
+        private string GetUserInitials(string userName)
         {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(userName))
                 return "U";
 
-            string[] nameParts = name.Split(' ');
-            if (nameParts.Length >= 2)
-                return (nameParts[0].Substring(0, 1) + nameParts[1].Substring(0, 1)).ToUpper();
-            else
-                return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
-        }
+            if (userName.Contains("@"))
+            {
+                string username = userName.Split('@')[0];
+                if (username.Length >= 2)
+                    return (username.Substring(0, 1) + username.Substring(1, 1)).ToUpper();
+                else
+                    return username.Substring(0, 1).ToUpper();
+            }
 
-        private string GetCurrentPageName()
-        {
-            string path = Request.CurrentExecutionFilePath;
-            return System.IO.Path.GetFileNameWithoutExtension(path)?.ToLower() ?? "dashboard";
+            var parts = userName.Split(' ');
+            if (parts.Length >= 2)
+            {
+                return (parts[0].Substring(0, 1) + parts[1].Substring(0, 1)).ToUpper();
+            }
+
+            return userName.Substring(0, Math.Min(2, userName.Length)).ToUpper();
         }
 
         private string FormatTimeAgo(DateTime dateTime)
@@ -504,75 +506,53 @@ namespace TPASystem2
                 return "Just now";
         }
 
-        private void LogUserActivity(int userId, string eventType, string entityType, string description, string ipAddress)
+        private void GenerateBreadcrumbs()
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                var breadcrumbs = new StringBuilder();
+                string currentPage = GetCurrentPageName();
+                string appPath = GetApplicationPath();
+
+                // Always start with Dashboard
+                breadcrumbs.AppendLine($"<a href='{appPath}/Dashboard.aspx' class='breadcrumb-link'>Dashboard</a>");
+
+                // Add current page breadcrumb based on page
+                switch (currentPage)
                 {
-                    string query = @"
-                        INSERT INTO RecentActivities (UserId, EventType, EntityType, Description, IPAddress, CreatedAt)
-                        VALUES (@UserId, @EventType, @EntityType, @Description, @IPAddress, @CreatedAt)";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@UserId", userId);
-                        cmd.Parameters.AddWithValue("@EventType", eventType);
-                        cmd.Parameters.AddWithValue("@EntityType", entityType);
-                        cmd.Parameters.AddWithValue("@Description", description);
-                        cmd.Parameters.AddWithValue("@IPAddress", ipAddress ?? "");
-                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
-
-                        conn.Open();
-                        cmd.ExecuteNonQuery();
-                    }
+                    case "employees":
+                        breadcrumbs.AppendLine("<span class='breadcrumb-separator'>></span>");
+                        breadcrumbs.AppendLine("<span class='breadcrumb-current'>Employees</span>");
+                        break;
+                    case "time-management":
+                        breadcrumbs.AppendLine("<span class='breadcrumb-separator'>></span>");
+                        breadcrumbs.AppendLine("<span class='breadcrumb-current'>Time Management</span>");
+                        break;
+                    case "leave-management":
+                        breadcrumbs.AppendLine("<span class='breadcrumb-separator'>></span>");
+                        breadcrumbs.AppendLine("<span class='breadcrumb-current'>Leave Management</span>");
+                        break;
+                    case "onboarding":
+                        breadcrumbs.AppendLine("<span class='breadcrumb-separator'>></span>");
+                        breadcrumbs.AppendLine("<span class='breadcrumb-current'>Onboarding Management</span>");
+                        break;
+                    case "my-onboarding":
+                        breadcrumbs.AppendLine("<span class='breadcrumb-separator'>></span>");
+                        breadcrumbs.AppendLine("<span class='breadcrumb-current'>My Onboarding</span>");
+                        break;
+                    case "benefits":
+                        breadcrumbs.AppendLine("<span class='breadcrumb-separator'>></span>");
+                        breadcrumbs.AppendLine("<span class='breadcrumb-current'>Benefits Management</span>");
+                        break;
                 }
+
+                litBreadcrumbs.Text = breadcrumbs.ToString();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error logging user activity: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error generating breadcrumbs: {ex.Message}");
+                litBreadcrumbs.Text = "<span class='breadcrumb-current'>Dashboard</span>";
             }
-        }
-
-        private string GetClientIP()
-        {
-            try
-            {
-                string ipAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
-
-                if (!string.IsNullOrEmpty(ipAddress))
-                {
-                    string[] addresses = ipAddress.Split(',');
-                    if (addresses.Length != 0)
-                    {
-                        return addresses[0];
-                    }
-                }
-
-                return Request.ServerVariables["REMOTE_ADDR"];
-            }
-            catch
-            {
-                return "Unknown";
-            }
-        }
-
-        #endregion
-
-        #region MenuItem Class (for database-driven menu - if needed)
-
-        public class MenuItem
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public string Route { get; set; }
-            public string Icon { get; set; }
-            public int? ParentId { get; set; }
-            public int SortOrder { get; set; }
-            public bool IsActive { get; set; }
-            public bool CanView { get; set; }
-            public bool CanEdit { get; set; }
-            public bool CanDelete { get; set; }
         }
 
         #endregion

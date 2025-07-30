@@ -71,6 +71,7 @@
     <Content Include="Content\css\tpa-auth.css" />
     <Content Include="Content\css\tpa-common.css" />
     <Content Include="Content\css\tpa-dashboard.css" />
+    <Content Include="Content\js\tpa-onboarding.js" />
     <Content Include="Content\js\tpa-common.js" />
     <Content Include="Content\js\tpa-dashboard.js" />
     <Content Include="Content\logo.png" />
@@ -91,6 +92,7 @@
     <Content Include="LeaveManagement\RequestLeave.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
+    <Content Include="OnBoarding\MyOnboarding.aspx" />
     <Content Include="OnBoarding\OnboardingManagement.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
@@ -209,6 +211,13 @@
     </Compile>
     <Compile Include="NotFound.aspx.designer.cs">
       <DependentUpon>NotFound.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="OnBoarding\MyOnboarding.aspx.cs">
+      <DependentUpon>MyOnboarding.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="OnBoarding\MyOnboarding.aspx.designer.cs">
+      <DependentUpon>MyOnboarding.aspx</DependentUpon>
     </Compile>
     <Compile Include="OnBoarding\OnboardingManagement.aspx.cs">
       <DependentUpon>OnboardingManagement.aspx</DependentUpon>
