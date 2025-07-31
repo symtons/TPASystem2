@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Routing;
 using System.Web.Security;
 using System.Web.SessionState;
+using System.Web.UI;
 
 namespace TPASystem2
 {
@@ -12,30 +13,31 @@ namespace TPASystem2
     {
         //private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
-        //protected void Application_Start(object sender, EventArgs e)
-        //{
-        //    try
-        //    {
-        //        // Register URL routes for clean URLs
-        //        RegisterRoutes(RouteTable.Routes);
+        protected void Application_Start(object sender, EventArgs e)
+        {
+            ValidationSettings.UnobtrusiveValidationMode = UnobtrusiveValidationMode.None;
+            //try
+            //{
+            // Register URL routes for clean URLs
+            //RegisterRoutes(RouteTable.Routes);
 
-        //        // Application startup logic
-        //        LogApplicationEvent("Application Started", "TPA HR System application has started successfully");
+            // Application startup logic
+            //LogApplicationEvent("Application Started", "TPA HR System application has started successfully");
 
-        //        // Initialize application-level variables
-        //        Application["ApplicationName"] = ConfigurationManager.AppSettings["ApplicationName"] ?? "TPA HR System";
-        //        Application["ApplicationVersion"] = ConfigurationManager.AppSettings["ApplicationVersion"] ?? "1.0.0";
-        //        Application["StartTime"] = DateTime.Now;
-        //        Application["ActiveSessions"] = 0;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        // Log startup error
-        //        System.Diagnostics.EventLog.WriteEntry("TPA HR System",
-        //            $"Application Start Error: {ex.Message}",
-        //            System.Diagnostics.EventLogEntryType.Error);
-        //    }
-        //}
+            // Initialize application-level variables
+            //Application["ApplicationName"] = ConfigurationManager.AppSettings["ApplicationName"] ?? "TPA HR System";
+            //Application["ApplicationVersion"] = ConfigurationManager.AppSettings["ApplicationVersion"] ?? "1.0.0";
+            //Application["StartTime"] = DateTime.Now;
+            //Application["ActiveSessions"] = 0;
+            //}
+            //catch (Exception ex)
+            //{
+            //    // Log startup error
+            //    System.Diagnostics.EventLog.WriteEntry("TPA HR System",
+            //        $"Application Start Error: {ex.Message}",
+            //        System.Diagnostics.EventLogEntryType.Error);
+            //}
+        }
 
         //private void RegisterRoutes(RouteCollection routes)
         //{
@@ -345,6 +347,6 @@ namespace TPASystem2
         //    return ipAddress;
         //}
 
-       // #endregion
+        // #endregion
     }
 }

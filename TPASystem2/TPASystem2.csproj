@@ -94,6 +94,7 @@
     <Content Include="NotFound.aspx" />
     <Content Include="OnBoarding\MyOnboarding.aspx" />
     <Content Include="OnBoarding\OnboardingManagement.aspx" />
+    <Content Include="OnBoarding\OnboardingTasks.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -227,6 +228,13 @@
       <DependentUpon>OnboardingManagement.aspx</DependentUpon>
     </Compile>
     <Compile Include="Helpers\PasswordHelper.cs" />
+    <Compile Include="OnBoarding\OnboardingTasks.aspx.cs">
+      <DependentUpon>OnboardingTasks.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="OnBoarding\OnboardingTasks.aspx.designer.cs">
+      <DependentUpon>OnboardingTasks.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Site.Master.cs">
       <DependentUpon>Site.Master</DependentUpon>
