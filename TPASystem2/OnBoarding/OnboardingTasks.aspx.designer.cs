@@ -186,15 +186,6 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtTitle;
 
         /// <summary>
-        /// rfvTitle control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvTitle;
-
-        /// <summary>
         /// ddlDepartment control.
         /// </summary>
         /// <remarks>
@@ -202,15 +193,6 @@ namespace TPASystem2.OnBoarding
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlDepartment;
-
-        /// <summary>
-        /// rfvDepartment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvDepartment;
 
         /// <summary>
         /// txtDescription control.
@@ -231,15 +213,6 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.DropDownList ddlCategory;
 
         /// <summary>
-        /// rfvCategory control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvCategory;
-
-        /// <summary>
         /// ddlPriority control.
         /// </summary>
         /// <remarks>
@@ -249,15 +222,6 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.DropDownList ddlPriority;
 
         /// <summary>
-        /// rfvPriority control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvPriority;
-
-        /// <summary>
         /// txtEstimatedDays control.
         /// </summary>
         /// <remarks>
@@ -265,24 +229,6 @@ namespace TPASystem2.OnBoarding
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtEstimatedDays;
-
-        /// <summary>
-        /// rfvEstimatedDays control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEstimatedDays;
-
-        /// <summary>
-        /// rvEstimatedDays control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RangeValidator rvEstimatedDays;
 
         /// <summary>
         /// chkCanEmployeeComplete control.

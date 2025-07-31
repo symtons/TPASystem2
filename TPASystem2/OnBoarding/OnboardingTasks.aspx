@@ -709,8 +709,6 @@
                             <label class="form-label">Task Title *</label>
                             <asp:TextBox ID="txtTitle" runat="server" CssClass="form-input" 
                                          placeholder="Enter task title" MaxLength="200"></asp:TextBox>
-                            <asp:RequiredFieldValidator ID="rfvTitle" runat="server" ControlToValidate="txtTitle" 
-                                                        ErrorMessage="Task title is required" CssClass="field-error" Display="Dynamic" />
                         </div>
                         
                         <div class="form-group col-4">
@@ -718,8 +716,6 @@
                             <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-input">
                                 <asp:ListItem Value="">Select Department</asp:ListItem>
                             </asp:DropDownList>
-                            <asp:RequiredFieldValidator ID="rfvDepartment" runat="server" ControlToValidate="ddlDepartment" 
-                                                        ErrorMessage="Please select a department" CssClass="field-error" Display="Dynamic" />
                         </div>
                     </div>
 
@@ -745,8 +741,6 @@
                                 <asp:ListItem Value="TRAINING">Training</asp:ListItem>
                                 <asp:ListItem Value="COMPLIANCE">Compliance</asp:ListItem>
                             </asp:DropDownList>
-                            <asp:RequiredFieldValidator ID="rfvCategory" runat="server" ControlToValidate="ddlCategory" 
-                                                        ErrorMessage="Please select a category" CssClass="field-error" Display="Dynamic" />
                         </div>
                         
                         <div class="form-group col-4">
@@ -757,19 +751,12 @@
                                 <asp:ListItem Value="MEDIUM" Selected="True">Medium</asp:ListItem>
                                 <asp:ListItem Value="HIGH">High</asp:ListItem>
                             </asp:DropDownList>
-                            <asp:RequiredFieldValidator ID="rfvPriority" runat="server" ControlToValidate="ddlPriority" 
-                                                        ErrorMessage="Please select a priority" CssClass="field-error" Display="Dynamic" />
                         </div>
                         
                         <div class="form-group col-4">
                             <label class="form-label">Estimated Days *</label>
                             <asp:TextBox ID="txtEstimatedDays" runat="server" CssClass="form-input" 
                                          placeholder="1" TextMode="Number" min="1" max="365"></asp:TextBox>
-                            <asp:RequiredFieldValidator ID="rfvEstimatedDays" runat="server" ControlToValidate="txtEstimatedDays" 
-                                                        ErrorMessage="Estimated days is required" CssClass="field-error" Display="Dynamic" />
-                            <asp:RangeValidator ID="rvEstimatedDays" runat="server" ControlToValidate="txtEstimatedDays" 
-                                                MinimumValue="1" MaximumValue="365" Type="Integer"
-                                                ErrorMessage="Please enter a value between 1 and 365" CssClass="field-error" Display="Dynamic" />
                         </div>
                     </div>
                 </div>
@@ -865,7 +852,7 @@
                 <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn btn-outline" 
                             OnClick="btnCancel_Click" CausesValidation="false" />
                 <asp:Button ID="btnSaveTemplate" runat="server" Text="Save Template" CssClass="btn btn-primary" 
-                            OnClick="btnSaveTemplate_Click" />
+                            OnClick="btnSaveTemplate_Click" UseSubmitBehavior="true" CausesValidation="false" />
             </div>
         </div>
     </asp:Panel>

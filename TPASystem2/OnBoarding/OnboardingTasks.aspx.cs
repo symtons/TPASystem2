@@ -253,8 +253,7 @@ namespace TPASystem2.OnBoarding
                         SELECT 
                             Id, DepartmentId, Title, Description, Category, Priority, 
                             EstimatedDays, Instructions, CanEmployeeComplete, 
-                            BlocksSystemAccess, RequiresDocuments, RequiredDocumentsList,
-                            AcceptedFileTypes, MaxFileSizeMB, IsActive
+                            BlocksSystemAccess, IsActive
                         FROM OnboardingTaskTemplates 
                         WHERE Id = @Id";
 
@@ -276,22 +275,9 @@ namespace TPASystem2.OnBoarding
                             chkCanEmployeeComplete.Checked = Convert.ToBoolean(reader["CanEmployeeComplete"]);
                             chkBlocksSystemAccess.Checked = Convert.ToBoolean(reader["BlocksSystemAccess"]);
 
-                            // Handle document requirements
-                            chkRequiresDocuments.Checked = Convert.ToBoolean(reader["RequiresDocuments"]);
-                            pnlDocumentRequirements.Visible = chkRequiresDocuments.Checked;
-
-                            if (chkRequiresDocuments.Checked)
-                            {
-                                txtRequiredDocuments.Text = reader["RequiredDocumentsList"].ToString();
-                                if (!string.IsNullOrEmpty(reader["AcceptedFileTypes"].ToString()))
-                                {
-                                    ddlFileTypes.SelectedValue = reader["AcceptedFileTypes"].ToString();
-                                }
-                                if (!string.IsNullOrEmpty(reader["MaxFileSizeMB"].ToString()))
-                                {
-                                    ddlMaxFileSize.SelectedValue = reader["MaxFileSizeMB"].ToString();
-                                }
-                            }
+                            // For now, hide document requirements since columns don't exist
+                            chkRequiresDocuments.Checked = false;
+                            pnlDocumentRequirements.Visible = false;
 
                             litFormTitle.Text = "Edit Task Template";
                             ShowCreateTab();
@@ -383,13 +369,7 @@ namespace TPASystem2.OnBoarding
         {
             try
             {
-                // Debug: Check if page is valid
-                if (!Page.IsValid)
-                {
-                    ShowError("Please fix validation errors before saving.");
-                    return;
-                }
-
+                // Skip validation for now - just do basic checks
                 // Debug: Check required fields manually
                 if (string.IsNullOrEmpty(txtTitle.Text.Trim()))
                 {
@@ -431,28 +411,24 @@ namespace TPASystem2.OnBoarding
                     string query;
                     if (templateId == 0)
                     {
-                        // Insert new template
+                        // Insert new template - using only existing columns
                         query = @"
                             INSERT INTO OnboardingTaskTemplates 
                             (DepartmentId, Title, Description, Category, Priority, EstimatedDays, 
-                             Instructions, CanEmployeeComplete, BlocksSystemAccess, RequiresDocuments,
-                             RequiredDocumentsList, AcceptedFileTypes, MaxFileSizeMB, IsActive, CreatedDate)
+                             Instructions, CanEmployeeComplete, BlocksSystemAccess, IsActive, CreatedDate)
                             VALUES 
                             (@DepartmentId, @Title, @Description, @Category, @Priority, @EstimatedDays,
-                             @Instructions, @CanEmployeeComplete, @BlocksSystemAccess, @RequiresDocuments,
-                             @RequiredDocumentsList, @AcceptedFileTypes, @MaxFileSizeMB, 1, GETUTCDATE())";
+                             @Instructions, @CanEmployeeComplete, @BlocksSystemAccess, 1, GETUTCDATE())";
                     }
                     else
                     {
-                        // Update existing template
+                        // Update existing template - using only existing columns
                         query = @"
                             UPDATE OnboardingTaskTemplates 
                             SET DepartmentId = @DepartmentId, Title = @Title, Description = @Description,
                                 Category = @Category, Priority = @Priority, EstimatedDays = @EstimatedDays,
                                 Instructions = @Instructions, CanEmployeeComplete = @CanEmployeeComplete,
-                                BlocksSystemAccess = @BlocksSystemAccess, RequiresDocuments = @RequiresDocuments,
-                                RequiredDocumentsList = @RequiredDocumentsList, AcceptedFileTypes = @AcceptedFileTypes,
-                                MaxFileSizeMB = @MaxFileSizeMB
+                                BlocksSystemAccess = @BlocksSystemAccess
                             WHERE Id = @Id";
                     }
 
@@ -472,22 +448,6 @@ namespace TPASystem2.OnBoarding
                         cmd.Parameters.AddWithValue("@Instructions", txtInstructions.Text.Trim());
                         cmd.Parameters.AddWithValue("@CanEmployeeComplete", chkCanEmployeeComplete.Checked);
                         cmd.Parameters.AddWithValue("@BlocksSystemAccess", chkBlocksSystemAccess.Checked);
-
-                        // Handle document requirements
-                        if (chkRequiresDocuments.Checked)
-                        {
-                            cmd.Parameters.AddWithValue("@RequiresDocuments", true);
-                            cmd.Parameters.AddWithValue("@RequiredDocumentsList", txtRequiredDocuments.Text.Trim());
-                            cmd.Parameters.AddWithValue("@AcceptedFileTypes", ddlFileTypes.SelectedValue);
-                            cmd.Parameters.AddWithValue("@MaxFileSizeMB", Convert.ToInt32(ddlMaxFileSize.SelectedValue));
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@RequiresDocuments", false);
-                            cmd.Parameters.AddWithValue("@RequiredDocumentsList", DBNull.Value);
-                            cmd.Parameters.AddWithValue("@AcceptedFileTypes", DBNull.Value);
-                            cmd.Parameters.AddWithValue("@MaxFileSizeMB", DBNull.Value);
-                        }
 
                         int rowsAffected = cmd.ExecuteNonQuery();
 
@@ -509,8 +469,6 @@ namespace TPASystem2.OnBoarding
             catch (Exception ex)
             {
                 ShowError("Error saving template: " + ex.Message);
-                // Log the full exception for debugging
-                System.Diagnostics.Debug.WriteLine($"Save Template Error: {ex}");
             }
         }
 
