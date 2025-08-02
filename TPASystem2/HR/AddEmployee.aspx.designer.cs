@@ -15,6 +15,15 @@ namespace TPASystem2.HR
     {
 
         /// <summary>
+        /// btnCancel control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnCancel;
+
+        /// <summary>
         /// pnlMessage control.
         /// </summary>
         /// <remarks>
@@ -31,33 +40,6 @@ namespace TPASystem2.HR
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litMessage;
-
-        /// <summary>
-        /// btnCancel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCancel;
-
-        /// <summary>
-        /// btnSaveAndNew control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveAndNew;
-
-        /// <summary>
-        /// btnSaveEmployee control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveEmployee;
 
         /// <summary>
         /// txtFirstName control.
@@ -132,58 +114,22 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.TextBox txtPhoneNumber;
 
         /// <summary>
-        /// txtDateOfBirth control.
+        /// ddlDepartment control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDateOfBirth;
+        protected global::System.Web.UI.WebControls.DropDownList ddlDepartment;
 
         /// <summary>
-        /// ddlGender control.
+        /// rfvDepartment control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlGender;
-
-        /// <summary>
-        /// txtAddress control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtAddress;
-
-        /// <summary>
-        /// txtCity control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtCity;
-
-        /// <summary>
-        /// txtState control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtState;
-
-        /// <summary>
-        /// txtZipCode control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtZipCode;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvDepartment;
 
         /// <summary>
         /// txtPosition control.
@@ -204,22 +150,13 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvPosition;
 
         /// <summary>
-        /// ddlDepartment control.
+        /// ddlManager control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlDepartment;
-
-        /// <summary>
-        /// rfvDepartment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvDepartment;
+        protected global::System.Web.UI.WebControls.DropDownList ddlManager;
 
         /// <summary>
         /// ddlEmployeeType control.
@@ -240,42 +177,6 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEmployeeType;
 
         /// <summary>
-        /// txtHireDate control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtHireDate;
-
-        /// <summary>
-        /// rfvHireDate control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvHireDate;
-
-        /// <summary>
-        /// ddlManager control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlManager;
-
-        /// <summary>
-        /// txtWorkLocation control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtWorkLocation;
-
-        /// <summary>
         /// txtSalary control.
         /// </summary>
         /// <remarks>
@@ -285,13 +186,13 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.TextBox txtSalary;
 
         /// <summary>
-        /// ddlStatus control.
+        /// txtWorkLocation control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlStatus;
+        protected global::System.Web.UI.WebControls.TextBox txtWorkLocation;
 
         /// <summary>
         /// txtTemporaryPassword control.
@@ -312,13 +213,22 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.CheckBox chkMustChangePassword;
 
         /// <summary>
-        /// btnCancelBottom control.
+        /// btnSaveAndNew control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCancelBottom;
+        protected global::System.Web.UI.WebControls.Button btnSaveAndNew;
+
+        /// <summary>
+        /// btnSaveEmployee control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnSaveEmployee;
 
         /// <summary>
         /// btnSaveEmployeeBottom control.
@@ -328,5 +238,14 @@ namespace TPASystem2.HR
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnSaveEmployeeBottom;
+
+        /// <summary>
+        /// vsEmployee control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ValidationSummary vsEmployee;
     }
 }

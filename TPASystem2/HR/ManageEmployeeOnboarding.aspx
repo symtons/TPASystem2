@@ -185,6 +185,7 @@
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
+            user-select: none;
         }
 
         .template-card:hover {
@@ -196,6 +197,7 @@
         .template-card.selected {
             border-color: #1976d2;
             background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            box-shadow: 0 8px 24px rgba(25, 118, 210, 0.2);
         }
 
         .template-header {
@@ -248,6 +250,8 @@
             width: 20px;
             height: 20px;
             accent-color: #1976d2;
+            cursor: pointer;
+            z-index: 2;
         }
 
         /* Tasks Section */
@@ -288,14 +292,6 @@
             align-items: center;
         }
 
-        .filter-select {
-            padding: 0.5rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            background: white;
-        }
-
         /* Task Cards */
         .task-card {
             background: white;
@@ -304,12 +300,28 @@
             padding: 1.5rem;
             margin-bottom: 1rem;
             transition: all 0.3s ease;
-            position: relative;
+            border-left: 4px solid #e5e7eb;
         }
 
         .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .task-card.task-pending {
+            border-left-color: #fbbf24;
+        }
+
+        .task-card.task-in_progress {
+            border-left-color: #3b82f6;
+        }
+
+        .task-card.task-completed {
+            border-left-color: #10b981;
+        }
+
+        .task-card.task-overdue {
+            border-left-color: #ef4444;
         }
 
         .task-header {
@@ -317,6 +329,11 @@
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .task-title-section {
+            flex: 1;
         }
 
         .task-title {
@@ -326,10 +343,16 @@
             margin: 0 0 0.5rem 0;
         }
 
+        .task-meta {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .task-category {
-            display: inline-block;
-            background: #f1f5f9;
-            color: #64748b;
+            background: #e5e7eb;
+            color: #374151;
             padding: 0.25rem 0.75rem;
             border-radius: 12px;
             font-size: 0.75rem;
@@ -337,96 +360,178 @@
             text-transform: uppercase;
         }
 
+        .task-priority {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-high {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .priority-medium {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .priority-low {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+
         .task-status {
+            flex-shrink: 0;
+        }
+
+        .status-badge {
             padding: 0.5rem 1rem;
             border-radius: 20px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .status-pending { background: #fef3c7; color: #d97706; }
-        .status-in-progress { background: #dbeafe; color: #2563eb; }
-        .status-completed { background: #dcfce7; color: #16a34a; }
-        .status-overdue { background: #fee2e2; color: #dc2626; }
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-in_progress {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .status-completed {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .status-overdue {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .task-body {
+            margin-bottom: 1rem;
+        }
 
         .task-description {
             color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
             margin-bottom: 1rem;
+        }
+
+        .task-instructions {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
             line-height: 1.5;
         }
 
-        .task-meta {
+        .task-instructions strong {
+            color: #1e293b;
+        }
+
+        .task-details {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
             align-items: center;
-            font-size: 0.9rem;
-            color: #64748b;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
-        .task-meta .meta-item {
+        .task-detail {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
+            gap: 0.5rem;
+            color: #64748b;
+            font-size: 0.85rem;
         }
 
-        .task-meta .material-icons {
-            font-size: 1rem;
-            color: #1976d2;
+        .task-detail .material-icons {
+            font-size: 1.1rem;
+            color: #94a3b8;
         }
 
         .task-actions {
             display: flex;
             gap: 0.5rem;
+            align-items: center;
+            justify-content: flex-end;
             flex-wrap: wrap;
         }
 
-        /* Buttons */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
+        /* Message Styles */
+        .alert {
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
             border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            display: inline-flex;
+            border-left: 4px solid;
+            font-weight: 500;
+            display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
-            color: white;
+        .alert-success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border-color: #4caf50;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border-color: #f44336;
         }
 
-        .btn-outline {
-            background: white;
-            border: 2px solid #e5e7eb;
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
             color: #64748b;
         }
 
-        .btn-outline:hover {
+        .empty-state .material-icons {
+            font-size: 4rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Filter Controls */
+        .filter-control {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-control:focus {
+            outline: none;
             border-color: #1976d2;
-            color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
         }
 
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
+        /* Button Styles */
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
         }
 
         .btn-danger {
@@ -434,57 +539,9 @@
             color: white;
         }
 
-        .btn-small {
-            padding: 0.5rem 1rem;
-            font-size: 0.8rem;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 3rem 2rem;
-            color: #64748b;
-        }
-
-        .empty-state .material-icons {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            margin: 0 0 0.5rem 0;
-            color: #1e293b;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .welcome-content {
-                flex-direction: column;
-                gap: 1.5rem;
-                text-align: center;
-            }
-            
-            .welcome-title {
-                font-size: 2rem;
-            }
-            
-            .employee-info {
-                justify-content: center;
-            }
-            
-            .templates-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .progress-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .task-filters {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
         }
     </style>
     
@@ -521,6 +578,18 @@
             </div>
         </div>
     </div>
+
+    <!-- Success/Error Messages -->
+    <asp:Panel ID="pnlMessages" runat="server" Visible="false">
+        <div class="alert alert-success" id="divSuccess" runat="server" visible="false">
+            <i class="material-icons">check_circle</i>
+            <asp:Literal ID="litSuccessMessage" runat="server"></asp:Literal>
+        </div>
+        <div class="alert alert-error" id="divError" runat="server" visible="false">
+            <i class="material-icons">error</i>
+            <asp:Literal ID="litErrorMessage" runat="server"></asp:Literal>
+        </div>
+    </asp:Panel>
 
     <!-- Progress Section -->
     <div class="progress-section">
@@ -575,7 +644,7 @@
         <div class="templates-grid">
             <asp:Repeater ID="rptAvailableTemplates" runat="server">
                 <ItemTemplate>
-                    <div class="template-card" onclick="toggleTemplate(this, <%# Eval("Id") %>)">
+                    <div class="template-card" data-template-id="<%# Eval("Id") %>">
                         <asp:CheckBox ID="chkSelectTemplate" runat="server" 
                                       CssClass="template-selection-checkbox" />
                         <asp:HiddenField ID="hdnTemplateId" runat="server" Value='<%# Eval("Id") %>' />
@@ -610,7 +679,7 @@
                 Current Onboarding Tasks
             </h3>
             <div class="task-filters">
-                <asp:DropDownList ID="ddlTaskFilter" runat="server" CssClass="filter-select" 
+                <asp:DropDownList ID="ddlTaskFilter" runat="server" CssClass="filter-control" 
                                   AutoPostBack="true" OnSelectedIndexChanged="ddlTaskFilter_SelectedIndexChanged">
                     <asp:ListItem Value="">All Tasks</asp:ListItem>
                     <asp:ListItem Value="PENDING">Pending</asp:ListItem>
@@ -618,39 +687,46 @@
                     <asp:ListItem Value="COMPLETED">Completed</asp:ListItem>
                     <asp:ListItem Value="OVERDUE">Overdue</asp:ListItem>
                 </asp:DropDownList>
-                
                 <asp:Button ID="btnAddCustomTask" runat="server" Text="+ Add Custom Task" 
-                            CssClass="btn btn-primary btn-small" OnClick="btnAddCustomTask_Click" />
+                            CssClass="btn btn-outline" OnClick="btnAddCustomTask_Click" />
             </div>
         </div>
 
         <asp:Repeater ID="rptTasks" runat="server" OnItemCommand="rptTasks_ItemCommand">
             <ItemTemplate>
-                <div class="task-card">
+                <div class="task-card task-<%# Eval("Status").ToString().ToLower() %>">
                     <div class="task-header">
-                        <div>
+                        <div class="task-title-section">
                             <h4 class="task-title"><%# Eval("Title") %></h4>
-                            <span class="task-category"><%# Eval("Category") %></span>
+                            <div class="task-meta">
+                                <span class="task-category"><%# Eval("Category") %></span>
+                                <span class="task-priority priority-<%# Eval("Priority").ToString().ToLower() %>">
+                                    <%# Eval("Priority") %>
+                                </span>
+                            </div>
                         </div>
-                        <span class="task-status status-<%# Eval("Status").ToString().ToLower().Replace("_", "-") %>">
-                            <%# Eval("Status") %>
-                        </span>
+                        <div class="task-status">
+                            <span class="status-badge status-<%# Eval("Status").ToString().ToLower() %>">
+                                <%# Eval("Status").ToString().Replace("_", " ") %>
+                            </span>
+                        </div>
                     </div>
-                    
-                    <p class="task-description"><%# Eval("Description") %></p>
-                    
-                    <div class="task-meta">
-                        <div class="meta-item">
-                            <i class="material-icons">schedule</i>
-                            Due: <%# Eval("DueDate", "{0:MMM dd, yyyy}") %>
-                        </div>
-                        <div class="meta-item">
-                            <i class="material-icons">flag</i>
-                            <%# Eval("Priority") %> Priority
-                        </div>
-                        <div class="meta-item">
-                            <i class="material-icons">timer</i>
-                            <%# Eval("EstimatedTime") %>
+
+                    <div class="task-body">
+                        <p class="task-description"><%# Eval("Description") %></p>
+                        
+                        <%# !string.IsNullOrEmpty(Eval("Instructions").ToString()) ? 
+                            "<div class='task-instructions'><strong>Instructions:</strong><br/>" + Eval("Instructions") + "</div>" : "" %>
+                        
+                        <div class="task-details">
+                            <div class="task-detail">
+                                <i class="material-icons">schedule</i>
+                                <span>Due: <%# Convert.ToDateTime(Eval("DueDate")).ToString("MMM dd, yyyy") %></span>
+                            </div>
+                            <div class="task-detail">
+                                <i class="material-icons">timer</i>
+                                <span><%# Eval("EstimatedTime") %></span>
+                            </div>
                         </div>
                     </div>
 
@@ -684,17 +760,55 @@
         </asp:Panel>
     </div>
 
-    <!-- JavaScript for Template Selection -->
+    <!-- JavaScript for Template Selection - FIXED -->
     <script type="text/javascript">
-        function toggleTemplate(card, templateId) {
-            const checkbox = card.querySelector('input[type="checkbox"]');
-            checkbox.checked = !checkbox.checked;
-
-            if (checkbox.checked) {
-                card.classList.add('selected');
-            } else {
-                card.classList.remove('selected');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize template card click handlers
+            const templateCards = document.querySelectorAll('.template-card');
+            
+            templateCards.forEach(function(card) {
+                card.addEventListener('click', function(e) {
+                    // Don't toggle if clicking directly on checkbox
+                    if (e.target.type === 'checkbox') {
+                        return;
+                    }
+                    
+                    const checkbox = card.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        toggleTemplateCard(card, checkbox.checked);
+                    }
+                });
+                
+                // Handle direct checkbox clicks
+                const checkbox = card.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        toggleTemplateCard(card, this.checked);
+                    });
+                }
+            });
+            
+            function toggleTemplateCard(card, isSelected) {
+                if (isSelected) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
             }
-        }
+            
+            // Prevent form submission if no templates selected
+            const assignButton = document.querySelector('#<%= btnAssignTemplates.ClientID %>');
+            if (assignButton) {
+                assignButton.addEventListener('click', function (e) {
+                    const selectedTemplates = document.querySelectorAll('.template-card input[type="checkbox"]:checked');
+                    if (selectedTemplates.length === 0) {
+                        e.preventDefault();
+                        alert('Please select at least one template to assign.');
+                        return false;
+                    }
+                });
+            }
+        });
     </script>
 </asp:Content>

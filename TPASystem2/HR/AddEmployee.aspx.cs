@@ -129,10 +129,7 @@ namespace TPASystem2.HR
         private void SetDefaultValues()
         {
             // Set default hire date to today
-            txtHireDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
-
-            // Set default status to Active
-            ddlStatus.SelectedValue = "Active";
+            
 
             // Set default employee type to Full-time
             ddlEmployeeType.SelectedValue = "Full-time";
@@ -231,7 +228,7 @@ namespace TPASystem2.HR
                     conn.Open();
 
                     // Generate salt and hash password using TPASystem2 method
-                    string tempPassword = string.IsNullOrEmpty(txtTemporaryPassword.Text) ? "TempPass123!" : txtTemporaryPassword.Text.Trim();
+                    string tempPassword = string.IsNullOrEmpty(txtTemporaryPassword.Text) ? "test123" : txtTemporaryPassword.Text.Trim();
                     string salt = PasswordHelper.GenerateSalt();
                     string passwordHash = PasswordHelper.ComputeHash(tempPassword, salt);
 
@@ -250,8 +247,8 @@ namespace TPASystem2.HR
                         cmd.Parameters.AddWithValue("@PhoneNumber",
                             string.IsNullOrEmpty(txtPhoneNumber.Text) ? (object)DBNull.Value : txtPhoneNumber.Text.Trim());
                         cmd.Parameters.AddWithValue("@EmployeeType", ddlEmployeeType.SelectedValue);
-                        cmd.Parameters.AddWithValue("@HireDate", Convert.ToDateTime(txtHireDate.Text));
-                        cmd.Parameters.AddWithValue("@Status", ddlStatus.SelectedValue);
+                        cmd.Parameters.AddWithValue("@HireDate", Convert.ToDateTime(DateTime.Now));
+                        cmd.Parameters.AddWithValue("@Status", "Active");
                         cmd.Parameters.AddWithValue("@ManagerId",
                             string.IsNullOrEmpty(ddlManager.SelectedValue) || ddlManager.SelectedValue == "0" ?
                             (object)DBNull.Value : Convert.ToInt32(ddlManager.SelectedValue));
@@ -259,19 +256,7 @@ namespace TPASystem2.HR
                             string.IsNullOrEmpty(txtWorkLocation.Text) ? "Office" : txtWorkLocation.Text.Trim());
                         cmd.Parameters.AddWithValue("@Salary",
                             string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : Convert.ToDecimal(txtSalary.Text));
-                        cmd.Parameters.AddWithValue("@Address",
-                            string.IsNullOrEmpty(txtAddress.Text) ? (object)DBNull.Value : txtAddress.Text.Trim());
-                        cmd.Parameters.AddWithValue("@City",
-                            string.IsNullOrEmpty(txtCity.Text) ? (object)DBNull.Value : txtCity.Text.Trim());
-                        cmd.Parameters.AddWithValue("@State",
-                            string.IsNullOrEmpty(txtState.Text) ? (object)DBNull.Value : txtState.Text.Trim());
-                        cmd.Parameters.AddWithValue("@ZipCode",
-                            string.IsNullOrEmpty(txtZipCode.Text) ? (object)DBNull.Value : txtZipCode.Text.Trim());
-                        cmd.Parameters.AddWithValue("@DateOfBirth",
-                            string.IsNullOrEmpty(txtDateOfBirth.Text) ? (object)DBNull.Value : Convert.ToDateTime(txtDateOfBirth.Text));
-                        cmd.Parameters.AddWithValue("@Gender",
-                            string.IsNullOrEmpty(ddlGender.SelectedValue) || ddlGender.SelectedValue == "0" ?
-                            (object)DBNull.Value : ddlGender.SelectedValue);
+                       
                         cmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
                         cmd.Parameters.AddWithValue("@CreatedByUserId", createdByUserId);
 
@@ -362,7 +347,7 @@ namespace TPASystem2.HR
             txtCity.Text = "";
             txtState.Text = "";
             txtZipCode.Text = "";
-            txtDateOfBirth.Text = "";
+            
 
             // Reset dropdowns to default
             if (ddlDepartment.Items.Count > 0)
@@ -374,14 +359,7 @@ namespace TPASystem2.HR
             if (ddlManager.Items.Count > 0)
                 ddlManager.SelectedIndex = 0;
 
-            if (ddlStatus.Items.Count > 0)
-                ddlStatus.SelectedValue = "Active";
-
-            if (ddlGender.Items.Count > 0)
-                ddlGender.SelectedIndex = 0;
-
-            // Reset date and checkbox
-            txtHireDate.Text = DateTime.Today.ToString("yyyy-MM-dd");
+            
             chkMustChangePassword.Checked = true;
 
             // Clear any existing messages
