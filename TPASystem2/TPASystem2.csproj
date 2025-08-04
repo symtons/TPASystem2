@@ -92,7 +92,9 @@
     <Content Include="LeaveManagement\RequestLeave.aspx" />
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
+    <Content Include="OnBoarding\DirectDepositEnrollment.aspx" />
     <Content Include="OnBoarding\MyOnboarding.aspx" />
+    <Content Include="OnBoarding\NewHirePaperWork.aspx" />
     <Content Include="OnBoarding\OnboardingManagement.aspx" />
     <Content Include="OnBoarding\OnboardingTasks.aspx" />
     <Content Include="Web.config" />
@@ -213,12 +215,26 @@
     <Compile Include="NotFound.aspx.designer.cs">
       <DependentUpon>NotFound.aspx</DependentUpon>
     </Compile>
+    <Compile Include="OnBoarding\DirectDepositEnrollment.aspx.cs">
+      <DependentUpon>DirectDepositEnrollment.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="OnBoarding\DirectDepositEnrollment.aspx.designer.cs">
+      <DependentUpon>DirectDepositEnrollment.aspx</DependentUpon>
+    </Compile>
     <Compile Include="OnBoarding\MyOnboarding.aspx.cs">
       <DependentUpon>MyOnboarding.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="OnBoarding\MyOnboarding.aspx.designer.cs">
       <DependentUpon>MyOnboarding.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="OnBoarding\NewHirePaperWork.aspx.cs">
+      <DependentUpon>NewHirePaperWork.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="OnBoarding\NewHirePaperWork.aspx.designer.cs">
+      <DependentUpon>NewHirePaperWork.aspx</DependentUpon>
     </Compile>
     <Compile Include="OnBoarding\OnboardingManagement.aspx.cs">
       <DependentUpon>OnboardingManagement.aspx</DependentUpon>

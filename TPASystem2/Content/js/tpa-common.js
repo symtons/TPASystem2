@@ -766,3 +766,389 @@ if (typeof module !== 'undefined' && module.exports) {
 
 console.log('✅ TPA Common JavaScript loaded successfully');
 
+/* ===============================================
+   ENHANCED SUCCESS MODAL JAVASCRIPT - ADD TO tpa-common.js
+   =============================================== */
+
+// Enhanced Success Modal with Company Email
+function showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, companyEmail) {
+    // Remove any existing modal
+    const existingModal = document.querySelector('.success-modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Create modal HTML
+    const modalHTML = `
+        <div class="success-modal-overlay" onclick="closeSuccessModal(event)">
+            <div class="success-modal-dialog">
+                <div class="success-modal-content">
+                    <div class="success-modal-header">
+                        <div class="success-icon">
+                            <i class="material-icons">check_circle</i>
+                        </div>
+                        <h2 class="success-modal-title">Employee Created Successfully!</h2>
+                        <p class="success-modal-subtitle">Welcome to the Tennessee Personal Assistance team</p>
+                    </div>
+                    
+                    <div class="success-modal-body">
+                        <div class="employee-details">
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="material-icons">badge</i>
+                                    Employee Number
+                                </span>
+                                <span class="detail-value">${employeeNumber}</span>
+                            </div>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="material-icons">person</i>
+                                    Full Name
+                                </span>
+                                <span class="detail-value">${employeeName}</span>
+                            </div>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="material-icons">business</i>
+                                    Department
+                                </span>
+                                <span class="detail-value">${department}</span>
+                            </div>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="material-icons">email</i>
+                                    Company Email
+                                </span>
+                                <span class="detail-value">
+                                    <span class="company-email-highlight">${companyEmail}</span>
+                                </span>
+                            </div>
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">
+                                    <i class="material-icons">assignment</i>
+                                    Onboarding Tasks
+                                </span>
+                                <span class="detail-value">${taskCount} tasks assigned</span>
+                            </div>
+                        </div>
+                        
+                        <div class="next-steps">
+                            <h4>
+                                <i class="material-icons">info</i>
+                                What happens next?
+                            </h4>
+                            <ul>
+                                <li><strong>Welcome Email Sent:</strong> Login credentials sent to their personal email</li>
+                                <li><strong>Onboarding Process:</strong> ${taskCount} tasks automatically assigned</li>
+                                <li><strong>System Access:</strong> Employee can log in using their company email</li>
+                                <li><strong>HR Review:</strong> Monitor onboarding progress in the HR dashboard</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="success-modal-footer">
+                        <div class="email-sent-notice">
+                            <i class="material-icons">mark_email_read</i>
+                            Welcome email sent to personal email
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button class="btn-modal btn-modal-secondary" onclick="closeSuccessModal()">
+                                Close
+                            </button>
+                            <a href="/HR/Employees.aspx" class="btn-modal btn-modal-primary">
+                                View All Employees
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+
+    // Auto-close after 30 seconds
+    setTimeout(() => {
+        closeSuccessModal();
+    }, 30000);
+}
+
+// Legacy success modal function (keep for compatibility)
+function showSuccessModal(employeeNumber, employeeName, department, taskCount) {
+    showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, 'Not specified');
+}
+
+// Close success modal
+function closeSuccessModal(event) {
+    // Only close if clicking overlay or close button
+    if (event && event.target.closest('.success-modal-content') && !event.target.closest('.btn-modal')) {
+        return;
+    }
+
+    const modal = document.querySelector('.success-modal-overlay');
+    if (modal) {
+        modal.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+        }, 200);
+    }
+}
+
+// Add keyboard support
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeSuccessModal();
+    }
+});
+
+/* ===============================================
+   EMAIL VALIDATION HELPER FUNCTIONS
+   =============================================== */
+
+// Generate company email preview
+function generateEmailPreview() {
+    const firstName = document.getElementById('txtFirstName')?.value || '';
+    const lastName = document.getElementById('txtLastName')?.value || '';
+
+    if (firstName && lastName) {
+        const cleanLastName = lastName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const firstInitial = firstName.substring(0, 1).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+        return `${cleanLastName}${firstInitial}@tennesseepersonalassistance.org`;
+    }
+
+    return '';
+}
+
+// Show email preview in real-time
+function updateEmailPreview() {
+    const preview = generateEmailPreview();
+    const previewElement = document.getElementById('emailPreview');
+
+    if (previewElement && preview) {
+        previewElement.textContent = preview;
+        previewElement.style.display = 'block';
+    } else if (previewElement) {
+        previewElement.style.display = 'none';
+    }
+}
+
+// Add event listeners when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    const firstNameField = document.getElementById('txtFirstName');
+    const lastNameField = document.getElementById('txtLastName');
+
+    if (firstNameField && lastNameField) {
+        firstNameField.addEventListener('input', updateEmailPreview);
+        lastNameField.addEventListener('input', updateEmailPreview);
+    }
+});
+
+/* ===============================================
+   FORM VALIDATION HELPERS
+   =============================================== */
+
+// Validate email format
+function validateEmailFormat(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Show validation message
+function showValidationMessage(fieldId, message, type = 'error') {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+
+    // Remove existing validation message
+    const existingMessage = field.parentNode.querySelector('.validation-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    // Add new validation message
+    if (message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `validation-message text-${type}`;
+        messageElement.textContent = message;
+        messageElement.style.fontSize = '0.8rem';
+        messageElement.style.marginTop = '0.25rem';
+
+        field.parentNode.appendChild(messageElement);
+    }
+}
+
+// Clear validation messages
+function clearValidationMessages() {
+    const messages = document.querySelectorAll('.validation-message');
+    messages.forEach(message => message.remove());
+}
+
+/* ===============================================
+   SIMPLE SUCCESS MODAL JAVASCRIPT - ADD TO tpa-common.js
+   =============================================== */
+
+// Simple Success Modal with Company Email
+function showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, companyEmail) {
+    // Remove any existing modal
+    const existingModal = document.querySelector('.success-modal-overlay');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Create modal HTML
+    const modalHTML = `
+        <div class="success-modal-overlay" onclick="closeSuccessModal(event)">
+            <div class="success-modal-dialog">
+                <div class="success-modal-content">
+                    <div class="success-modal-header">
+                        <div class="success-icon">
+                            <i class="material-icons">check_circle</i>
+                        </div>
+                        <h2 class="success-modal-title">Employee Created Successfully!</h2>
+                    </div>
+                    
+                    <div class="success-modal-body">
+                        <div class="employee-summary">
+                            <div class="summary-item">
+                                <span class="label">Employee:</span>
+                                <span class="value">${employeeName} (${employeeNumber})</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="label">Department:</span>
+                                <span class="value">${department}</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="label">Company Email:</span>
+                                <span class="value highlight">${companyEmail}</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="label">Default Password:</span>
+                                <span class="value highlight">test123</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="label">Onboarding Tasks:</span>
+                                <span class="value">${taskCount} tasks assigned</span>
+                            </div>
+                        </div>
+                        
+                        <div class="next-steps">
+                            <p><strong>✉️ Welcome email sent</strong> to their personal email with login credentials.</p>
+                            <p>The employee can now log in using their company email and the default password.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="success-modal-footer">
+                        <button class="btn-modal btn-secondary" onclick="closeSuccessModal()">
+                            Close
+                        </button>
+                        <a href="/HR/Employees.aspx" class="btn-modal btn-primary">
+                            View All Employees
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+
+    // Auto-close after 30 seconds
+    setTimeout(() => {
+        closeSuccessModal();
+    }, 30000);
+}
+
+// Legacy success modal function (keep for compatibility)
+function showSuccessModal(employeeNumber, employeeName, department, taskCount) {
+    showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, 'Not specified');
+}
+
+// Close success modal
+function closeSuccessModal(event) {
+    // Only close if clicking overlay or close button
+    if (event && event.target.closest('.success-modal-content') && !event.target.closest('.btn-modal')) {
+        return;
+    }
+
+    const modal = document.querySelector('.success-modal-overlay');
+    if (modal) {
+        modal.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+        }, 200);
+    }
+}
+
+// Add keyboard support
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeSuccessModal();
+    }
+});
+
+/* ===============================================
+   EMAIL PREVIEW FUNCTIONS
+   =============================================== */
+
+// Generate company email preview
+function generateEmailPreview() {
+    const firstName = document.getElementById('txtFirstName')?.value || '';
+    const lastName = document.getElementById('txtLastName')?.value || '';
+
+    if (firstName && lastName) {
+        const cleanLastName = lastName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        const firstInitial = firstName.substring(0, 1).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+
+        return `${cleanLastName}${firstInitial}@tennesseepersonalassistance.org`;
+    }
+
+    return '';
+}
+
+// Show email preview in real-time
+function updateEmailPreview() {
+    const preview = generateEmailPreview();
+    const previewElement = document.getElementById('emailPreview');
+
+    if (previewElement && preview) {
+        previewElement.textContent = preview;
+        previewElement.style.display = 'block';
+    } else if (previewElement) {
+        previewElement.style.display = 'none';
+    }
+}
+
+// Add event listeners when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    const firstNameField = document.getElementById('txtFirstName');
+    const lastNameField = document.getElementById('txtLastName');
+
+    if (firstNameField && lastNameField) {
+        firstNameField.addEventListener('input', updateEmailPreview);
+        lastNameField.addEventListener('input', updateEmailPreview);
+    }
+});
+

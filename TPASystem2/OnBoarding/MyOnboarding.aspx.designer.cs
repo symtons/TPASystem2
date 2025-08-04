@@ -15,6 +15,15 @@ namespace TPASystem2.OnBoarding
     {
 
         /// <summary>
+        /// litEmployeeInitials control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litEmployeeInitials;
+
+        /// <summary>
         /// litEmployeeName control.
         /// </summary>
         /// <remarks>
@@ -51,13 +60,67 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.Literal litHireDate;
 
         /// <summary>
-        /// rptTasks control.
+        /// pnlSystemAccessWarning control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptTasks;
+        protected global::System.Web.UI.WebControls.Panel pnlSystemAccessWarning;
+
+        /// <summary>
+        /// pnlMandatoryTasks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlMandatoryTasks;
+
+        /// <summary>
+        /// litMandatoryProgress control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litMandatoryProgress;
+
+        /// <summary>
+        /// litMandatoryProgressText control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litMandatoryProgressText;
+
+        /// <summary>
+        /// rptMandatoryTasks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptMandatoryTasks;
+
+        /// <summary>
+        /// rptRegularTasks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptRegularTasks;
+
+        /// <summary>
+        /// pnlEmptyRegularTasks control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlEmptyRegularTasks;
 
         /// <summary>
         /// pnlEmptyTasks control.
@@ -67,32 +130,5 @@ namespace TPASystem2.OnBoarding
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel pnlEmptyTasks;
-
-        /// <summary>
-        /// hidCompletedTasks control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hidCompletedTasks;
-
-        /// <summary>
-        /// hidTotalTasks control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hidTotalTasks;
-
-        /// <summary>
-        /// hidCompletionPercentage control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hidCompletionPercentage;
     }
 }

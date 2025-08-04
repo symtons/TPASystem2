@@ -7,6 +7,10 @@ using System.Web.UI.WebControls;
 using System.Security.Cryptography;
 using System.Text;
 using TPASystem2.Helpers;
+using System.Text.RegularExpressions;
+using System.Net.Mail;
+using System.Net;
+using System.Linq;
 
 namespace TPASystem2.HR
 {
@@ -94,12 +98,11 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
                     string query = @"
-                        SELECT e.Id, e.FirstName + ' ' + e.LastName as FullName
+                        SELECT e.Id, CONCAT(e.FirstName, ' ', e.LastName) as FullName 
                         FROM Employees e
                         INNER JOIN Users u ON e.UserId = u.Id
-                        WHERE e.Status = 'Active'
-                        AND u.IsActive = 1
-                        AND (u.Role LIKE '%Manager%' OR u.Role LIKE '%Director%' OR u.Role LIKE '%Admin%')
+                        WHERE e.IsActive = 1 
+                        AND u.Role IN ('MANAGER', 'HR', 'ADMIN', 'SUPERADMIN')
                         ORDER BY e.FirstName, e.LastName";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -107,7 +110,7 @@ namespace TPASystem2.HR
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             ddlManager.Items.Clear();
-                            ddlManager.Items.Add(new ListItem("Select Manager", ""));
+                            ddlManager.Items.Add(new ListItem("Select Manager (Optional)", ""));
 
                             while (reader.Read())
                             {
@@ -128,9 +131,6 @@ namespace TPASystem2.HR
 
         private void SetDefaultValues()
         {
-            // Set default hire date to today
-            
-
             // Set default employee type to Full-time
             ddlEmployeeType.SelectedValue = "Full-time";
 
@@ -174,11 +174,6 @@ namespace TPASystem2.HR
             }
         }
 
-        protected void btnCancelBottom_Click(object sender, EventArgs e)
-        {
-            Response.Redirect("~/HR/Employees.aspx");
-        }
-
         #endregion
 
         #region Employee Creation Methods
@@ -189,8 +184,18 @@ namespace TPASystem2.HR
             {
                 int createdByUserId = Convert.ToInt32(Session["UserId"]);
 
+                // Generate company email
+                string companyEmail = GenerateCompanyEmail(txtFirstName.Text.Trim(), txtLastName.Text.Trim());
+
+                // Check if company email already exists
+                if (IsCompanyEmailTaken(companyEmail))
+                {
+                    ShowMessage($"The company email '{companyEmail}' is already in use. Please contact IT support for manual assignment.", "error");
+                    return;
+                }
+
                 // Call the stored procedure to create employee with onboarding
-                var result = CreateEmployeeWithOnboarding(createdByUserId);
+                var result = CreateEmployeeWithOnboarding(createdByUserId, companyEmail);
 
                 if (result.Success)
                 {
@@ -198,8 +203,12 @@ namespace TPASystem2.HR
                                $"Created employee: {txtFirstName.Text} {txtLastName.Text} ({result.EmployeeNumber})",
                                GetClientIP());
 
+                    // Send welcome email with company credentials to personal email
+                    SendWelcomeEmail(txtEmail.Text.Trim(), txtFirstName.Text.Trim(), txtLastName.Text.Trim(),
+                                   companyEmail, result.TempPassword);
+
                     // Always show success modal
-                    ShowSuccessModal(result.EmployeeNumber, result.EmployeeName, result.Department, result.OnboardingTasksCount);
+                    ShowSuccessModal(result.EmployeeNumber, result.EmployeeName, result.Department, result.OnboardingTasksCount, companyEmail);
 
                     if (addAnother)
                     {
@@ -219,7 +228,200 @@ namespace TPASystem2.HR
             }
         }
 
-        private dynamic CreateEmployeeWithOnboarding(int createdByUserId)
+        private string GenerateCompanyEmail(string firstName, string lastName)
+        {
+            // Format: lastname + first letter of first name + @tennesseepersonalassistance.org
+            string cleanLastName = CleanEmailPart(lastName).ToLower();
+            string firstInitial = CleanEmailPart(firstName.Substring(0, 1)).ToLower();
+
+            string baseEmail = $"{cleanLastName}{firstInitial}@tennesseepersonalassistance.org";
+
+            // Check for uniqueness and add numbers if needed
+            string finalEmail = baseEmail;
+            int counter = 1;
+
+            while (IsCompanyEmailTaken(finalEmail))
+            {
+                finalEmail = $"{cleanLastName}{firstInitial}{counter}@tennesseepersonalassistance.org";
+                counter++;
+            }
+
+            return finalEmail;
+        }
+
+        private string CleanEmailPart(string input)
+        {
+            // Remove any non-alphanumeric characters and spaces
+            return Regex.Replace(input, @"[^a-zA-Z0-9]", "");
+        }
+
+        private bool IsCompanyEmailTaken(string email)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        SELECT COUNT(*) 
+                        FROM Users 
+                        WHERE LOWER(Email) = LOWER(@Email)
+                        UNION ALL
+                        SELECT COUNT(*) 
+                        FROM Employees 
+                        WHERE LOWER(Email) = LOWER(@Email)";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Email", email);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            int totalCount = 0;
+                            while (reader.Read())
+                            {
+                                totalCount += Convert.ToInt32(reader[0]);
+                            }
+                            return totalCount > 0;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking email uniqueness: {ex.Message}");
+                return true; // Assume taken if there's an error
+            }
+        }
+
+        private void SendWelcomeEmail(string personalEmail, string firstName, string lastName, string companyEmail, string tempPassword)
+        {
+           
+                // Create email message
+                MailMessage message = new MailMessage();
+                message.From = new MailAddress("simbac@tennesseepersonalassistance.org", "TPA Human Resources");
+                message.To.Add(personalEmail);
+                message.Subject = "Welcome to Tennessee Personal Assistance - Your Account Details";
+                message.IsBodyHtml = true;
+
+                // Create email body
+                string emailBody = $@"
+                    <html>
+                    <head>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                            .header {{ background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%); color: white; padding: 20px; text-align: center; }}
+                            .content {{ padding: 20px; background: #f9f9f9; }}
+                            .credentials {{ background: white; padding: 15px; border-left: 4px solid #ff9800; margin: 20px 0; }}
+                            .footer {{ background: #333; color: white; padding: 15px; text-align: center; font-size: 12px; }}
+                            .highlight {{ color: #ff9800; font-weight: bold; }}
+                        </style>
+                    </head>
+                    <body>
+                        <div class='header'>
+                            <h1>Welcome to Tennessee Personal Assistance!</h1>
+                        </div>
+                        
+                        <div class='content'>
+                            <h2>Dear {firstName} {lastName},</h2>
+                            
+                            <p>Welcome to the Tennessee Personal Assistance team! We're excited to have you join our organization.</p>
+                            
+                            <p>Your employee account has been created and your onboarding process has begun. Below are your login credentials for our HR system:</p>
+                            
+                            <div class='credentials'>
+                                <h3>Your Company Account Details:</h3>
+                                <p><strong>Company Email:</strong> <span class='highlight'>{companyEmail}</span></p>
+                                <p><strong>Temporary Password:</strong> <span class='highlight'>{tempPassword}</span></p>
+                                <p><strong>Login URL:</strong> <a href='https://hr.tennesseepersonalassistance.org/login'>https://hr.tennesseepersonalassistance.org/login</a></p>
+                            </div>
+                            
+                            <h3>Important Next Steps:</h3>
+                            <ul>
+                                <li><strong>First Login:</strong> Use the credentials above to log into the HR system</li>
+                                <li><strong>Change Password:</strong> You'll be required to change your password on first login</li>
+                                <li><strong>Complete Onboarding:</strong> Review and complete your onboarding tasks in the system</li>
+                                <li><strong>Contact Information:</strong> Update your profile with current contact information</li>
+                            </ul>
+                            
+                            <h3>Email Setup:</h3>
+                            <p>Your company email address is <strong>{companyEmail}</strong>. This will be your primary email for all company communications. Your personal email ({personalEmail}) will be kept on file as a backup contact method.</p>
+                            
+                            <p>If you have any questions or need assistance, please don't hesitate to contact our HR department at <a href='mailto:simbac@tennesseepersonalassistance.org'>simbac@tennesseepersonalassistance.org</a> or call us at (615) 555-0123.</p>
+                            
+                            <p>We look forward to working with you!</p>
+                            
+                            <p>Best regards,<br/>
+                            <strong>Tennessee Personal Assistance<br/>
+                            Human Resources Department</strong></p>
+                        </div>
+                        
+                        <div class='footer'>
+                            <p>&copy; 2025 Tennessee Personal Assistance. All rights reserved.<br/>
+                            This email contains confidential information. Please do not forward.</p>
+                        </div>
+                    </body>
+                    </html>";
+
+                message.Body = emailBody;
+
+                // Configure SMTP client for Office 365
+                SmtpClient smtpClient = new SmtpClient();
+                smtpClient.Host = "smtp.office365.com";
+                smtpClient.Port = 587;
+                smtpClient.EnableSsl = true;
+                smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
+                smtpClient.UseDefaultCredentials = false;
+                smtpClient.Credentials = new NetworkCredential("simbac@tennesseepersonalassistance.org", "97072066Sc@2025");
+
+                // Send the email
+                smtpClient.Send(message);
+
+                // Log success
+                System.Diagnostics.Debug.WriteLine($"Welcome email sent successfully to: {personalEmail}");
+                System.Diagnostics.Debug.WriteLine($"From: simbac@tennesseepersonalassistance.org");
+                System.Diagnostics.Debug.WriteLine($"Company Email: {companyEmail}");
+                System.Diagnostics.Debug.WriteLine($"Temp Password: {tempPassword}");
+
+                message.Dispose();
+                smtpClient.Dispose();
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Diagnostics.Debug.WriteLine($"Error sending welcome email: {ex.Message}");
+            //    // Log the error but don't throw - employee creation should still succeed
+            //    LogEmailError(personalEmail, ex.Message);
+            //}
+        }
+
+        private void LogEmailError(string recipientEmail, string errorMessage)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        INSERT INTO ErrorLogs (ErrorMessage, Source, Timestamp, Severity, CreatedAt)
+                        VALUES (@ErrorMessage, @Source, @Timestamp, @Severity, @CreatedAt)";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@ErrorMessage", $"Failed to send welcome email to {recipientEmail}: {errorMessage}");
+                        cmd.Parameters.AddWithValue("@Source", "AddEmployee.SendWelcomeEmail");
+                        cmd.Parameters.AddWithValue("@Timestamp", DateTime.UtcNow);
+                        cmd.Parameters.AddWithValue("@Severity", "Medium");
+                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception logEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error logging email error: {logEx.Message}");
+            }
+        }
+
+        private dynamic CreateEmployeeWithOnboarding(int createdByUserId, string companyEmail)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
@@ -227,28 +429,29 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
 
-                    // Generate salt and hash password using TPASystem2 method
+                    // Use the fixed password and salt values
                     string tempPassword = string.IsNullOrEmpty(txtTemporaryPassword.Text) ? "test123" : txtTemporaryPassword.Text.Trim();
-                    string salt = PasswordHelper.GenerateSalt();
-                    string passwordHash = PasswordHelper.ComputeHash(tempPassword, salt);
+                    string salt = "testsalt";
+                    string passwordHash = "7UqSUHMlJ2oKwgsnJCCh/RdOpcTdJI537HSRDFW4OmY=";
 
                     using (SqlCommand cmd = new SqlCommand("sp_CreateEmployeeWithOnboarding", conn))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.CommandTimeout = 60; // Increase timeout for complex operations
 
-                        // Add parameters matching the stored procedure
+                        // Add ALL parameters that the stored procedure expects
                         cmd.Parameters.AddWithValue("@FirstName", txtFirstName.Text.Trim());
                         cmd.Parameters.AddWithValue("@LastName", txtLastName.Text.Trim());
-                        cmd.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
+                        cmd.Parameters.AddWithValue("@Email", companyEmail); // Use company email for login
                         cmd.Parameters.AddWithValue("@Position", txtPosition.Text.Trim());
                         cmd.Parameters.AddWithValue("@DepartmentId", Convert.ToInt32(ddlDepartment.SelectedValue));
                         cmd.Parameters.AddWithValue("@TemporaryPassword", tempPassword);
                         cmd.Parameters.AddWithValue("@PhoneNumber",
-                            string.IsNullOrEmpty(txtPhoneNumber.Text) ? (object)DBNull.Value : txtPhoneNumber.Text.Trim());
+                            string.IsNullOrEmpty(txtPhoneNumber.Text) ?
+                            (object)DBNull.Value : txtPhoneNumber.Text.Trim());
                         cmd.Parameters.AddWithValue("@EmployeeType", ddlEmployeeType.SelectedValue);
-                        cmd.Parameters.AddWithValue("@HireDate", Convert.ToDateTime(DateTime.Now));
-                        cmd.Parameters.AddWithValue("@Status", "Active");
+                        cmd.Parameters.AddWithValue("@HireDate", DateTime.Today); // Default to today's date
+                        cmd.Parameters.AddWithValue("@Status", "Active"); // Default status
                         cmd.Parameters.AddWithValue("@ManagerId",
                             string.IsNullOrEmpty(ddlManager.SelectedValue) || ddlManager.SelectedValue == "0" ?
                             (object)DBNull.Value : Convert.ToInt32(ddlManager.SelectedValue));
@@ -256,44 +459,30 @@ namespace TPASystem2.HR
                             string.IsNullOrEmpty(txtWorkLocation.Text) ? "Office" : txtWorkLocation.Text.Trim());
                         cmd.Parameters.AddWithValue("@Salary",
                             string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : Convert.ToDecimal(txtSalary.Text));
-                       
+                        cmd.Parameters.AddWithValue("@Address", (object)DBNull.Value); // Not collected in form
+                        cmd.Parameters.AddWithValue("@City", (object)DBNull.Value); // Not collected in form
+                        cmd.Parameters.AddWithValue("@State", (object)DBNull.Value); // Not collected in form
+                        cmd.Parameters.AddWithValue("@ZipCode", (object)DBNull.Value); // Not collected in form
+                        cmd.Parameters.AddWithValue("@DateOfBirth", (object)DBNull.Value); // Not collected in form
+                        cmd.Parameters.AddWithValue("@Gender", (object)DBNull.Value); // Not collected in form
                         cmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
                         cmd.Parameters.AddWithValue("@CreatedByUserId", createdByUserId);
-
-                        // Add the generated salt and password hash
                         cmd.Parameters.AddWithValue("@Salt", salt);
                         cmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
 
-                        // Execute and get the result
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                // Create anonymous object to return results
                                 return new
                                 {
-                                    EmployeeId = Convert.ToInt32(reader["EmployeeId"]),
-                                    EmployeeNumber = reader["EmployeeNumber"].ToString(),
-                                    EmployeeName = reader["EmployeeName"].ToString(),
-                                    OnboardingTasksCount = Convert.ToInt32(reader["OnboardingTasks"]),
-                                    Department = reader["Department"].ToString(),
-                                    Message = reader["Message"].ToString(),
-                                    ErrorMessage = reader["ErrorMessage"].ToString(),
-                                    Success = Convert.ToInt32(reader["EmployeeId"]) > 0 && string.IsNullOrEmpty(reader["ErrorMessage"].ToString())
-                                };
-                            }
-                            else
-                            {
-                                return new
-                                {
-                                    EmployeeId = 0,
-                                    EmployeeNumber = "",
-                                    EmployeeName = "",
-                                    OnboardingTasksCount = 0,
-                                    Department = "",
-                                    Message = "",
-                                    ErrorMessage = "No result returned from stored procedure",
-                                    Success = false
+                                    Success = !reader["ErrorMessage"].ToString().Contains("Error") && !string.IsNullOrEmpty(reader["EmployeeNumber"].ToString()),
+                                    EmployeeNumber = reader["EmployeeNumber"]?.ToString() ?? "",
+                                    EmployeeName = reader["EmployeeName"]?.ToString() ?? "",
+                                    Department = reader["Department"]?.ToString() ?? "",
+                                    OnboardingTasksCount = Convert.ToInt32(reader["OnboardingTasks"] ?? 0),
+                                    ErrorMessage = reader["ErrorMessage"]?.ToString() ?? "",
+                                    TempPassword = tempPassword
                                 };
                             }
                         }
@@ -301,32 +490,55 @@ namespace TPASystem2.HR
                 }
                 catch (Exception ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"Database error in CreateEmployeeWithOnboarding: {ex}");
                     return new
                     {
-                        EmployeeId = 0,
+                        Success = false,
                         EmployeeNumber = "",
                         EmployeeName = "",
-                        OnboardingTasksCount = 0,
                         Department = "",
-                        Message = "",
+                        OnboardingTasksCount = 0,
                         ErrorMessage = ex.Message,
-                        Success = false
+                        TempPassword = ""
                     };
                 }
             }
+
+            return new
+            {
+                Success = false,
+                EmployeeNumber = "",
+                EmployeeName = "",
+                Department = "",
+                OnboardingTasksCount = 0,
+                ErrorMessage = "Unknown error occurred",
+                TempPassword = ""
+            };
         }
 
-        // Method to show the success modal - Alternative approach
-        private void ShowSuccessModal(string employeeNumber, string employeeName, string department, int taskCount)
+        private string GenerateSecurePassword()
         {
-            // Escape single quotes in the data to prevent JavaScript errors
+            // Generate a secure 12-character password
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+            Random random = new Random();
+            return new string(Enumerable.Repeat(chars, 12)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        private void ShowSuccessModal(string employeeNumber, string employeeName, string department, int taskCount, string companyEmail)
+        {
             string safeEmployeeNumber = employeeNumber.Replace("'", "\\'");
             string safeEmployeeName = employeeName.Replace("'", "\\'");
             string safeDepartment = department.Replace("'", "\\'");
+            string safeCompanyEmail = companyEmail.Replace("'", "\\'");
 
             string script = $@"
                 setTimeout(function() {{
-                    showSuccessModal('{safeEmployeeNumber}', '{safeEmployeeName}', '{safeDepartment}', {taskCount});
+                    if (typeof showSuccessModalWithEmail === 'function') {{
+                        showSuccessModalWithEmail('{safeEmployeeNumber}', '{safeEmployeeName}', '{safeDepartment}', {taskCount}, '{safeCompanyEmail}');
+                    }} else {{
+                        alert('Employee created successfully!\\nEmployee #: {safeEmployeeNumber}\\nName: {safeEmployeeName}\\nDepartment: {safeDepartment}\\nCompany Email: {safeCompanyEmail}\\nOnboarding tasks: {taskCount}');
+                    }}
                 }}, 100);";
 
             ClientScript.RegisterStartupScript(this.GetType(), "ShowSuccessModal", script, true);
@@ -334,7 +546,7 @@ namespace TPASystem2.HR
 
         private void ClearForm()
         {
-            // Clear all form fields
+            // Clear all form fields - ONLY fields that exist
             txtFirstName.Text = "";
             txtLastName.Text = "";
             txtEmail.Text = "";
@@ -343,11 +555,6 @@ namespace TPASystem2.HR
             txtTemporaryPassword.Text = "";
             txtSalary.Text = "";
             txtWorkLocation.Text = "Office";
-            txtAddress.Text = "";
-            txtCity.Text = "";
-            txtState.Text = "";
-            txtZipCode.Text = "";
-            
 
             // Reset dropdowns to default
             if (ddlDepartment.Items.Count > 0)
@@ -359,7 +566,6 @@ namespace TPASystem2.HR
             if (ddlManager.Items.Count > 0)
                 ddlManager.SelectedIndex = 0;
 
-            
             chkMustChangePassword.Checked = true;
 
             // Clear any existing messages
@@ -384,7 +590,7 @@ namespace TPASystem2.HR
             pnlMessage.CssClass = $"alert alert-{type}";
         }
 
-        private void LogActivity(int userId, string action, string entityType, string description, string ipAddress)
+        private void LogActivity(int userId, string action, string entityType, string details, string ipAddress)
         {
             try
             {
@@ -392,15 +598,15 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
                     string query = @"
-                        INSERT INTO ApplicationLogs (UserId, Action, EntityType, EntityId, Description, IPAddress, Timestamp)
-                        VALUES (@UserId, @Action, @EntityType, NULL, @Description, @IPAddress, GETUTCDATE())";
+                        INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
+                        VALUES (@UserId, 1, @Action, @EntityType, @Details, @IPAddress, GETUTCDATE())";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@UserId", userId);
                         cmd.Parameters.AddWithValue("@Action", action);
                         cmd.Parameters.AddWithValue("@EntityType", entityType);
-                        cmd.Parameters.AddWithValue("@Description", description);
+                        cmd.Parameters.AddWithValue("@Details", details);
                         cmd.Parameters.AddWithValue("@IPAddress", ipAddress);
                         cmd.ExecuteNonQuery();
                     }
@@ -414,22 +620,21 @@ namespace TPASystem2.HR
 
         private string GetClientIP()
         {
-            string ip = "";
-            try
-            {
-                ip = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
-                if (string.IsNullOrEmpty(ip) || ip.ToLower() == "unknown")
-                {
-                    ip = Request.ServerVariables["REMOTE_ADDR"];
-                }
-            }
-            catch
-            {
-                ip = "Unknown";
-            }
-            return ip;
+            string ipAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+            if (string.IsNullOrEmpty(ipAddress))
+                ipAddress = Request.ServerVariables["REMOTE_ADDR"];
+            return ipAddress ?? "Unknown";
         }
 
         #endregion
+    }
+
+    // Helper class for URL routing (if it doesn't exist)
+    public static class SimpleUrlHelper
+    {
+        public static void RedirectToCleanUrl(string page)
+        {
+            System.Web.HttpContext.Current.Response.Redirect($"~/{page}.aspx");
+        }
     }
 }

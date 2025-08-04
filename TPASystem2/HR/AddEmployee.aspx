@@ -259,6 +259,56 @@
             color: #475569;
         }
 
+        /* Required field indicator */
+        .required::after {
+            content: " *";
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        /* Checkbox styling */
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .form-text {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        /* Email Preview Styles */
+        .email-preview-container {
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .email-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #1e293b;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .email-preview:empty:before {
+            content: "Enter first and last name to see preview";
+            color: #94a3b8;
+            font-style: italic;
+            font-weight: normal;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .welcome-content {
@@ -290,32 +340,6 @@
                 width: 100%;
                 justify-content: center;
             }
-        }
-
-        /* Required field indicator */
-        .required::after {
-            content: " *";
-            color: #ef4444;
-            font-weight: bold;
-        }
-
-        /* Checkbox styling */
-        .form-check {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-        }
-
-        .form-check input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-        }
-
-        .form-text {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 0.25rem;
         }
 
         /* Validation summary styling */
@@ -390,10 +414,6 @@
                                                 Display="Dynamic" CssClass="text-danger" />
                 </div>
             </div>
-            
-            
-            
-            
         </div>
         
         <!-- Contact Information Section -->
@@ -405,12 +425,13 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label required">Email Address</label>
+                    <label class="form-label required">Personal Email Address</label>
                     <asp:TextBox ID="txtEmail" runat="server" CssClass="form-control" 
-                                 TextMode="Email" placeholder="employee@company.com" />
+                                 TextMode="Email" placeholder="personal@email.com" />
+                    <small class="form-text text-muted">This will be used as backup email. Company email will be auto-generated.</small>
                     <asp:RequiredFieldValidator ID="rfvEmail" runat="server" 
                                                 ControlToValidate="txtEmail" 
-                                                ErrorMessage="Email address is required." 
+                                                ErrorMessage="Personal email address is required." 
                                                 Display="Dynamic" CssClass="text-danger" />
                     <asp:RegularExpressionValidator ID="revEmail" runat="server" 
                                                     ControlToValidate="txtEmail" 
@@ -420,15 +441,27 @@
                 </div>
                 
                 <div class="form-group">
+                    <label class="form-label">Company Email (Auto-Generated)</label>
+                    <div class="email-preview-container">
+                        <div id="emailPreview" class="email-preview">
+                            Enter first and last name to see preview
+                        </div>
+                        <small class="form-text text-muted">Format: lastname + first initial + @tennesseepersonalassistance.org</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
                     <label class="form-label">Phone Number</label>
                     <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-control" 
                                  placeholder="(555) 123-4567" MaxLength="20" />
                 </div>
+                
+                <div class="form-group">
+                    <!-- Empty for layout balance -->
+                </div>
             </div>
-            
-           
-            
-           
         </div>
         
         <!-- Employment Information Section -->
@@ -437,8 +470,6 @@
                 <i class="material-icons">work</i>
                 Employment Information
             </h3>
-            
-            
             
             <div class="form-row">
                 <div class="form-group">
@@ -499,10 +530,6 @@
                                  placeholder="Office location" MaxLength="100" />
                 </div>
             </div>
-            
-            
-            
-            
         </div>
         
         <!-- Security Information Section -->
@@ -538,7 +565,6 @@
                 Fields marked with * are required
             </div>
             <div class="form-footer-right">
-                
                 <asp:Button ID="btnSaveAndNew" runat="server" Text="Save & Add Another" 
                             CssClass="btn btn-secondary" OnClick="btnSaveAndNew_Click" />
                 <asp:Button ID="btnSaveEmployee" runat="server" Text="Create Employee" 
@@ -554,5 +580,55 @@
                            HeaderText="Please correct the following errors:" 
                            CssClass="validation-summary" 
                            DisplayMode="BulletList" />
+
+    <!-- JavaScript for Email Preview -->
+    <script>
+        // Generate company email preview
+        function generateEmailPreview() {
+            const firstName = document.getElementById('<%= txtFirstName.ClientID %>').value || '';
+            const lastName = document.getElementById('<%= txtLastName.ClientID %>').value || '';
+            
+            if (firstName && lastName) {
+                const cleanLastName = lastName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                const firstInitial = firstName.substring(0, 1).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                
+                return cleanLastName + firstInitial + '@tennesseepersonalassistance.org';
+            }
+            
+            return '';
+        }
+
+        // Update email preview in real-time
+        function updateEmailPreview() {
+            const preview = generateEmailPreview();
+            const previewElement = document.getElementById('emailPreview');
+            
+            if (previewElement) {
+                if (preview) {
+                    previewElement.textContent = preview;
+                    previewElement.style.color = '#1e293b';
+                    previewElement.style.fontWeight = '600';
+                } else {
+                    previewElement.textContent = '';
+                    previewElement.style.color = '#94a3b8';
+                    previewElement.style.fontWeight = 'normal';
+                }
+            }
+        }
+
+        // Add event listeners when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstNameField = document.getElementById('<%= txtFirstName.ClientID %>');
+            const lastNameField = document.getElementById('<%= txtLastName.ClientID %>');
+
+            if (firstNameField && lastNameField) {
+                firstNameField.addEventListener('input', updateEmailPreview);
+                lastNameField.addEventListener('input', updateEmailPreview);
+
+                // Initial preview update
+                updateEmailPreview();
+            }
+        });
+    </script>
 
 </asp:Content>

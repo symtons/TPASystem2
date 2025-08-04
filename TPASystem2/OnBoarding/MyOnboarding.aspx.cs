@@ -29,8 +29,10 @@ namespace TPASystem2.OnBoarding
 
                 InitializePage();
                 LoadEmployeeInfo();
-                LoadOnboardingTasks();
+                LoadMandatoryTasks();
+                LoadRegularTasks();
                 UpdateProgressData();
+                CheckSystemAccess();
             }
         }
 
@@ -38,10 +40,15 @@ namespace TPASystem2.OnBoarding
         {
             try
             {
-                if (e.CommandName.StartsWith("COMPLETE_TASK:"))
+                if (e.CommandName.StartsWith("COMPLETE_MANDATORY:"))
                 {
                     int taskId = Convert.ToInt32(e.CommandName.Split(':')[1]);
-                    CompleteTask(taskId);
+                    CompleteMandatoryTask(taskId);
+                }
+                else if (e.CommandName.StartsWith("COMPLETE_TASK:"))
+                {
+                    int taskId = Convert.ToInt32(e.CommandName.Split(':')[1]);
+                    CompleteRegularTask(taskId);
                 }
             }
             catch (Exception ex)
@@ -111,10 +118,19 @@ namespace TPASystem2.OnBoarding
                         {
                             if (reader.Read())
                             {
-                                litEmployeeName.Text = reader["FirstName"].ToString() + " " + reader["LastName"].ToString();
+                                string firstName = reader["FirstName"].ToString();
+                                string lastName = reader["LastName"].ToString();
+
+                                litEmployeeName.Text = firstName + " " + lastName;
                                 litEmployeeNumber.Text = reader["EmployeeNumber"].ToString();
                                 litDepartment.Text = reader["DepartmentName"]?.ToString() ?? "Not Assigned";
                                 litHireDate.Text = Convert.ToDateTime(reader["HireDate"]).ToString("MMM dd, yyyy");
+
+                                // Set employee initials
+                                string initials = "";
+                                if (!string.IsNullOrEmpty(firstName)) initials += firstName[0];
+                                if (!string.IsNullOrEmpty(lastName)) initials += lastName[0];
+                                litEmployeeInitials.Text = initials.ToUpper();
                             }
                         }
                     }
@@ -127,33 +143,140 @@ namespace TPASystem2.OnBoarding
             }
         }
 
-        private void LoadOnboardingTasks()
+        private void LoadMandatoryTasks()
         {
             try
             {
-                var tasks = GetEmployeeTasks();
+                var mandatoryTasks = GetMandatoryTasks();
 
-                if (tasks.Count == 0)
+                if (mandatoryTasks.Count == 0)
                 {
-                    pnlEmptyTasks.Visible = true;
-                    rptTasks.Visible = false;
+                    pnlMandatoryTasks.Visible = false;
                 }
                 else
                 {
-                    rptTasks.DataSource = tasks;
-                    rptTasks.DataBind();
-                    pnlEmptyTasks.Visible = false;
-                    rptTasks.Visible = true;
+                    rptMandatoryTasks.DataSource = mandatoryTasks;
+                    rptMandatoryTasks.DataBind();
+                    pnlMandatoryTasks.Visible = true;
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading onboarding tasks: {ex.Message}");
-                ShowNotification("Error loading onboarding tasks.", "error");
+                System.Diagnostics.Debug.WriteLine($"Error loading mandatory tasks: {ex.Message}");
+                ShowNotification("Error loading mandatory tasks.", "error");
             }
         }
 
-        private List<OnboardingTaskInfo> GetEmployeeTasks()
+        private void LoadRegularTasks()
+        {
+            try
+            {
+                var regularTasks = GetRegularTasks();
+
+                if (regularTasks.Count == 0)
+                {
+                    pnlEmptyRegularTasks.Visible = true;
+                    rptRegularTasks.Visible = false;
+                }
+                else
+                {
+                    rptRegularTasks.DataSource = regularTasks;
+                    rptRegularTasks.DataBind();
+                    pnlEmptyRegularTasks.Visible = false;
+                    rptRegularTasks.Visible = true;
+                }
+
+                // Check if all tasks are completed
+                var allTasks = GetAllTasks();
+                if (allTasks.Count == 0 || allTasks.All(t => t.Status == "COMPLETED"))
+                {
+                    pnlEmptyTasks.Visible = true;
+                    pnlMandatoryTasks.Visible = false;
+                    pnlEmptyRegularTasks.Visible = false;
+                    rptRegularTasks.Visible = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading regular tasks: {ex.Message}");
+                ShowNotification("Error loading regular tasks.", "error");
+            }
+        }
+
+        private void UpdateProgressData()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Get mandatory task progress
+                    using (SqlCommand cmd = new SqlCommand("sp_GetMandatoryTasksStatus", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            // Skip the first result set (task details)
+                            reader.NextResult();
+
+                            // Read the summary statistics
+                            if (reader.Read())
+                            {
+                                int totalMandatory = Convert.ToInt32(reader["TotalMandatoryTasks"]);
+                                int completedMandatory = Convert.ToInt32(reader["CompletedMandatoryTasks"]);
+                                decimal percentage = Convert.ToDecimal(reader["MandatoryCompletionPercentage"]);
+
+                                litMandatoryProgress.Text = $"{percentage:F0}%";
+                                litMandatoryProgressText.Text = $"{completedMandatory} of {totalMandatory} mandatory tasks completed";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating progress data: {ex.Message}");
+            }
+        }
+
+        private void CheckSystemAccess()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    using (SqlCommand cmd = new SqlCommand("sp_GetEmployeeSystemAccessStatus", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string accessStatus = reader["AccessStatus"].ToString();
+                                pnlSystemAccessWarning.Visible = accessStatus == "RESTRICTED_ACCESS";
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking system access: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Data Retrieval Methods
+
+        private List<OnboardingTaskInfo> GetMandatoryTasks()
         {
             var tasks = new List<OnboardingTaskInfo>();
 
@@ -177,25 +300,19 @@ namespace TPASystem2.OnBoarding
                             ot.CreatedDate,
                             ot.CompletedDate,
                             ot.Notes,
-                            ot.AssignedToRole,
-                            ISNULL(ot.CanEmployeeComplete, 0) AS CanEmployeeComplete,
-                            ISNULL(ot.BlocksSystemAccess, 0) AS BlocksSystemAccess,
+                            ISNULL(ot.AssignedToRole, 'HR') as AssignedToRole,
+                            ISNULL(ot.CanEmployeeComplete, 1) as CanEmployeeComplete,
+                            ISNULL(ot.BlocksSystemAccess, 0) as BlocksSystemAccess,
+                            ot.SortOrder,
                             CASE 
                                 WHEN ot.Status != 'COMPLETED' AND ot.DueDate < GETUTCDATE() THEN 1
                                 ELSE 0
                             END AS IsOverdue
                         FROM [dbo].[OnboardingTasks] ot
-                        WHERE ot.EmployeeId = @EmployeeId
-                          AND ot.IsTemplate = 0
-                        ORDER BY 
-                            CASE ot.Priority
-                                WHEN 'HIGH' THEN 1
-                                WHEN 'MEDIUM' THEN 2
-                                WHEN 'LOW' THEN 3
-                                ELSE 4
-                            END,
-                            ot.DueDate,
-                            ot.CreatedDate";
+                        WHERE ot.EmployeeId = @EmployeeId 
+                            AND ot.IsMandatory = 1
+                            AND ot.IsTemplate = 0
+                        ORDER BY ot.SortOrder, ot.DueDate";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -213,13 +330,13 @@ namespace TPASystem2.OnBoarding
                                     Category = reader["Category"].ToString(),
                                     Status = reader["Status"].ToString(),
                                     Priority = reader["Priority"].ToString(),
-                                    DueDate = Convert.ToDateTime(reader["DueDate"]),
+                                    DueDate = reader["DueDate"] != DBNull.Value ? Convert.ToDateTime(reader["DueDate"]) : DateTime.MinValue,
                                     EstimatedTime = reader["EstimatedTime"].ToString(),
-                                    Instructions = reader["Instructions"]?.ToString(),
+                                    Instructions = reader["Instructions"].ToString(),
                                     CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
-                                    CompletedDate = reader["CompletedDate"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(reader["CompletedDate"]),
-                                    Notes = reader["Notes"]?.ToString(),
-                                    AssignedToRole = reader["AssignedToRole"]?.ToString(),
+                                    CompletedDate = reader["CompletedDate"] != DBNull.Value ? Convert.ToDateTime(reader["CompletedDate"]) : (DateTime?)null,
+                                    Notes = reader["Notes"].ToString(),
+                                    AssignedToRole = reader["AssignedToRole"].ToString(),
                                     CanEmployeeComplete = Convert.ToBoolean(reader["CanEmployeeComplete"]),
                                     BlocksSystemAccess = Convert.ToBoolean(reader["BlocksSystemAccess"]),
                                     IsOverdue = Convert.ToBoolean(reader["IsOverdue"])
@@ -231,14 +348,16 @@ namespace TPASystem2.OnBoarding
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in GetEmployeeTasks: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Error getting mandatory tasks: {ex.Message}");
             }
 
             return tasks;
         }
 
-        private void UpdateProgressData()
+        private List<OnboardingTaskInfo> GetRegularTasks()
         {
+            var tasks = new List<OnboardingTaskInfo>();
+
             try
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
@@ -247,11 +366,31 @@ namespace TPASystem2.OnBoarding
 
                     string query = @"
                         SELECT 
-                            TotalTasks,
-                            CompletedTasks,
-                            CompletionPercentage
-                        FROM [dbo].[OnboardingProgress]
-                        WHERE EmployeeId = @EmployeeId";
+                            ot.Id AS TaskId,
+                            ot.Title,
+                            ot.Description,
+                            ot.Category,
+                            ot.Status,
+                            ot.Priority,
+                            ot.DueDate,
+                            ot.EstimatedTime,
+                            ot.Instructions,
+                            ot.CreatedDate,
+                            ot.CompletedDate,
+                            ot.Notes,
+                            ISNULL(ot.AssignedToRole, 'HR') as AssignedToRole,
+                            ISNULL(ot.CanEmployeeComplete, 1) as CanEmployeeComplete,
+                            ISNULL(ot.BlocksSystemAccess, 0) as BlocksSystemAccess,
+                            ot.SortOrder,
+                            CASE 
+                                WHEN ot.Status != 'COMPLETED' AND ot.DueDate < GETUTCDATE() THEN 1
+                                ELSE 0
+                            END AS IsOverdue
+                        FROM [dbo].[OnboardingTasks] ot
+                        WHERE ot.EmployeeId = @EmployeeId 
+                            AND ISNULL(ot.IsMandatory, 0) = 0
+                            AND ot.IsTemplate = 0
+                        ORDER BY ot.SortOrder, ot.DueDate";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -259,126 +398,44 @@ namespace TPASystem2.OnBoarding
 
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            if (reader.Read())
+                            while (reader.Read())
                             {
-                                hidTotalTasks.Value = reader["TotalTasks"].ToString();
-                                hidCompletedTasks.Value = reader["CompletedTasks"].ToString();
-                                hidCompletionPercentage.Value = reader["CompletionPercentage"].ToString();
-                            }
-                            else
-                            {
-                                // Initialize progress if it doesn't exist
-                                InitializeProgress();
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error updating progress data: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Task Management Methods
-
-        private void CompleteTask(int taskId)
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    using (SqlTransaction transaction = conn.BeginTransaction())
-                    {
-                        try
-                        {
-                            // Update task status
-                            string updateTaskQuery = @"
-                                UPDATE [dbo].[OnboardingTasks] 
-                                SET Status = 'COMPLETED',
-                                    CompletedDate = GETUTCDATE(),
-                                    CompletedByUserId = @UserId,
-                                    LastUpdated = GETUTCDATE()
-                                WHERE Id = @TaskId 
-                                  AND EmployeeId = @EmployeeId 
-                                  AND CanEmployeeComplete = 1 
-                                  AND Status != 'COMPLETED'";
-
-                            using (SqlCommand cmd = new SqlCommand(updateTaskQuery, conn, transaction))
-                            {
-                                cmd.Parameters.AddWithValue("@TaskId", taskId);
-                                cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                                cmd.Parameters.AddWithValue("@UserId", Session["UserId"]);
-
-                                int rowsAffected = cmd.ExecuteNonQuery();
-
-                                if (rowsAffected == 0)
+                                tasks.Add(new OnboardingTaskInfo
                                 {
-                                    throw new Exception("Task not found or cannot be completed by employee.");
-                                }
+                                    TaskId = Convert.ToInt32(reader["TaskId"]),
+                                    Title = reader["Title"].ToString(),
+                                    Description = reader["Description"].ToString(),
+                                    Category = reader["Category"].ToString(),
+                                    Status = reader["Status"].ToString(),
+                                    Priority = reader["Priority"].ToString(),
+                                    DueDate = reader["DueDate"] != DBNull.Value ? Convert.ToDateTime(reader["DueDate"]) : DateTime.MinValue,
+                                    EstimatedTime = reader["EstimatedTime"].ToString(),
+                                    Instructions = reader["Instructions"].ToString(),
+                                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"]),
+                                    CompletedDate = reader["CompletedDate"] != DBNull.Value ? Convert.ToDateTime(reader["CompletedDate"]) : (DateTime?)null,
+                                    Notes = reader["Notes"].ToString(),
+                                    AssignedToRole = reader["AssignedToRole"].ToString(),
+                                    CanEmployeeComplete = Convert.ToBoolean(reader["CanEmployeeComplete"]),
+                                    BlocksSystemAccess = Convert.ToBoolean(reader["BlocksSystemAccess"]),
+                                    IsOverdue = Convert.ToBoolean(reader["IsOverdue"])
+                                });
                             }
-
-                            // Update progress
-                            UpdateOnboardingProgress(conn, transaction);
-
-                            transaction.Commit();
-
-                            // Show success and refresh page
-                            ClientScript.RegisterStartupScript(this.GetType(), "showSuccess", "showModal();", true);
-                        }
-                        catch (Exception)
-                        {
-                            transaction.Rollback();
-                            throw;
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error completing task: {ex.Message}");
-                ShowNotification($"Error completing task: {ex.Message}", "error");
+                System.Diagnostics.Debug.WriteLine($"Error getting regular tasks: {ex.Message}");
             }
+
+            return tasks;
         }
 
-        private void UpdateOnboardingProgress(SqlConnection conn, SqlTransaction transaction)
+        private List<OnboardingTaskInfo> GetAllTasks()
         {
-            string updateProgressQuery = @"
-                UPDATE [dbo].[OnboardingProgress]
-                SET 
-                    CompletedTasks = (SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND Status = 'COMPLETED'),
-                    PendingTasks = (SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND Status != 'COMPLETED'),
-                    OverdueTasks = (SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND (Status = 'OVERDUE' OR (Status != 'COMPLETED' AND DueDate < GETUTCDATE()))),
-                    CompletionPercentage = CASE 
-                        WHEN TotalTasks > 0 
-                        THEN CAST(((SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND Status = 'COMPLETED') * 100.0 / TotalTasks) as DECIMAL(5,2))
-                        ELSE 0
-                    END,
-                    Status = CASE 
-                        WHEN (SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND Status = 'COMPLETED') = TotalTasks THEN 'COMPLETED'
-                        WHEN (SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND Status = 'COMPLETED') > 0 THEN 'IN_PROGRESS'
-                        ELSE 'NOT_STARTED'
-                    END,
-                    LastUpdated = GETUTCDATE(),
-                    CompletionDate = CASE 
-                        WHEN (SELECT COUNT(*) FROM [dbo].[OnboardingTasks] WHERE EmployeeId = @EmployeeId AND IsTemplate = 0 AND Status = 'COMPLETED') = TotalTasks 
-                        THEN GETUTCDATE()
-                        ELSE CompletionDate
-                    END
-                WHERE EmployeeId = @EmployeeId";
+            var tasks = new List<OnboardingTaskInfo>();
 
-            using (SqlCommand cmd = new SqlCommand(updateProgressQuery, conn, transaction))
-            {
-                cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                cmd.ExecuteNonQuery();
-            }
-        }
-
-        private void InitializeProgress()
-        {
             try
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
@@ -386,34 +443,134 @@ namespace TPASystem2.OnBoarding
                     conn.Open();
 
                     string query = @"
-                        INSERT INTO [dbo].[OnboardingProgress] 
-                        (EmployeeId, TotalTasks, CompletedTasks, PendingTasks, OverdueTasks, CompletionPercentage, StartDate, Status, LastUpdated)
                         SELECT 
-                            @EmployeeId,
-                            COUNT(*) as TotalTasks,
-                            0 as CompletedTasks,
-                            COUNT(*) as PendingTasks,
-                            0 as OverdueTasks,
-                            0 as CompletionPercentage,
-                            GETUTCDATE() as StartDate,
-                            'NOT_STARTED' as Status,
-                            GETUTCDATE() as LastUpdated
-                        FROM [dbo].[OnboardingTasks]
-                        WHERE EmployeeId = @EmployeeId AND IsTemplate = 0";
+                            ot.Id AS TaskId,
+                            ot.Status
+                        FROM [dbo].[OnboardingTasks] ot
+                        WHERE ot.EmployeeId = @EmployeeId 
+                            AND ot.IsTemplate = 0";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                        cmd.ExecuteNonQuery();
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                tasks.Add(new OnboardingTaskInfo
+                                {
+                                    TaskId = Convert.ToInt32(reader["TaskId"]),
+                                    Status = reader["Status"].ToString()
+                                });
+                            }
+                        }
                     }
                 }
-
-                // Reload progress data
-                UpdateProgressData();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error initializing progress: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error getting all tasks: {ex.Message}");
+            }
+
+            return tasks;
+        }
+
+        #endregion
+
+        #region Task Completion Methods
+
+        private void CompleteMandatoryTask(int taskId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    using (SqlCommand cmd = new SqlCommand("sp_CompleteMandatoryTask", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TaskId", taskId);
+                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                        cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
+                        cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string status = reader["Status"].ToString();
+                                string message = reader["Message"].ToString();
+
+                                if (status == "SUCCESS")
+                                {
+                                    ShowNotification("Mandatory task completed successfully! 🎉", "success");
+
+                                    // Redirect to refresh the page and show updated progress
+                                    Response.Redirect(Request.RawUrl);
+                                }
+                                else
+                                {
+                                    ShowNotification($"Error: {message}", "error");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error completing mandatory task: {ex.Message}");
+                ShowNotification($"Error completing task: {ex.Message}", "error");
+            }
+        }
+
+        private void CompleteRegularTask(int taskId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Use the regular task completion procedure
+                    using (SqlCommand cmd = new SqlCommand("sp_UpdateOnboardingTaskStatus", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@TaskId", taskId);
+                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                        cmd.Parameters.AddWithValue("@Status", "COMPLETED");
+                        cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
+                        cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                string status = reader["Status"].ToString();
+                                string message = reader["Message"].ToString();
+
+                                if (status == "SUCCESS")
+                                {
+                                    ShowNotification("Task completed successfully! 🎉", "success");
+
+                                    // Refresh the page to show updated progress
+                                    Response.Redirect(Request.RawUrl);
+                                }
+                                else
+                                {
+                                    ShowNotification($"Error: {message}", "error");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error completing regular task: {ex.Message}");
+                ShowNotification($"Error completing task: {ex.Message}", "error");
             }
         }
 
@@ -425,163 +582,88 @@ namespace TPASystem2.OnBoarding
         {
             try
             {
-                int userId = Session["UserId"] != null ? Convert.ToInt32(Session["UserId"]) : 0;
-
-                if (userId == 0) return 0;
+                if (Session["UserId"] == null) return 0;
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-
                     string query = "SELECT Id FROM [dbo].[Employees] WHERE UserId = @UserId";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@UserId", userId);
-
-                        object result = cmd.ExecuteScalar();
+                        cmd.Parameters.AddWithValue("@UserId", Session["UserId"]);
+                        var result = cmd.ExecuteScalar();
                         return result != null ? Convert.ToInt32(result) : 0;
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error getting employee ID: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error getting current employee ID: {ex.Message}");
                 return 0;
+            }
+        }
+
+        protected string GetAssignedToDisplay(string assignedToRole)
+        {
+            switch (assignedToRole?.ToUpper())
+            {
+                case "HR":
+                    return "Human Resources";
+                case "IT":
+                    return "IT Department";
+                case "MANAGER":
+                    return "Your Manager";
+                case "SECURITY":
+                    return "Security Department";
+                case "EMPLOYEE":
+                    return "You";
+                default:
+                    return assignedToRole ?? "HR";
             }
         }
 
         private void ShowNotification(string message, string type)
         {
-            string script = $"showNotification('{message}', '{type}');";
-            ClientScript.RegisterStartupScript(this.GetType(), "showNotification", script, true);
+            string script = $@"
+                document.addEventListener('DOMContentLoaded', function() {{
+                    var notification = document.createElement('div');
+                    notification.className = 'notification {type}';
+                    notification.textContent = '{message.Replace("'", "\\'")}';
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(function() {{
+                        notification.remove();
+                    }}, 5000);
+                }});";
+
+            ClientScript.RegisterStartupScript(this.GetType(), "ShowNotification", script, true);
         }
 
         #endregion
 
-        #region Template Helper Methods
+        #region Data Transfer Objects
 
-        public string GetTaskCardClass(string status, string priority, bool isOverdue)
+        public class OnboardingTaskInfo
         {
-            var classes = new List<string>();
-
-            if (status == "COMPLETED")
-                classes.Add("completed");
-
-            if (isOverdue && status != "COMPLETED")
-                classes.Add("overdue");
-
-            classes.Add($"priority-{priority.ToLower()}");
-
-            return string.Join(" ", classes);
-        }
-
-        public string GetTaskStatusIcon(string status)
-        {
-            switch (status?.ToUpper())
-            {
-                case "COMPLETED":
-                    return "<i class='material-icons' style='color: #4caf50; background: #e8f5e8;'>check_circle</i>";
-                case "IN_PROGRESS":
-                    return "<i class='material-icons' style='color: #ff9800; background: #fff3e0;'>access_time</i>";
-                case "OVERDUE":
-                    return "<i class='material-icons' style='color: #f44336; background: #ffebee;'>warning</i>";
-                case "PENDING":
-                default:
-                    return "<i class='material-icons' style='color: #2196f3; background: #e3f2fd;'>pending</i>";
-            }
-        }
-
-        public string GetCategoryIcon(string category)
-        {
-            switch (category?.ToUpper())
-            {
-                case "DOCUMENTATION":
-                    return "<i class='material-icons'>description</i>";
-                case "SETUP":
-                    return "<i class='material-icons'>settings</i>";
-                case "ORIENTATION":
-                    return "<i class='material-icons'>tour</i>";
-                case "TRAINING":
-                    return "<i class='material-icons'>school</i>";
-                default:
-                    return "<i class='material-icons'>assignment</i>";
-            }
-        }
-
-        public string GetCategoryDisplay(string category)
-        {
-            switch (category?.ToUpper())
-            {
-                case "DOCUMENTATION":
-                    return "Documentation";
-                case "SETUP":
-                    return "Setup";
-                case "ORIENTATION":
-                    return "Orientation";
-                case "TRAINING":
-                    return "Training";
-                default:
-                    return category ?? "General";
-            }
-        }
-
-        public string GetCategoryClass(string category)
-        {
-            return $"category-{category?.ToLower() ?? "general"}";
-        }
-
-        public string GetPriorityClass(string priority)
-        {
-            return $"priority-{priority?.ToLower() ?? "medium"}";
-        }
-
-        public string GetAssignedToDisplay(string role)
-        {
-            switch (role?.ToUpper())
-            {
-                case "HR":
-                    return "HR Department";
-                case "MANAGER":
-                    return "Direct Manager";
-                case "EMPLOYEE":
-                    return "You";
-                case "IT":
-                    return "IT Department";
-                case "FACILITIES":
-                    return "Facilities";
-                case "FINANCE":
-                    return "Finance Department";
-                default:
-                    return role ?? "Unassigned";
-            }
+            public int TaskId { get; set; }
+            public string Title { get; set; }
+            public string Description { get; set; }
+            public string Category { get; set; }
+            public string Status { get; set; }
+            public string Priority { get; set; }
+            public DateTime DueDate { get; set; }
+            public string EstimatedTime { get; set; }
+            public string Instructions { get; set; }
+            public DateTime CreatedDate { get; set; }
+            public DateTime? CompletedDate { get; set; }
+            public string Notes { get; set; }
+            public string AssignedToRole { get; set; }
+            public bool CanEmployeeComplete { get; set; }
+            public bool BlocksSystemAccess { get; set; }
+            public bool IsOverdue { get; set; }
         }
 
         #endregion
     }
-
-    #region Data Models
-
-    [Serializable]
-    public class OnboardingTaskInfo
-    {
-        public int TaskId { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string Category { get; set; }
-        public string Status { get; set; }
-        public string Priority { get; set; }
-        public DateTime DueDate { get; set; }
-        public string EstimatedTime { get; set; }
-        public string Instructions { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime? CompletedDate { get; set; }
-        public string Notes { get; set; }
-        public string AssignedToRole { get; set; }
-        public bool CanEmployeeComplete { get; set; }
-        public bool BlocksSystemAccess { get; set; }
-        public bool IsOverdue { get; set; }
-    }
-
-    #endregion
 }

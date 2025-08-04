@@ -14,7 +14,7 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
-    <link href="~/Content/css/tpa-common.css" rel="stylesheet" />
+    
     <link href="~/Content/css/tpa-auth.css" rel="stylesheet" />
 </head>
 
@@ -61,7 +61,8 @@
                             <asp:Literal ID="litError" runat="server"></asp:Literal>
                         </div>
                     </asp:Panel>
-                    
+                  <div></div>
+                    <div></div>
                     <!-- Email Field -->
                     <div class="form-group">
                         <asp:TextBox ID="txtEmail" runat="server" CssClass="form-input" 
