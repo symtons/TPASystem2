@@ -1,39 +1,28 @@
-﻿<%@ Page Title="New Hire Paperwork" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="NewHirePaperwork.aspx.cs" Inherits="TPASystem2.OnBoarding.NewHirePaperwork" %>
+﻿<%@ Page Title="New Hire Paperwork" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="NewHirePaperWork.aspx.cs" Inherits="TPASystem2.OnBoarding.NewHirePaperwork" EnableEventValidation="false" %>
 
-<asp:Content ID="NewHirePaperworkContent" ContentPlaceHolderID="DashboardContent" runat="server">
-    <!-- CSS Links -->
+<asp:Content ID="Content1" ContentPlaceHolderID="DashboardContent" runat="server">
+      <!-- CSS Links -->
     <link href='<%=ResolveUrl("~/Content/css/tpa-dashboard.css") %>' rel="stylesheet" type="text/css" />
     <link href='<%=ResolveUrl("~/Content/css/tpa-common.css") %>' rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
-    <!-- Custom Styles -->
+
     <style>
+        /* Task-specific styling */
         .mandatory-task-header {
-            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
             color: white;
-            padding: 2.5rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .mandatory-task-header::before {
-            content: '📋';
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 3rem;
-            opacity: 0.3;
+            padding: 2rem;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 0;
         }
         
         .task-title {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem 0;
             display: flex;
             align-items: center;
             gap: 1rem;
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 1rem 0;
         }
         
         .task-subtitle {
@@ -43,55 +32,60 @@
         }
         
         .mandatory-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 25px;
-            font-size: 0.9rem;
+            background: #ff5722;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
-        .form-section {
+        .form-container {
             background: white;
-            border-radius: 16px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .form-section {
             padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            border: 2px solid #e8f5e8;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
         }
         
         .section-header {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e8f5e8;
+            margin-bottom: 1.5rem;
         }
         
         .section-icon {
-            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
-            color: white;
-            width: 50px;
-            height: 50px;
+            background: #e3f2fd;
+            color: #1976d2;
+            width: 3rem;
+            height: 3rem;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
         }
         
         .section-title {
-            color: #2e7d32;
             font-size: 1.5rem;
             font-weight: 600;
             margin: 0;
+            color: #333;
         }
         
         .form-row {
             display: flex;
-            gap: 1.5rem;
+            gap: 2rem;
             margin-bottom: 1.5rem;
         }
         
@@ -109,88 +103,70 @@
         
         .form-label {
             display: block;
-            margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #2e7d32;
+            margin-bottom: 0.5rem;
+            color: #333;
         }
         
         .form-label.required::after {
-            content: ' *';
+            content: " *";
             color: #f44336;
         }
         
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
-            padding: 1rem;
+            padding: 0.75rem;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #fafafa;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #4caf50;
+            transition: border-color 0.3s ease;
             background: white;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
         
-        .form-select {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            background: #fafafa;
-            cursor: pointer;
-        }
-        
-        .form-select:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
-            border-color: #4caf50;
-            background: white;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
         }
         
         .checkbox-group {
             display: flex;
             align-items: flex-start;
-            gap: 1rem;
+            gap: 0.75rem;
             padding: 1rem;
             background: #f8f9fa;
             border-radius: 8px;
             border: 2px solid #e0e0e0;
+            transition: border-color 0.3s ease;
         }
         
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin: 0;
-            accent-color: #4caf50;
+        .checkbox-group:hover {
+            border-color: #1976d2;
         }
         
         .checkbox-label {
             flex: 1;
             line-height: 1.5;
-            color: #333;
+            cursor: pointer;
+            margin: 0;
         }
         
         .form-actions {
             display: flex;
+            justify-content: space-between;
             gap: 1rem;
-            justify-content: flex-end;
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 2px solid #e8f5e8;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+            background: #1976d2;
             color: white;
             border: none;
-            padding: 1rem 3rem;
-            border-radius: 25px;
-            font-size: 1.1rem;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -200,19 +176,19 @@
         }
         
         .btn-primary:hover {
-            background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+            background: #1565c0;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
         }
         
         .btn-secondary {
             background: #f5f5f5;
-            color: #666;
+            color: #333;
             border: 2px solid #e0e0e0;
-            padding: 1rem 2rem;
-            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -260,6 +236,17 @@
             margin-bottom: 1rem;
             border: 2px solid #4caf50;
         }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
     </style>
 
     <!-- Page Header -->
@@ -284,331 +271,371 @@
         <strong>Paperwork completed successfully!</strong> You will be redirected to your onboarding dashboard.
     </asp:Panel>
 
-    <!-- Personal Information Section -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-icon">
-                <i class="material-icons">person</i>
+    <!-- Form Container -->
+    <div class="form-container">
+        <!-- Personal Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="material-icons">person</i>
+                </div>
+                <h2 class="section-title">Personal Information</h2>
             </div>
-            <h2 class="section-title">Personal Information</h2>
-        </div>
 
-        <!-- Basic Info Row -->
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtFirstName">First Name</label>
-                    <asp:TextBox ID="txtFirstName" runat="server" CssClass="form-input" placeholder="Enter your first name" MaxLength="50" />
-                    <asp:RequiredFieldValidator ID="rfvFirstName" runat="server" ControlToValidate="txtFirstName" 
-                        ErrorMessage="First name is required" CssClass="error-message" Display="Dynamic" />
+            <!-- Name Fields -->
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtFirstName">First Name</label>
+                        <asp:TextBox ID="txtFirstName" runat="server" CssClass="form-input" placeholder="Enter your first name" MaxLength="50" />
+                        <asp:RequiredFieldValidator ID="rfvFirstName" runat="server" ControlToValidate="txtFirstName" 
+                            ErrorMessage="First name is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label" for="txtMiddleName">Middle Name</label>
+                        <asp:TextBox ID="txtMiddleName" runat="server" CssClass="form-input" placeholder="Enter your middle name (optional)" MaxLength="50" />
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtLastName">Last Name</label>
+                        <asp:TextBox ID="txtLastName" runat="server" CssClass="form-input" placeholder="Enter your last name" MaxLength="50" />
+                        <asp:RequiredFieldValidator ID="rfvLastName" runat="server" ControlToValidate="txtLastName" 
+                            ErrorMessage="Last name is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
                 </div>
             </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label" for="txtMiddleName">Middle Name</label>
-                    <asp:TextBox ID="txtMiddleName" runat="server" CssClass="form-input" placeholder="Enter your middle name" MaxLength="50" />
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtLastName">Last Name</label>
-                    <asp:TextBox ID="txtLastName" runat="server" CssClass="form-input" placeholder="Enter your last name" MaxLength="50" />
-                    <asp:RequiredFieldValidator ID="rfvLastName" runat="server" ControlToValidate="txtLastName" 
-                        ErrorMessage="Last name is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-        </div>
 
-        <!-- Contact Info Row -->
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtPersonalEmail">Personal Email</label>
-                    <asp:TextBox ID="txtPersonalEmail" runat="server" CssClass="form-input" placeholder="your.email@example.com" TextMode="Email" />
-                    <asp:RequiredFieldValidator ID="rfvPersonalEmail" runat="server" ControlToValidate="txtPersonalEmail" 
-                        ErrorMessage="Personal email is required" CssClass="error-message" Display="Dynamic" />
-                    <div class="form-help">This will be used for personal communications</div>
+            <!-- Date of Birth and SSN -->
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtDateOfBirth">Date of Birth</label>
+                        <asp:TextBox ID="txtDateOfBirth" runat="server" CssClass="form-input" placeholder="MM/DD/YYYY" TextMode="Date" />
+                        <asp:RequiredFieldValidator ID="rfvDateOfBirth" runat="server" ControlToValidate="txtDateOfBirth" 
+                            ErrorMessage="Date of birth is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtSocialSecurityNumber">Social Security Number</label>
+                        <asp:TextBox ID="txtSocialSecurityNumber" runat="server" CssClass="form-input" placeholder="XXX-XX-XXXX" MaxLength="11" />
+                        <asp:RequiredFieldValidator ID="rfvSocialSecurityNumber" runat="server" ControlToValidate="txtSocialSecurityNumber" 
+                            ErrorMessage="Social Security Number is required" CssClass="error-message" Display="Dynamic" />
+                        <div class="form-help">Required for tax and benefits processing</div>
+                    </div>
                 </div>
             </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtPhoneNumber">Phone Number</label>
-                    <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-input" placeholder="(555) 123-4567" />
-                    <asp:RequiredFieldValidator ID="rfvPhoneNumber" runat="server" ControlToValidate="txtPhoneNumber" 
-                        ErrorMessage="Phone number is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-        </div>
 
-        <!-- Address Info -->
-        <div class="form-row">
-            <div class="form-col col-2">
-                <div class="form-group">
-                    <label class="form-label required" for="txtAddress">Home Address</label>
-                    <asp:TextBox ID="txtAddress" runat="server" CssClass="form-input" placeholder="123 Main Street" MaxLength="200" />
-                    <asp:RequiredFieldValidator ID="rfvAddress" runat="server" ControlToValidate="txtAddress" 
-                        ErrorMessage="Home address is required" CssClass="error-message" Display="Dynamic" />
+            <!-- Contact Information -->
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtPersonalEmail">Personal Email</label>
+                        <asp:TextBox ID="txtPersonalEmail" runat="server" CssClass="form-input" 
+                            placeholder="your.email@example.com" TextMode="Email" />
+                        <asp:RequiredFieldValidator ID="rfvPersonalEmail" runat="server" ControlToValidate="txtPersonalEmail" 
+                            ErrorMessage="Personal email is required" CssClass="error-message" Display="Dynamic" />
+                        <div class="form-help">This will be used for personal communications</div>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtPhoneNumber">Phone Number</label>
+                        <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-input" placeholder="(555) 123-4567" />
+                        <asp:RequiredFieldValidator ID="rfvPhoneNumber" runat="server" ControlToValidate="txtPhoneNumber" 
+                            ErrorMessage="Phone number is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtCity">City</label>
-                    <asp:TextBox ID="txtCity" runat="server" CssClass="form-input" placeholder="Enter city" MaxLength="50" />
-                    <asp:RequiredFieldValidator ID="rfvCity" runat="server" ControlToValidate="txtCity" 
-                        ErrorMessage="City is required" CssClass="error-message" Display="Dynamic" />
+            <!-- Address Info -->
+            <div class="form-row">
+                <div class="form-col col-2">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtAddress">Home Address</label>
+                        <asp:TextBox ID="txtAddress" runat="server" CssClass="form-input" placeholder="123 Main Street" MaxLength="200" />
+                        <asp:RequiredFieldValidator ID="rfvAddress" runat="server" ControlToValidate="txtAddress" 
+                            ErrorMessage="Home address is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
                 </div>
             </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="ddlState">State</label>
-                    <asp:DropDownList ID="ddlState" runat="server" CssClass="form-select">
-                        <asp:ListItem Value="" Text="Select State" />
-                        <asp:ListItem Value="TN" Text="Tennessee" />
-                        <asp:ListItem Value="AL" Text="Alabama" />
-                        <asp:ListItem Value="AR" Text="Arkansas" />
-                        <asp:ListItem Value="FL" Text="Florida" />
-                        <asp:ListItem Value="GA" Text="Georgia" />
-                        <asp:ListItem Value="KY" Text="Kentucky" />
-                        <asp:ListItem Value="MS" Text="Mississippi" />
-                        <asp:ListItem Value="NC" Text="North Carolina" />
-                        <asp:ListItem Value="SC" Text="South Carolina" />
-                        <asp:ListItem Value="VA" Text="Virginia" />
-                    </asp:DropDownList>
-                    <asp:RequiredFieldValidator ID="rfvState" runat="server" ControlToValidate="ddlState" InitialValue=""
-                        ErrorMessage="State is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtZipCode">ZIP Code</label>
-                    <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-input" placeholder="12345" MaxLength="10" />
-                    <asp:RequiredFieldValidator ID="rfvZipCode" runat="server" ControlToValidate="txtZipCode" 
-                        ErrorMessage="ZIP code is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-        </div>
 
-        <!-- Personal Details -->
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label" for="txtDateOfBirth">Date of Birth</label>
-                    <asp:TextBox ID="txtDateOfBirth" runat="server" CssClass="form-input" TextMode="Date" />
-                    <div class="form-help">Optional - for benefits and HR records</div>
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtCity">City</label>
+                        <asp:TextBox ID="txtCity" runat="server" CssClass="form-input" placeholder="Enter city" MaxLength="50" />
+                        <asp:RequiredFieldValidator ID="rfvCity" runat="server" ControlToValidate="txtCity" 
+                            ErrorMessage="City is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
                 </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label" for="ddlGender">Gender</label>
-                    <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-select">
-                        <asp:ListItem Value="" Text="Prefer not to say" />
-                        <asp:ListItem Value="Male" Text="Male" />
-                        <asp:ListItem Value="Female" Text="Female" />
-                        <asp:ListItem Value="Other" Text="Other" />
-                    </asp:DropDownList>
-                    <div class="form-help">Optional - for reporting purposes only</div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="ddlState">State</label>
+                        <asp:DropDownList ID="ddlState" runat="server" CssClass="form-select">
+                            <asp:ListItem Value="" Text="Select State" />
+                            <asp:ListItem Value="AL" Text="Alabama" />
+                            <asp:ListItem Value="AK" Text="Alaska" />
+                            <asp:ListItem Value="AZ" Text="Arizona" />
+                            <asp:ListItem Value="AR" Text="Arkansas" />
+                            <asp:ListItem Value="CA" Text="California" />
+                            <asp:ListItem Value="CO" Text="Colorado" />
+                            <asp:ListItem Value="CT" Text="Connecticut" />
+                            <asp:ListItem Value="DE" Text="Delaware" />
+                            <asp:ListItem Value="FL" Text="Florida" />
+                            <asp:ListItem Value="GA" Text="Georgia" />
+                            <asp:ListItem Value="HI" Text="Hawaii" />
+                            <asp:ListItem Value="ID" Text="Idaho" />
+                            <asp:ListItem Value="IL" Text="Illinois" />
+                            <asp:ListItem Value="IN" Text="Indiana" />
+                            <asp:ListItem Value="IA" Text="Iowa" />
+                            <asp:ListItem Value="KS" Text="Kansas" />
+                            <asp:ListItem Value="KY" Text="Kentucky" />
+                            <asp:ListItem Value="LA" Text="Louisiana" />
+                            <asp:ListItem Value="ME" Text="Maine" />
+                            <asp:ListItem Value="MD" Text="Maryland" />
+                            <asp:ListItem Value="MA" Text="Massachusetts" />
+                            <asp:ListItem Value="MI" Text="Michigan" />
+                            <asp:ListItem Value="MN" Text="Minnesota" />
+                            <asp:ListItem Value="MS" Text="Mississippi" />
+                            <asp:ListItem Value="MO" Text="Missouri" />
+                            <asp:ListItem Value="MT" Text="Montana" />
+                            <asp:ListItem Value="NE" Text="Nebraska" />
+                            <asp:ListItem Value="NV" Text="Nevada" />
+                            <asp:ListItem Value="NH" Text="New Hampshire" />
+                            <asp:ListItem Value="NJ" Text="New Jersey" />
+                            <asp:ListItem Value="NM" Text="New Mexico" />
+                            <asp:ListItem Value="NY" Text="New York" />
+                            <asp:ListItem Value="NC" Text="North Carolina" />
+                            <asp:ListItem Value="ND" Text="North Dakota" />
+                            <asp:ListItem Value="OH" Text="Ohio" />
+                            <asp:ListItem Value="OK" Text="Oklahoma" />
+                            <asp:ListItem Value="OR" Text="Oregon" />
+                            <asp:ListItem Value="PA" Text="Pennsylvania" />
+                            <asp:ListItem Value="RI" Text="Rhode Island" />
+                            <asp:ListItem Value="SC" Text="South Carolina" />
+                            <asp:ListItem Value="SD" Text="South Dakota" />
+                            <asp:ListItem Value="TN" Text="Tennessee" />
+                            <asp:ListItem Value="TX" Text="Texas" />
+                            <asp:ListItem Value="UT" Text="Utah" />
+                            <asp:ListItem Value="VT" Text="Vermont" />
+                            <asp:ListItem Value="VA" Text="Virginia" />
+                            <asp:ListItem Value="WA" Text="Washington" />
+                            <asp:ListItem Value="WV" Text="West Virginia" />
+                            <asp:ListItem Value="WI" Text="Wisconsin" />
+                            <asp:ListItem Value="WY" Text="Wyoming" />
+                        </asp:DropDownList>
+                        <asp:RequiredFieldValidator ID="rfvState" runat="server" ControlToValidate="ddlState" InitialValue=""
+                            ErrorMessage="State is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Emergency Contact Section -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-icon">
-                <i class="material-icons">contact_emergency</i>
-            </div>
-            <h2 class="section-title">Emergency Contact Information</h2>
-        </div>
-
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtEmergencyContactName">Emergency Contact Name</label>
-                    <asp:TextBox ID="txtEmergencyContactName" runat="server" CssClass="form-input" placeholder="Full name" MaxLength="100" />
-                    <asp:RequiredFieldValidator ID="rfvEmergencyContactName" runat="server" ControlToValidate="txtEmergencyContactName" 
-                        ErrorMessage="Emergency contact name is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtEmergencyContactRelationship">Relationship</label>
-                    <asp:TextBox ID="txtEmergencyContactRelationship" runat="server" CssClass="form-input" placeholder="e.g., Spouse, Parent, Sibling" MaxLength="50" />
-                    <asp:RequiredFieldValidator ID="rfvEmergencyContactRelationship" runat="server" ControlToValidate="txtEmergencyContactRelationship" 
-                        ErrorMessage="Relationship is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="txtEmergencyContactPhone">Emergency Contact Phone</label>
-                    <asp:TextBox ID="txtEmergencyContactPhone" runat="server" CssClass="form-input" placeholder="(555) 123-4567" />
-                    <asp:RequiredFieldValidator ID="rfvEmergencyContactPhone" runat="server" ControlToValidate="txtEmergencyContactPhone" 
-                        ErrorMessage="Emergency contact phone is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label" for="txtEmergencyContactEmail">Emergency Contact Email</label>
-                    <asp:TextBox ID="txtEmergencyContactEmail" runat="server" CssClass="form-input" placeholder="contact@example.com" TextMode="Email" />
-                    <div class="form-help">Optional - backup contact method</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tax Information Section -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-icon">
-                <i class="material-icons">receipt</i>
-            </div>
-            <h2 class="section-title">Tax Information (W-4)</h2>
-        </div>
-
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="ddlFilingStatus">Filing Status</label>
-                    <asp:DropDownList ID="ddlFilingStatus" runat="server" CssClass="form-select">
-                        <asp:ListItem Value="" Text="Select Filing Status" />
-                        <asp:ListItem Value="Single" Text="Single or Married filing separately" />
-                        <asp:ListItem Value="MarriedJointly" Text="Married filing jointly" />
-                        <asp:ListItem Value="HeadOfHousehold" Text="Head of household" />
-                    </asp:DropDownList>
-                    <asp:RequiredFieldValidator ID="rfvFilingStatus" runat="server" ControlToValidate="ddlFilingStatus" InitialValue=""
-                        ErrorMessage="Filing status is required" CssClass="error-message" Display="Dynamic" />
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label" for="txtDependents">Number of Dependents</label>
-                    <asp:TextBox ID="txtDependents" runat="server" CssClass="form-input" TextMode="Number" Text="0" min="0" max="20" />
-                    <div class="form-help">Number of qualifying children or dependents</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label" for="txtAdditionalWithholding">Additional Federal Withholding</label>
-                    <asp:TextBox ID="txtAdditionalWithholding" runat="server" CssClass="form-input" TextMode="Number" step="0.01" placeholder="0.00" />
-                    <div class="form-help">Optional - additional amount to withhold per pay period</div>
-                </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <div class="checkbox-group">
-                        <asp:CheckBox ID="chkTaxExempt" runat="server" />
-                        <label class="checkbox-label" for="<%= chkTaxExempt.ClientID %>">
-                            I claim exemption from withholding for 2025, and I certify that I meet both of the following conditions for exemption:
-                            • Last year I had a right to a refund of all federal income tax withheld because I had no tax liability, and
-                            • This year I expect a refund of all federal income tax withheld because I expect to have no tax liability.
-                        </label>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtZipCode">ZIP Code</label>
+                        <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-input" placeholder="12345" MaxLength="10" />
+                        <asp:RequiredFieldValidator ID="rfvZipCode" runat="server" ControlToValidate="txtZipCode" 
+                            ErrorMessage="ZIP code is required" CssClass="error-message" Display="Dynamic" />
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- I-9 Employment Eligibility Section -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-icon">
-                <i class="material-icons">verified_user</i>
+        <!-- Emergency Contact Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="material-icons">contact_emergency</i>
+                </div>
+                <h2 class="section-title">Emergency Contact</h2>
             </div>
-            <h2 class="section-title">Employment Eligibility (I-9)</h2>
-        </div>
 
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group">
-                    <label class="form-label required" for="ddlWorkAuthorization">Work Authorization Status</label>
-                    <asp:DropDownList ID="ddlWorkAuthorization" runat="server" CssClass="form-select">
-                        <asp:ListItem Value="" Text="Select Work Authorization" />
-                        <asp:ListItem Value="USCitizen" Text="U.S. Citizen" />
-                        <asp:ListItem Value="LawfulPermanentResident" Text="Lawful Permanent Resident" />
-                        <asp:ListItem Value="AuthorizedToWork" Text="Authorized to work in the U.S." />
-                    </asp:DropDownList>
-                    <asp:RequiredFieldValidator ID="rfvWorkAuthorization" runat="server" ControlToValidate="ddlWorkAuthorization" InitialValue=""
-                        ErrorMessage="Work authorization status is required" CssClass="error-message" Display="Dynamic" />
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtEmergencyContactName">Contact Name</label>
+                        <asp:TextBox ID="txtEmergencyContactName" runat="server" CssClass="form-input" placeholder="Full name" MaxLength="100" />
+                        <asp:RequiredFieldValidator ID="rfvEmergencyContactName" runat="server" ControlToValidate="txtEmergencyContactName" 
+                            ErrorMessage="Emergency contact name is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtEmergencyContactRelationship">Relationship</label>
+                        <asp:TextBox ID="txtEmergencyContactRelationship" runat="server" CssClass="form-input" placeholder="e.g., Spouse, Parent, Sibling" MaxLength="50" />
+                        <asp:RequiredFieldValidator ID="rfvEmergencyContactRelationship" runat="server" ControlToValidate="txtEmergencyContactRelationship" 
+                            ErrorMessage="Relationship is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="txtEmergencyContactPhone">Phone Number</label>
+                        <asp:TextBox ID="txtEmergencyContactPhone" runat="server" CssClass="form-input" placeholder="(555) 123-4567" />
+                        <asp:RequiredFieldValidator ID="rfvEmergencyContactPhone" runat="server" ControlToValidate="txtEmergencyContactPhone" 
+                            ErrorMessage="Emergency contact phone is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label" for="txtEmergencyContactEmail">Email Address (Optional)</label>
+                        <asp:TextBox ID="txtEmergencyContactEmail" runat="server" CssClass="form-input" placeholder="email@example.com" TextMode="Email" />
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-group">
-            <div class="checkbox-group">
-                <asp:CheckBox ID="chkI9Attestation" runat="server" />
-                <label class="checkbox-label" for="<%= chkI9Attestation.ClientID %>">
-                    <strong>I attest, under penalty of perjury,</strong> that I am (check one of the following boxes):
-                    <br/>• A citizen of the United States
-                    <br/>• A noncitizen national of the United States
-                    <br/>• A lawful permanent resident
-                    <br/>• An alien authorized to work until the expiration date shown (if applicable)
-                    <br/><br/>
-                    I acknowledge that federal law provides for imprisonment and/or fines for false statements or use of false documents in connection with the completion of this form.
-                </label>
+        <!-- Tax Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="material-icons">receipt_long</i>
+                </div>
+                <h2 class="section-title">Tax Information (W-4)</h2>
             </div>
-            <asp:RequiredFieldValidator ID="rfvI9Attestation" runat="server" ControlToValidate="chkI9Attestation" 
-                ErrorMessage="You must complete the I-9 attestation" CssClass="error-message" Display="Dynamic" />
-        </div>
-    </div>
 
-    <!-- Acknowledgments Section -->
-    <div class="form-section">
-        <div class="section-header">
-            <div class="section-icon">
-                <i class="material-icons">fact_check</i>
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="ddlFilingStatus">Filing Status</label>
+                        <asp:DropDownList ID="ddlFilingStatus" runat="server" CssClass="form-select">
+                            <asp:ListItem Value="" Text="Select Filing Status" />
+                            <asp:ListItem Value="Single" Text="Single or Married filing separately" />
+                            <asp:ListItem Value="MarriedJoint" Text="Married filing jointly" />
+                            <asp:ListItem Value="HeadOfHousehold" Text="Head of household" />
+                        </asp:DropDownList>
+                        <asp:RequiredFieldValidator ID="rfvFilingStatus" runat="server" ControlToValidate="ddlFilingStatus" InitialValue=""
+                            ErrorMessage="Filing status is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label" for="txtDependents">Number of Dependents</label>
+                        <asp:TextBox ID="txtDependents" runat="server" CssClass="form-input" placeholder="0" TextMode="Number" />
+                        <div class="form-help">Enter 0 if none</div>
+                    </div>
+                </div>
             </div>
-            <h2 class="section-title">Acknowledgments & Agreements</h2>
-        </div>
 
-        <div class="form-group">
-            <div class="checkbox-group">
-                <asp:CheckBox ID="chkEmployeeHandbook" runat="server" />
-                <label class="checkbox-label" for="<%= chkEmployeeHandbook.ClientID %>">
-                    <strong>Employee Handbook Acknowledgment:</strong> I acknowledge that I have received and read the Employee Handbook. I understand that this handbook contains important information about company policies, procedures, and expectations.
-                </label>
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label" for="txtAdditionalWithholding">Additional Withholding</label>
+                        <asp:TextBox ID="txtAdditionalWithholding" runat="server" CssClass="form-input" placeholder="0.00" />
+                        <div class="form-help">Additional amount to withhold from each paycheck (optional)</div>
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label" for="chkTaxExempt">Tax Exempt Status</label>
+                        <div class="checkbox-group">
+                            <asp:CheckBox ID="chkTaxExempt" runat="server" />
+                            <label class="checkbox-label" for="<%= chkTaxExempt.ClientID %>">
+                                I claim exemption from withholding for this tax year
+                            </label>
+                        </div>
+                        <div class="form-help">Check only if you qualify for tax exemption</div>
+                    </div>
+                </div>
             </div>
-            <asp:RequiredFieldValidator ID="rfvEmployeeHandbook" runat="server" ControlToValidate="chkEmployeeHandbook" 
-                ErrorMessage="Employee handbook acknowledgment is required" CssClass="error-message" Display="Dynamic" />
         </div>
 
-        <div class="form-group">
-            <div class="checkbox-group">
-                <asp:CheckBox ID="chkDataAccuracy" runat="server" />
-                <label class="checkbox-label" for="<%= chkDataAccuracy.ClientID %>">
-                    <strong>Data Accuracy:</strong> I certify that all information provided in this form is true, complete, and accurate to the best of my knowledge. I understand that any false information may result in termination of employment.
-                </label>
+        <!-- Work Authorization Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="material-icons">work</i>
+                </div>
+                <h2 class="section-title">Work Authorization (I-9)</h2>
             </div>
-            <asp:RequiredFieldValidator ID="rfvDataAccuracy" runat="server" ControlToValidate="chkDataAccuracy" 
-                ErrorMessage="Data accuracy certification is required" CssClass="error-message" Display="Dynamic" />
-        </div>
 
-        <div class="form-group">
-            <div class="checkbox-group">
-                <asp:CheckBox ID="chkPrivacyConsent" runat="server" />
-                <label class="checkbox-label" for="<%= chkPrivacyConsent.ClientID %>">
-                    <strong>Privacy Consent:</strong> I consent to the collection, processing, and storage of my personal information as outlined in the company's Privacy Policy for employment purposes, benefits administration, and legal compliance.
-                </label>
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label class="form-label required" for="ddlWorkAuthorization">Work Authorization Status</label>
+                        <asp:DropDownList ID="ddlWorkAuthorization" runat="server" CssClass="form-select">
+                            <asp:ListItem Value="" Text="Select Work Authorization" />
+                            <asp:ListItem Value="USCitizen" Text="U.S. Citizen" />
+                            <asp:ListItem Value="LawfulPermanentResident" Text="Lawful Permanent Resident" />
+                            <asp:ListItem Value="AlienAuthorized" Text="Alien authorized to work" />
+                        </asp:DropDownList>
+                        <asp:RequiredFieldValidator ID="rfvWorkAuthorization" runat="server" ControlToValidate="ddlWorkAuthorization" InitialValue=""
+                            ErrorMessage="Work authorization status is required" CssClass="error-message" Display="Dynamic" />
+                    </div>
+                </div>
             </div>
-            <asp:RequiredFieldValidator ID="rfvPrivacyConsent" runat="server" ControlToValidate="chkPrivacyConsent" 
-                ErrorMessage="Privacy consent is required" CssClass="error-message" Display="Dynamic" />
-        </div>
-    </div>
 
-    <!-- Form Actions -->
-    <div class="form-actions">
-        <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-secondary" 
-            OnClick="btnCancel_Click" CausesValidation="false" />
-        <asp:Button ID="btnSubmit" runat="server" Text="Complete Paperwork" CssClass="btn-primary" 
-            OnClick="btnSubmit_Click" />
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <asp:CheckBox ID="chkI9Attestation" runat="server" />
+                    <label class="checkbox-label" for="<%= chkI9Attestation.ClientID %>">
+                        <strong>I-9 Attestation:</strong> I attest, under penalty of perjury, that I am (check one of the following boxes):
+                        1. A citizen of the United States
+                        2. A noncitizen national of the United States
+                        3. A lawful permanent resident
+                        4. An alien authorized to work until (expiration date, if applicable)
+                        I understand that this form is being completed in connection with the federal Form I-9 and that knowingly and willfully making false statements or using false documentation may subject me to criminal or civil penalties under federal law.
+                    </label>
+                </div>
+                <asp:RequiredFieldValidator ID="rfvI9Attestation" runat="server" ControlToValidate="chkI9Attestation" 
+                    ErrorMessage="You must complete the I-9 attestation" CssClass="error-message" Display="Dynamic" />
+            </div>
+        </div>
+
+        <!-- Acknowledgments Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="material-icons">fact_check</i>
+                </div>
+                <h2 class="section-title">Acknowledgments & Agreements</h2>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <asp:CheckBox ID="chkEmployeeHandbook" runat="server" />
+                    <label class="checkbox-label" for="<%= chkEmployeeHandbook.ClientID %>">
+                        <strong>Employee Handbook Acknowledgment:</strong> I acknowledge that I have received and read the Employee Handbook. I understand that this handbook contains important information about company policies, procedures, and expectations.
+                    </label>
+                </div>
+                <asp:RequiredFieldValidator ID="rfvEmployeeHandbook" runat="server" ControlToValidate="chkEmployeeHandbook" 
+                    ErrorMessage="Employee handbook acknowledgment is required" CssClass="error-message" Display="Dynamic" />
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <asp:CheckBox ID="chkDataAccuracy" runat="server" />
+                    <label class="checkbox-label" for="<%= chkDataAccuracy.ClientID %>">
+                        <strong>Data Accuracy:</strong> I certify that all information provided in this form is true, complete, and accurate to the best of my knowledge. I understand that any false information may result in termination of employment.
+                    </label>
+                </div>
+                <asp:RequiredFieldValidator ID="rfvDataAccuracy" runat="server" ControlToValidate="chkDataAccuracy" 
+                    ErrorMessage="Data accuracy certification is required" CssClass="error-message" Display="Dynamic" />
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <asp:CheckBox ID="chkPrivacyConsent" runat="server" />
+                    <label class="checkbox-label" for="<%= chkPrivacyConsent.ClientID %>">
+                        <strong>Privacy Consent:</strong> I consent to the collection, processing, and storage of my personal information as outlined in the company's Privacy Policy for employment purposes, benefits administration, and legal compliance.
+                    </label>
+                </div>
+                <asp:RequiredFieldValidator ID="rfvPrivacyConsent" runat="server" ControlToValidate="chkPrivacyConsent" 
+                    ErrorMessage="Privacy consent is required" CssClass="error-message" Display="Dynamic" />
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <asp:Button ID="btnCancel" runat="server" Text="Cancel" CssClass="btn-secondary" 
+                OnClick="btnCancel_Click" CausesValidation="false" />
+            <asp:Button ID="btnSubmit" runat="server" Text="Complete Paperwork" CssClass="btn-primary" 
+                OnClick="btnSubmit_Click" />
+        </div>
     </div>
 
     <!-- Loading overlay -->
@@ -633,10 +660,10 @@
         }
 
         // Add form submit handler
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             var form = document.forms[0];
             if (form) {
-                form.addEventListener('submit', function(e) {
+                form.addEventListener('submit', function (e) {
                     if (Page_ClientValidate && Page_ClientValidate()) {
                         showLoading();
                     }

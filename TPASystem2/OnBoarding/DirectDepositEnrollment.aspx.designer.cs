@@ -24,24 +24,6 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.Panel pnlSuccessMessage;
 
         /// <summary>
-        /// rbFullDeposit control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbFullDeposit;
-
-        /// <summary>
-        /// rbSplitDeposit control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbSplitDeposit;
-
-        /// <summary>
         /// txtBankName control.
         /// </summary>
         /// <remarks>
@@ -49,15 +31,6 @@ namespace TPASystem2.OnBoarding
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtBankName;
-
-        /// <summary>
-        /// rfvBankName control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvBankName;
 
         /// <summary>
         /// ddlAccountType control.
@@ -69,15 +42,6 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.DropDownList ddlAccountType;
 
         /// <summary>
-        /// rfvAccountType control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvAccountType;
-
-        /// <summary>
         /// txtRoutingNumber control.
         /// </summary>
         /// <remarks>
@@ -85,24 +49,6 @@ namespace TPASystem2.OnBoarding
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtRoutingNumber;
-
-        /// <summary>
-        /// rfvRoutingNumber control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvRoutingNumber;
-
-        /// <summary>
-        /// revRoutingNumber control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RegularExpressionValidator revRoutingNumber;
 
         /// <summary>
         /// txtAccountNumber control.
@@ -114,15 +60,6 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtAccountNumber;
 
         /// <summary>
-        /// rfvAccountNumber control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvAccountNumber;
-
-        /// <summary>
         /// txtConfirmAccountNumber control.
         /// </summary>
         /// <remarks>
@@ -132,184 +69,31 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtConfirmAccountNumber;
 
         /// <summary>
-        /// rfvConfirmAccountNumber control.
+        /// chkDirectDepositAuth control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvConfirmAccountNumber;
+        protected global::System.Web.UI.WebControls.CheckBox chkDirectDepositAuth;
 
         /// <summary>
-        /// cvAccountNumber control.
+        /// chkBankingAccuracy control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CompareValidator cvAccountNumber;
+        protected global::System.Web.UI.WebControls.CheckBox chkBankingAccuracy;
 
         /// <summary>
-        /// pnlPrimaryAmount control.
+        /// chkBankingPrivacy control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlPrimaryAmount;
-
-        /// <summary>
-        /// ddlPrimaryAmountType control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlPrimaryAmountType;
-
-        /// <summary>
-        /// txtPrimaryAmount control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrimaryAmount;
-
-        /// <summary>
-        /// pnlBankPreview control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlBankPreview;
-
-        /// <summary>
-        /// pnlSecondaryAccount control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSecondaryAccount;
-
-        /// <summary>
-        /// txtSecondaryBankName control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSecondaryBankName;
-
-        /// <summary>
-        /// ddlSecondaryAccountType control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlSecondaryAccountType;
-
-        /// <summary>
-        /// txtSecondaryRoutingNumber control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSecondaryRoutingNumber;
-
-        /// <summary>
-        /// revSecondaryRoutingNumber control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RegularExpressionValidator revSecondaryRoutingNumber;
-
-        /// <summary>
-        /// txtSecondaryAccountNumber control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSecondaryAccountNumber;
-
-        /// <summary>
-        /// ddlSecondaryAmountType control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlSecondaryAmountType;
-
-        /// <summary>
-        /// txtSecondaryAmount control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSecondaryAmount;
-
-        /// <summary>
-        /// chkAuthorization control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkAuthorization;
-
-        /// <summary>
-        /// rfvAuthorization control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvAuthorization;
-
-        /// <summary>
-        /// chkDataAccuracy control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkDataAccuracy;
-
-        /// <summary>
-        /// rfvDataAccuracy control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvDataAccuracy;
-
-        /// <summary>
-        /// chkPrivacyConsent control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkPrivacyConsent;
-
-        /// <summary>
-        /// rfvPrivacyConsent control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvPrivacyConsent;
+        protected global::System.Web.UI.WebControls.CheckBox chkBankingPrivacy;
 
         /// <summary>
         /// btnCancel control.

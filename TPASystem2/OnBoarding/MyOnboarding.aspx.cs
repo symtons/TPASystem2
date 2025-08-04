@@ -563,7 +563,7 @@ namespace TPASystem2.OnBoarding
                         Response.Redirect("~/OnBoarding/DirectDepositEnrollment.aspx");
                         return;
                     case "MANDATORY_TRAINING":
-                        Response.Redirect("~/Training/MandatoryTraining.aspx");
+                        Response.Redirect("~/OnBoarding/MandatoryTraining.aspx");
                         return;
                 }
 
@@ -838,5 +838,15 @@ namespace TPASystem2.OnBoarding
         }
 
         #endregion
+
+        protected void btnLogout_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        protected void GoToDashboard_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

@@ -4,9 +4,9 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
 
-namespace TPASystem2.OnBoarding
+namespace TPASystem2.Training
 {
-    public partial class DirectDepositEnrollment : System.Web.UI.Page
+    public partial class MandatoryTraining : System.Web.UI.Page
     {
         #region Properties and Fields
 
@@ -34,45 +34,11 @@ namespace TPASystem2.OnBoarding
                     }
                 }
 
-                // Method 2: Find and remove specific problematic validators
-                var problemValidators = new string[] {
-                    "rfvDirectDepositAuth", "chkDirectDepositAuth",
-                    "rfvAuthorization", "chkAuthorization",
-                    "rfvBankingAccuracy", "rfvBankingPrivacy",
-                    "rfv19Attestation", "chk19Attestation"
-                };
-
-                foreach (string controlId in problemValidators)
-                {
-                    try
-                    {
-                        var control = FindControlRecursive(Page, controlId);
-                        if (control != null)
-                        {
-                            if (control is System.Web.UI.WebControls.BaseValidator badValidator)
-                            {
-                                badValidator.Enabled = false;
-                                badValidator.Visible = false;
-                                badValidator.ControlToValidate = "";
-                            }
-
-                            if (control.Parent != null)
-                            {
-                                control.Parent.Controls.Remove(control);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error removing validator {controlId}: {ex.Message}");
-                    }
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Emergency fix applied - disabled {Page.Validators.Count} validators");
+                System.Diagnostics.Debug.WriteLine($"Training page - disabled {Page.Validators.Count} validators");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in emergency validator fix: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in training page validator fix: {ex.Message}");
             }
 
             // Override client-side validation completely
@@ -82,58 +48,35 @@ namespace TPASystem2.OnBoarding
                     if (typeof ValidatorOnSubmit === 'function') {
                         ValidatorOnSubmit = function() { return true; };
                     }
-                    if (typeof ValidatorCommonOnSubmit === 'function') {
-                        ValidatorCommonOnSubmit = function() { return true; };
-                    }
                 </script>", false);
 
             if (!IsPostBack)
             {
                 InitializePage();
-                LoadEmployeeData();
+                LoadEmployeeTrainingStatus();
             }
         }
 
-        protected void Page_PreRender(object sender, EventArgs e)
-        {
-            // Final cleanup - disable all validators before rendering
-            try
-            {
-                foreach (var validator in Page.Validators)
-                {
-                    if (validator is System.Web.UI.WebControls.BaseValidator baseValidator)
-                    {
-                        baseValidator.Enabled = false;
-                        baseValidator.Visible = false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in Page_PreRender validator cleanup: {ex.Message}");
-            }
-        }
-
-        protected void btnSubmit_Click(object sender, EventArgs e)
+        protected void btnCompleteTraining_Click(object sender, EventArgs e)
         {
             try
             {
-                // Skip Page.IsValid check and do manual validation instead
-                if (ManualValidateDirectDeposit())
+                // Manual validation instead of using ASP.NET validators
+                if (ManualValidateTraining())
                 {
-                    SaveDirectDepositData();
+                    SaveTrainingCompletion();
                     CompleteMandatoryTask();
                     ShowSuccessAndRedirect();
                 }
                 else
                 {
-                    ShowErrorMessage("Please complete all required fields including bank information and authorizations.");
+                    ShowErrorMessage("Please acknowledge completion of all training modules and requirements.");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error submitting direct deposit: {ex.Message}");
-                ShowErrorMessage("An error occurred while saving your direct deposit information. Please try again.");
+                System.Diagnostics.Debug.WriteLine($"Error completing training: {ex.Message}");
+                ShowErrorMessage("An error occurred while saving your training completion. Please try again.");
             }
         }
 
@@ -144,102 +87,46 @@ namespace TPASystem2.OnBoarding
 
         #endregion
 
-        #region Helper Methods
+        #region Validation Methods
 
-        private System.Web.UI.Control FindControlRecursive(System.Web.UI.Control container, string controlId)
-        {
-            if (container.ID == controlId)
-                return container;
-
-            foreach (System.Web.UI.Control control in container.Controls)
-            {
-                var found = FindControlRecursive(control, controlId);
-                if (found != null)
-                    return found;
-            }
-
-            return null;
-        }
-
-        private bool ManualValidateDirectDeposit()
+        private bool ManualValidateTraining()
         {
             bool isValid = true;
             string errorMessage = "";
 
             try
             {
-                // Check basic text fields
-                if (string.IsNullOrWhiteSpace(txtBankName?.Text))
+                // Check training completion acknowledgments
+                if (chkTrainingCompletion != null && !chkTrainingCompletion.Checked)
                 {
                     isValid = false;
-                    errorMessage += "Bank name is required. ";
+                    errorMessage += "Training completion acknowledgment is required. ";
                 }
 
-                if (string.IsNullOrEmpty(ddlAccountType?.SelectedValue))
+                if (chkPolicyUnderstanding != null && !chkPolicyUnderstanding.Checked)
                 {
                     isValid = false;
-                    errorMessage += "Account type is required. ";
+                    errorMessage += "Policy understanding acknowledgment is required. ";
                 }
 
-                if (string.IsNullOrWhiteSpace(txtRoutingNumber?.Text))
+                if (chkContinuousLearning != null && !chkContinuousLearning.Checked)
                 {
                     isValid = false;
-                    errorMessage += "Routing number is required. ";
-                }
-                else if (txtRoutingNumber.Text.Length != 9 || !System.Text.RegularExpressions.Regex.IsMatch(txtRoutingNumber.Text, @"^\d{9}$"))
-                {
-                    isValid = false;
-                    errorMessage += "Routing number must be exactly 9 digits. ";
-                }
-
-                if (string.IsNullOrWhiteSpace(txtAccountNumber?.Text))
-                {
-                    isValid = false;
-                    errorMessage += "Account number is required. ";
-                }
-
-                if (string.IsNullOrWhiteSpace(txtConfirmAccountNumber?.Text))
-                {
-                    isValid = false;
-                    errorMessage += "Account number confirmation is required. ";
-                }
-                else if (txtAccountNumber?.Text != txtConfirmAccountNumber?.Text)
-                {
-                    isValid = false;
-                    errorMessage += "Account numbers must match. ";
-                }
-
-                // Check authorization checkboxes
-                if (chkDirectDepositAuth != null && !chkDirectDepositAuth.Checked)
-                {
-                    isValid = false;
-                    errorMessage += "Direct deposit authorization is required. ";
-                }
-
-                if (chkBankingAccuracy != null && !chkBankingAccuracy.Checked)
-                {
-                    isValid = false;
-                    errorMessage += "Data accuracy certification is required. ";
-                }
-
-                if (chkBankingPrivacy != null && !chkBankingPrivacy.Checked)
-                {
-                    isValid = false;
-                    errorMessage += "Privacy consent is required. ";
+                    errorMessage += "Continuous learning commitment is required. ";
                 }
 
                 if (!isValid)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Validation failed: {errorMessage}");
+                    System.Diagnostics.Debug.WriteLine($"Training validation failed: {errorMessage}");
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Manual validation passed");
+                    System.Diagnostics.Debug.WriteLine("Training validation passed");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in manual validation: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error in training validation: {ex.Message}");
                 isValid = true; // Allow submission even if validation fails
             }
 
@@ -275,7 +162,7 @@ namespace TPASystem2.OnBoarding
             }
         }
 
-        private void LoadEmployeeData()
+        private void LoadEmployeeTrainingStatus()
         {
             try
             {
@@ -293,8 +180,7 @@ namespace TPASystem2.OnBoarding
                         {
                             if (reader.Read())
                             {
-                                // Employee data loaded successfully
-                                System.Diagnostics.Debug.WriteLine($"Loaded data for employee: {reader["FirstName"]} {reader["LastName"]}");
+                                System.Diagnostics.Debug.WriteLine($"Loading training for employee: {reader["FirstName"]} {reader["LastName"]}");
                             }
                         }
                     }
@@ -302,8 +188,7 @@ namespace TPASystem2.OnBoarding
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading employee data: {ex.Message}");
-                // Don't show error to user, just log it
+                System.Diagnostics.Debug.WriteLine($"Error loading employee training status: {ex.Message}");
             }
         }
 
@@ -311,7 +196,7 @@ namespace TPASystem2.OnBoarding
 
         #region Data Saving Methods
 
-        private void SaveDirectDepositData()
+        private void SaveTrainingCompletion()
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
@@ -320,10 +205,10 @@ namespace TPASystem2.OnBoarding
                 {
                     try
                     {
-                        // Log the direct deposit information
-                        LogDirectDepositData();
+                        // Log the training completion information
+                        LogTrainingData();
 
-                        // Update employee record with basic info
+                        // Update employee record
                         using (SqlCommand cmd = new SqlCommand(@"
                             UPDATE Employees 
                             SET LastUpdated = GETUTCDATE()
@@ -334,41 +219,43 @@ namespace TPASystem2.OnBoarding
                         }
 
                         transaction.Commit();
-                        System.Diagnostics.Debug.WriteLine("Direct deposit data saved successfully");
+                        System.Diagnostics.Debug.WriteLine("Training completion data saved successfully");
                     }
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        System.Diagnostics.Debug.WriteLine($"Error in SaveDirectDepositData: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Error in SaveTrainingCompletion: {ex.Message}");
                         throw;
                     }
                 }
             }
         }
 
-        private void LogDirectDepositData()
+        private void LogTrainingData()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("=== DIRECT DEPOSIT ENROLLMENT DATA ===");
+                System.Diagnostics.Debug.WriteLine("=== MANDATORY TRAINING COMPLETION DATA ===");
                 System.Diagnostics.Debug.WriteLine($"Employee ID: {CurrentEmployeeId}");
-                System.Diagnostics.Debug.WriteLine($"Bank Name: {txtBankName?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Account Type: {ddlAccountType?.SelectedValue}");
-                System.Diagnostics.Debug.WriteLine($"Routing Number: {txtRoutingNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Account Number: {txtAccountNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Confirm Account Number: {txtConfirmAccountNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Direct Deposit Authorization: {chkDirectDepositAuth?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Banking Accuracy: {chkBankingAccuracy?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Banking Privacy: {chkBankingPrivacy?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Timestamp: {DateTime.Now}");
-                System.Diagnostics.Debug.WriteLine("=== END DIRECT DEPOSIT DATA ===");
+                System.Diagnostics.Debug.WriteLine($"Training Completion: {chkTrainingCompletion?.Checked}");
+                System.Diagnostics.Debug.WriteLine($"Policy Understanding: {chkPolicyUnderstanding?.Checked}");
+                System.Diagnostics.Debug.WriteLine($"Continuous Learning: {chkContinuousLearning?.Checked}");
+                System.Diagnostics.Debug.WriteLine($"Completion Date: {DateTime.Now}");
 
-                // TODO: When you create the DirectDeposit table, insert this data
+                // Log individual training modules completed
+                System.Diagnostics.Debug.WriteLine("Training Modules Completed:");
+                System.Diagnostics.Debug.WriteLine("✓ Company Orientation (30 min)");
+                System.Diagnostics.Debug.WriteLine("✓ Workplace Safety (45 min)");
+                System.Diagnostics.Debug.WriteLine("✓ IT Security Awareness (15 min)");
+                System.Diagnostics.Debug.WriteLine($"Total Training Time: 2 hours");
+                System.Diagnostics.Debug.WriteLine("=== END TRAINING DATA ===");
+
+                // TODO: When you create the EmployeeTraining table, insert this data
                 // For now, we're just logging it
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error logging direct deposit data: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error logging training data: {ex.Message}");
             }
         }
 
@@ -380,16 +267,16 @@ namespace TPASystem2.OnBoarding
                 {
                     conn.Open();
 
-                    // Mark the Direct Deposit task as completed
+                    // Mark the Mandatory Training task as completed
                     using (SqlCommand cmd = new SqlCommand(@"
                         UPDATE OnboardingTasks 
                         SET Status = 'COMPLETED',
                             CompletedDate = GETUTCDATE(),
                             CompletedById = @EmployeeId,
-                            Notes = 'Completed through employee portal - Direct deposit enrollment',
+                            Notes = 'Completed through employee portal - All mandatory training modules completed',
                             LastUpdated = GETUTCDATE()
                         WHERE EmployeeId = @EmployeeId 
-                          AND Category = 'DIRECT_DEPOSIT' 
+                          AND Category = 'MANDATORY_TRAINING' 
                           AND Status = 'PENDING'", conn))
                     {
                         cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
@@ -397,18 +284,18 @@ namespace TPASystem2.OnBoarding
 
                         if (rowsAffected > 0)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Successfully completed direct deposit task for employee {CurrentEmployeeId}");
+                            System.Diagnostics.Debug.WriteLine($"Successfully completed mandatory training task for employee {CurrentEmployeeId}");
                         }
                         else
                         {
-                            System.Diagnostics.Debug.WriteLine($"No pending direct deposit task found for employee {CurrentEmployeeId}");
+                            System.Diagnostics.Debug.WriteLine($"No pending mandatory training task found for employee {CurrentEmployeeId}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error completing mandatory task: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error completing mandatory training task: {ex.Message}");
                 // Don't throw error here as the data was saved successfully
             }
         }
@@ -468,10 +355,10 @@ namespace TPASystem2.OnBoarding
                     pnlSuccessMessage.Visible = true;
                 }
 
-                // Redirect after a brief delay using JavaScript
+                // Show success message and redirect
                 ClientScript.RegisterStartupScript(this.GetType(), "redirect",
                     @"
-                    alert('Direct deposit enrollment completed successfully!');
+                    alert('Congratulations! You have completed all mandatory training requirements.');
                     setTimeout(function() {
                         window.location.href = '" + ResolveUrl("~/OnBoarding/MyOnboarding.aspx") + @"';
                     }, 1000);

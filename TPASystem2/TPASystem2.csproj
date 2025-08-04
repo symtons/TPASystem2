@@ -93,6 +93,7 @@
     <Content Include="Login.aspx" />
     <Content Include="NotFound.aspx" />
     <Content Include="OnBoarding\DirectDepositEnrollment.aspx" />
+    <Content Include="OnBoarding\MandatoryTraining.aspx" />
     <Content Include="OnBoarding\MyOnboarding.aspx" />
     <Content Include="OnBoarding\NewHirePaperWork.aspx" />
     <Content Include="OnBoarding\OnboardingManagement.aspx" />
@@ -221,6 +222,13 @@
     </Compile>
     <Compile Include="OnBoarding\DirectDepositEnrollment.aspx.designer.cs">
       <DependentUpon>DirectDepositEnrollment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="OnBoarding\MandatoryTraining.aspx.cs">
+      <DependentUpon>MandatoryTraining.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="OnBoarding\MandatoryTraining.aspx.designer.cs">
+      <DependentUpon>MandatoryTraining.aspx</DependentUpon>
     </Compile>
     <Compile Include="OnBoarding\MyOnboarding.aspx.cs">
       <DependentUpon>MyOnboarding.aspx</DependentUpon>

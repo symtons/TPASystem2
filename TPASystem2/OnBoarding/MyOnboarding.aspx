@@ -718,10 +718,10 @@
         </div>
         <h3>All Done! Welcome to the Team! 🎉</h3>
         <p>You've completed all your onboarding tasks. Welcome aboard!</p>
-        <a href="/Dashboard.aspx" class="btn-tpa">
-            <i class="material-icons">dashboard</i>
-            Go to Dashboard
-        </a>
+         <asp:LinkButton ID="GoToDashboard" runat="server" OnClick="GoToDashboard_Click" CssClass="btn-tpa">
+     <i class="material-icons">exit_to_app</i>Go to Dashboard
+ </asp:LinkButton>
+        
     </asp:Panel>
 
     <!-- Success Modal -->
