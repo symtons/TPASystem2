@@ -502,6 +502,21 @@
                 opacity: 1;
             }
         }
+
+        .task-completion-status {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .task-completion-status.completed {
+            background: #e8f5e8;
+        }
+
+        .task-completion-status.not-employee-task {
+            background: #f5f5f5;
+        }
     </style>
 
     <!-- Page Header -->
@@ -600,12 +615,21 @@
                             "<div class='task-instructions'><h4><i class='material-icons'>info</i>Instructions:</h4><p>" + Eval("Instructions") + "</p></div>" : "" %>
                     </div>
 
-                    <!-- Task Actions -->
-                    <%# Eval("Status").ToString() != "COMPLETED" && Convert.ToBoolean(Eval("CanEmployeeComplete")) ? 
-                        "<div class='task-actions'><asp:Button runat='server' Text='Complete This Task' CssClass='btn-complete' CommandName='COMPLETE_MANDATORY:" + Eval("TaskId") + "' /></div>" : "" %>
+                    <!-- Task Actions - Fixed to use proper server controls -->
+                    <asp:Panel ID="pnlTaskActions" runat="server" CssClass="task-actions" 
+                               Visible='<%# Eval("Status").ToString() != "COMPLETED" && Convert.ToBoolean(Eval("CanEmployeeComplete")) %>'>
+                        <asp:Button ID="btnCompleteTask" runat="server" Text="Complete This Task" 
+                                    CssClass="btn-complete" 
+                                    CommandName="COMPLETE_MANDATORY" 
+                                    CommandArgument='<%# Eval("TaskId") %>' />
+                    </asp:Panel>
                     
-                    <%# Eval("Status").ToString() == "COMPLETED" ? 
-                        "<div style='text-align: center; padding: 1rem; background: #e8f5e8; border-radius: 12px; margin-top: 1rem;'><i class='material-icons' style='color: #4caf50; font-size: 2rem;'>check_circle</i><p style='color: #2e7d32; font-weight: 600; margin: 0.5rem 0 0 0;'>Task Completed!</p></div>" : "" %>
+                    <!-- Completed Status -->
+                    <asp:Panel ID="pnlCompletedStatus" runat="server" CssClass="task-completion-status completed"
+                               Visible='<%# Eval("Status").ToString() == "COMPLETED" %>'>
+                        <i class="material-icons" style="color: #4caf50; font-size: 2rem;">check_circle</i>
+                        <p style="color: #2e7d32; font-weight: 600; margin: 0.5rem 0 0 0;">Task Completed!</p>
+                    </asp:Panel>
                 </div>
             </ItemTemplate>
         </asp:Repeater>
@@ -651,15 +675,28 @@
                             "<div class='task-instructions'><h4><i class='material-icons'>info</i>Instructions:</h4><p>" + Eval("Instructions") + "</p></div>" : "" %>
                     </div>
 
-                    <!-- Task Actions -->
-                    <%# Eval("Status").ToString() != "COMPLETED" && Convert.ToBoolean(Eval("CanEmployeeComplete")) ? 
-                        "<div class='task-actions'><asp:Button runat='server' Text='Complete Task' CssClass='btn-complete' CommandName='COMPLETE_TASK:" + Eval("TaskId") + "' /></div>" : "" %>
+                    <!-- Task Actions for Regular Tasks -->
+                    <asp:Panel ID="pnlRegularTaskActions" runat="server" CssClass="task-actions" 
+                               Visible='<%# Eval("Status").ToString() != "COMPLETED" && Convert.ToBoolean(Eval("CanEmployeeComplete")) %>'>
+                        <asp:Button ID="btnCompleteRegularTask" runat="server" Text="Complete Task" 
+                                    CssClass="btn-complete" 
+                                    CommandName="COMPLETE_TASK" 
+                                    CommandArgument='<%# Eval("TaskId") %>' />
+                    </asp:Panel>
                     
-                    <%# Eval("Status").ToString() == "COMPLETED" ? 
-                        "<div style='text-align: center; padding: 1rem; background: #e8f5e8; border-radius: 12px; margin-top: 1rem;'><i class='material-icons' style='color: #4caf50; font-size: 2rem;'>check_circle</i><p style='color: #2e7d32; font-weight: 600; margin: 0.5rem 0 0 0;'>Task Completed!</p></div>" : "" %>
+                    <!-- Completed Status for Regular Tasks -->
+                    <asp:Panel ID="pnlRegularCompletedStatus" runat="server" CssClass="task-completion-status completed"
+                               Visible='<%# Eval("Status").ToString() == "COMPLETED" %>'>
+                        <i class="material-icons" style="color: #4caf50; font-size: 2rem;">check_circle</i>
+                        <p style="color: #2e7d32; font-weight: 600; margin: 0.5rem 0 0 0;">Task Completed!</p>
+                    </asp:Panel>
                     
-                    <%# Eval("Status").ToString() != "COMPLETED" && !Convert.ToBoolean(Eval("CanEmployeeComplete")) ? 
-                        "<div style='text-align: center; padding: 1rem; background: #f5f5f5; border-radius: 12px; margin-top: 1rem;'><i class='material-icons' style='color: #666; font-size: 2rem;'>people</i><p style='color: #666; margin: 0.5rem 0 0 0;'>This task will be completed by " + GetAssignedToDisplay(Eval("AssignedToRole").ToString()) + "</p></div>" : "" %>
+                    <!-- Non-Employee Completable Tasks -->
+                    <asp:Panel ID="pnlNonEmployeeTask" runat="server" CssClass="task-completion-status not-employee-task"
+                               Visible='<%# Eval("Status").ToString() != "COMPLETED" && !Convert.ToBoolean(Eval("CanEmployeeComplete")) %>'>
+                        <i class="material-icons" style="color: #666; font-size: 2rem;">people</i>
+                        <p style="color: #666; margin: 0.5rem 0 0 0;">This task will be completed by <%# GetAssignedToDisplay(Eval("AssignedToRole").ToString()) %></p>
+                    </asp:Panel>
                 </div>
             </ItemTemplate>
         </asp:Repeater>
