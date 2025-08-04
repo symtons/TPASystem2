@@ -40,19 +40,31 @@ namespace TPASystem2.OnBoarding
         {
             try
             {
-                if (e.CommandName.StartsWith("COMPLETE_MANDATORY:"))
+                // Debug info
+                System.Diagnostics.Debug.WriteLine($"Command Name: {e.CommandName}");
+                System.Diagnostics.Debug.WriteLine($"Command Argument: {e.CommandArgument}");
+
+                int taskId = Convert.ToInt32(e.CommandArgument);
+
+                switch (e.CommandName)
                 {
-                    int taskId = Convert.ToInt32(e.CommandName.Split(':')[1]);
-                    CompleteMandatoryTask(taskId);
-                }
-                else if (e.CommandName.StartsWith("COMPLETE_TASK:"))
-                {
-                    int taskId = Convert.ToInt32(e.CommandName.Split(':')[1]);
-                    CompleteRegularTask(taskId);
+                    case "COMPLETE_MANDATORY":
+                        System.Diagnostics.Debug.WriteLine($"Completing mandatory task: {taskId}");
+                        CompleteMandatoryTask(taskId);
+                        break;
+                    case "COMPLETE_TASK":
+                        System.Diagnostics.Debug.WriteLine($"Completing regular task: {taskId}");
+                        CompleteRegularTask(taskId);
+                        break;
+                    default:
+                        System.Diagnostics.Debug.WriteLine($"Unknown command: {e.CommandName}");
+                        ShowNotification($"Unknown command: {e.CommandName}", "error");
+                        break;
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error in rptTasks_ItemCommand: {ex.Message}");
                 ShowNotification($"Error processing task: {ex.Message}", "error");
             }
         }
@@ -211,26 +223,58 @@ namespace TPASystem2.OnBoarding
                 {
                     conn.Open();
 
-                    // Get mandatory task progress
-                    using (SqlCommand cmd = new SqlCommand("sp_GetMandatoryTasksStatus", conn))
+                    // Try using stored procedure first, fallback to direct SQL if it doesn't exist
+                    try
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        using (SqlCommand cmd = new SqlCommand("sp_GetMandatoryTasksStatus", conn))
                         {
-                            // Skip the first result set (task details)
-                            reader.NextResult();
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
 
-                            // Read the summary statistics
-                            if (reader.Read())
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
-                                int totalMandatory = Convert.ToInt32(reader["TotalMandatoryTasks"]);
-                                int completedMandatory = Convert.ToInt32(reader["CompletedMandatoryTasks"]);
-                                decimal percentage = Convert.ToDecimal(reader["MandatoryCompletionPercentage"]);
+                                // Skip the first result set (task details)
+                                reader.NextResult();
 
-                                litMandatoryProgress.Text = $"{percentage:F0}%";
-                                litMandatoryProgressText.Text = $"{completedMandatory} of {totalMandatory} mandatory tasks completed";
+                                // Read the summary statistics
+                                if (reader.Read())
+                                {
+                                    int totalMandatory = Convert.ToInt32(reader["TotalMandatoryTasks"]);
+                                    int completedMandatory = Convert.ToInt32(reader["CompletedMandatoryTasks"]);
+                                    decimal percentage = Convert.ToDecimal(reader["MandatoryCompletionPercentage"]);
+
+                                    litMandatoryProgress.Text = $"{percentage:F0}%";
+                                    litMandatoryProgressText.Text = $"{completedMandatory} of {totalMandatory} mandatory tasks completed";
+                                }
+                            }
+                        }
+                    }
+                    catch (SqlException)
+                    {
+                        // Fallback to direct SQL if stored procedure doesn't exist
+                        string query = @"
+                            SELECT 
+                                COUNT(*) as TotalMandatory,
+                                COUNT(CASE WHEN Status = 'COMPLETED' THEN 1 END) as CompletedMandatory
+                            FROM [dbo].[OnboardingTasks] 
+                            WHERE EmployeeId = @EmployeeId 
+                                AND IsMandatory = 1 
+                                AND IsTemplate = 0";
+
+                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            using (SqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    int totalMandatory = Convert.ToInt32(reader["TotalMandatory"]);
+                                    int completedMandatory = Convert.ToInt32(reader["CompletedMandatory"]);
+                                    decimal percentage = totalMandatory > 0 ? (decimal)completedMandatory / totalMandatory * 100 : 0;
+
+                                    litMandatoryProgress.Text = $"{percentage:F0}%";
+                                    litMandatoryProgressText.Text = $"{completedMandatory} of {totalMandatory} mandatory tasks completed";
+                                }
                             }
                         }
                     }
@@ -250,18 +294,41 @@ namespace TPASystem2.OnBoarding
                 {
                     conn.Open();
 
-                    using (SqlCommand cmd = new SqlCommand("sp_GetEmployeeSystemAccessStatus", conn))
+                    // Try using stored procedure first, fallback to direct SQL if it doesn't exist
+                    try
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        using (SqlCommand cmd = new SqlCommand("sp_GetEmployeeSystemAccessStatus", conn))
                         {
-                            if (reader.Read())
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
-                                string accessStatus = reader["AccessStatus"].ToString();
-                                pnlSystemAccessWarning.Visible = accessStatus == "RESTRICTED_ACCESS";
+                                if (reader.Read())
+                                {
+                                    string accessStatus = reader["AccessStatus"].ToString();
+                                    pnlSystemAccessWarning.Visible = accessStatus == "RESTRICTED_ACCESS";
+                                }
                             }
+                        }
+                    }
+                    catch (SqlException)
+                    {
+                        // Fallback to direct SQL
+                        string query = @"
+                            SELECT COUNT(*) 
+                            FROM [dbo].[OnboardingTasks] 
+                            WHERE EmployeeId = @EmployeeId 
+                                AND IsMandatory = 1 
+                                AND BlocksSystemAccess = 1 
+                                AND Status != 'COMPLETED'
+                                AND IsTemplate = 0";
+
+                        using (SqlCommand cmd = new SqlCommand(query, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            int blockingTasks = Convert.ToInt32(cmd.ExecuteScalar());
+                            pnlSystemAccessWarning.Visible = blockingTasks > 0;
                         }
                     }
                 }
@@ -484,36 +551,86 @@ namespace TPASystem2.OnBoarding
         {
             try
             {
+                // First check if this is a task that requires navigation to a specific page
+                string taskCategory = GetTaskCategory(taskId);
+
+                switch (taskCategory)
+                {
+                    case "NEW_HIRE_PAPERWORK":
+                        Response.Redirect("~/OnBoarding/NewHirePaperWork.aspx");
+                        return;
+                    case "DIRECT_DEPOSIT":
+                        Response.Redirect("~/OnBoarding/DirectDepositEnrollment.aspx");
+                        return;
+                    case "MANDATORY_TRAINING":
+                        Response.Redirect("~/Training/MandatoryTraining.aspx");
+                        return;
+                }
+
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
 
-                    using (SqlCommand cmd = new SqlCommand("sp_CompleteMandatoryTask", conn))
+                    // Try using stored procedure first, fallback to direct SQL if it doesn't exist
+                    try
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@TaskId", taskId);
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                        cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
-                        cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        using (SqlCommand cmd = new SqlCommand("sp_CompleteMandatoryTask", conn))
                         {
-                            if (reader.Read())
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@TaskId", taskId);
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
+
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
-                                string status = reader["Status"].ToString();
-                                string message = reader["Message"].ToString();
-
-                                if (status == "SUCCESS")
+                                if (reader.Read())
                                 {
-                                    ShowNotification("Mandatory task completed successfully! 🎉", "success");
+                                    string status = reader["Status"].ToString();
+                                    string message = reader["Message"].ToString();
 
-                                    // Redirect to refresh the page and show updated progress
-                                    Response.Redirect(Request.RawUrl);
+                                    if (status == "SUCCESS")
+                                    {
+                                        ShowNotification("Mandatory task completed successfully! 🎉", "success");
+                                        // Redirect to refresh the page and show updated progress
+                                        Response.Redirect(Request.RawUrl);
+                                    }
+                                    else
+                                    {
+                                        ShowNotification($"Error: {message}", "error");
+                                    }
                                 }
-                                else
-                                {
-                                    ShowNotification($"Error: {message}", "error");
-                                }
+                            }
+                        }
+                    }
+                    catch (SqlException)
+                    {
+                        // Fallback to direct SQL update if stored procedure doesn't exist
+                        string updateQuery = @"
+                            UPDATE [dbo].[OnboardingTasks] 
+                            SET Status = 'COMPLETED', 
+                                CompletedDate = GETUTCDATE(),
+                                CompletedById = @CompletedById,
+                                Notes = @Notes,
+                                LastUpdated = GETUTCDATE()
+                            WHERE Id = @TaskId AND EmployeeId = @EmployeeId";
+
+                        using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@TaskId", taskId);
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
+
+                            int rowsAffected = cmd.ExecuteNonQuery();
+                            if (rowsAffected > 0)
+                            {
+                                ShowNotification("Mandatory task completed successfully! 🎉", "success");
+                                Response.Redirect(Request.RawUrl);
+                            }
+                            else
+                            {
+                                ShowNotification("Error completing task. Please try again.", "error");
                             }
                         }
                     }
@@ -534,34 +651,67 @@ namespace TPASystem2.OnBoarding
                 {
                     conn.Open();
 
-                    // Use the regular task completion procedure
-                    using (SqlCommand cmd = new SqlCommand("sp_UpdateOnboardingTaskStatus", conn))
+                    // Try using stored procedure first, fallback to direct SQL if it doesn't exist
+                    try
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@TaskId", taskId);
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                        cmd.Parameters.AddWithValue("@Status", "COMPLETED");
-                        cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
-                        cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        using (SqlCommand cmd = new SqlCommand("sp_UpdateOnboardingTaskStatus", conn))
                         {
-                            if (reader.Read())
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@TaskId", taskId);
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@Status", "COMPLETED");
+                            cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
+
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
-                                string status = reader["Status"].ToString();
-                                string message = reader["Message"].ToString();
-
-                                if (status == "SUCCESS")
+                                if (reader.Read())
                                 {
-                                    ShowNotification("Task completed successfully! 🎉", "success");
+                                    string status = reader["Status"].ToString();
+                                    string message = reader["Message"].ToString();
 
-                                    // Refresh the page to show updated progress
-                                    Response.Redirect(Request.RawUrl);
+                                    if (status == "SUCCESS")
+                                    {
+                                        ShowNotification("Task completed successfully! 🎉", "success");
+                                        // Refresh the page to show updated progress
+                                        Response.Redirect(Request.RawUrl);
+                                    }
+                                    else
+                                    {
+                                        ShowNotification($"Error: {message}", "error");
+                                    }
                                 }
-                                else
-                                {
-                                    ShowNotification($"Error: {message}", "error");
-                                }
+                            }
+                        }
+                    }
+                    catch (SqlException)
+                    {
+                        // Fallback to direct SQL update if stored procedure doesn't exist
+                        string updateQuery = @"
+                            UPDATE [dbo].[OnboardingTasks] 
+                            SET Status = 'COMPLETED', 
+                                CompletedDate = GETUTCDATE(),
+                                CompletedById = @CompletedById,
+                                Notes = @Notes,
+                                LastUpdated = GETUTCDATE()
+                            WHERE Id = @TaskId AND EmployeeId = @EmployeeId";
+
+                        using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@TaskId", taskId);
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@CompletedById", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@Notes", "Completed by employee through onboarding portal");
+
+                            int rowsAffected = cmd.ExecuteNonQuery();
+                            if (rowsAffected > 0)
+                            {
+                                ShowNotification("Task completed successfully! 🎉", "success");
+                                Response.Redirect(Request.RawUrl);
+                            }
+                            else
+                            {
+                                ShowNotification("Error completing task. Please try again.", "error");
                             }
                         }
                     }
@@ -577,6 +727,29 @@ namespace TPASystem2.OnBoarding
         #endregion
 
         #region Helper Methods
+
+        private string GetTaskCategory(int taskId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = "SELECT Category FROM [dbo].[OnboardingTasks] WHERE Id = @TaskId";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@TaskId", taskId);
+                        return cmd.ExecuteScalar()?.ToString() ?? "";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting task category: {ex.Message}");
+                return "";
+            }
+        }
 
         private int GetCurrentEmployeeId()
         {
