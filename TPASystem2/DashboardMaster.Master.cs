@@ -179,7 +179,8 @@ namespace TPASystem2
                         }
                         else
                         {
-                            menuHtml.AppendLine(CreateNavItem("My Leave", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                        menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/TimeManagement/EmployeeTimesheets.aspx", "assignment_ind", currentPage == "time-tracking"));
+                        menuHtml.AppendLine(CreateNavItem("My Leave", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                             menuHtml.AppendLine(CreateNavItem("My Reports", "/reports/personal", "assessment", currentPage == "reports"));
 
                             // Employee Section
