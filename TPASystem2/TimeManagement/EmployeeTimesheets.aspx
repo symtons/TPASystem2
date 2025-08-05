@@ -80,46 +80,44 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-number"><asp:Literal ID="litPendingTimesheets" runat="server" Text="0"></asp:Literal></div>
-                    <div class="stat-label">Awaiting Approval</div>
+                    <div class="stat-label">Pending Timesheets</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content Area -->
-    <div class="main-content-section">
-        
-        <!-- Filters and Actions Row -->
-        <div class="controls-section">
-            <div class="filters-container">
-                <h3 class="filters-title">
-                    <i class="material-icons">tune</i>
-                    Filter & Sort
-                </h3>
+    <!-- Filters and Actions -->
+    <div class="filters-actions-container">
+        <div class="filters-section">
+            <div class="section-title">
+                <h2>
+                    <i class="material-icons">filter_list</i>
+                    Filter Timesheets
+                </h2>
+            </div>
+            
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label class="filter-label">Status:</label>
+                    <asp:DropDownList ID="ddlStatusFilter" runat="server" CssClass="form-control" 
+                        AutoPostBack="true" OnSelectedIndexChanged="FilterChanged">
+                        <asp:ListItem Value="" Text="All Statuses" />
+                        <asp:ListItem Value="Draft" Text="Draft" />
+                        <asp:ListItem Value="Submitted" Text="Submitted" />
+                        <asp:ListItem Value="Approved" Text="Approved" />
+                        <asp:ListItem Value="Rejected" Text="Rejected" />
+                    </asp:DropDownList>
+                </div>
                 
-                <div class="filters-grid">
-                    <div class="filter-item">
-                        <label class="filter-label">Status</label>
-                        <asp:DropDownList ID="ddlStatusFilter" runat="server" CssClass="filter-select" 
-                            AutoPostBack="true" OnSelectedIndexChanged="FilterChanged">
-                            <asp:ListItem Value="" Text="All Statuses" />
-                            <asp:ListItem Value="Draft" Text="Draft" />
-                            <asp:ListItem Value="Submitted" Text="Submitted" />
-                            <asp:ListItem Value="Approved" Text="Approved" />
-                            <asp:ListItem Value="Rejected" Text="Rejected" />
-                        </asp:DropDownList>
-                    </div>
-                    
-                    <div class="filter-item">
-                        <label class="filter-label">Date Range</label>
-                        <asp:DropDownList ID="ddlDateFilter" runat="server" CssClass="filter-select" 
-                            AutoPostBack="true" OnSelectedIndexChanged="FilterChanged">
-                            <asp:ListItem Value="current" Text="Current Week" />
-                            <asp:ListItem Value="last" Text="Last Week" />
-                            <asp:ListItem Value="month" Text="This Month" />
-                            <asp:ListItem Value="all" Text="All Time" />
-                        </asp:DropDownList>
-                    </div>
+                <div class="filter-group">
+                    <label class="filter-label">Period:</label>
+                    <asp:DropDownList ID="ddlDateFilter" runat="server" CssClass="form-control" 
+                        AutoPostBack="true" OnSelectedIndexChanged="FilterChanged">
+                        <asp:ListItem Value="all" Text="All Time" />
+                        <asp:ListItem Value="current" Text="Current Week" />
+                        <asp:ListItem Value="last" Text="Last Week" />
+                        <asp:ListItem Value="month" Text="This Month" />
+                    </asp:DropDownList>
                 </div>
             </div>
             
@@ -152,8 +150,11 @@
                                 </div>
                                 
                                 <div class="status-container">
-                                    <div class="status-badge <%# GetStatusClass(Eval("Status").ToString()) %>">
-                                        <i class="material-icons"><%# GetStatusIcon(Eval("Status").ToString()) %></i>
+                                    <div class="status-badge <%# "status-" + Eval("Status").ToString().ToLower() %>">
+                                        <i class="material-icons"><%# Eval("Status").ToString().ToLower() == "draft" ? "edit" : 
+                                                                           Eval("Status").ToString().ToLower() == "submitted" ? "upload" : 
+                                                                           Eval("Status").ToString().ToLower() == "approved" ? "check_circle" : 
+                                                                           Eval("Status").ToString().ToLower() == "rejected" ? "cancel" : "info" %></i>
                                         <span><%# Eval("Status") %></span>
                                     </div>
                                 </div>
@@ -163,18 +164,18 @@
                                 <div class="hours-summary">
                                     <div class="hours-main">
                                         <div class="total-hours">
-                                            <span class="hours-number"><%# Convert.ToDecimal(Eval("TotalHours")).ToString("F1") %></span>
+                                            <span class="hours-number"><%# Eval("TotalHours") != DBNull.Value ? Convert.ToDecimal(Eval("TotalHours")).ToString("F1") : "0.0" %></span>
                                             <span class="hours-label">Total Hours</span>
                                         </div>
                                     </div>
                                     
                                     <div class="hours-breakdown">
                                         <div class="hours-item">
-                                            <span class="hours-value"><%# Convert.ToDecimal(Eval("RegularHours")).ToString("F1") %>h</span>
+                                            <span class="hours-value"><%# Eval("RegularHours") != DBNull.Value ? Convert.ToDecimal(Eval("RegularHours")).ToString("F1") : "0.0" %>h</span>
                                             <span class="hours-type">Regular</span>
                                         </div>
                                         <div class="hours-item overtime">
-                                            <span class="hours-value"><%# Convert.ToDecimal(Eval("OvertimeHours")).ToString("F1") %>h</span>
+                                            <span class="hours-value"><%# Eval("OvertimeHours") != DBNull.Value ? Convert.ToDecimal(Eval("OvertimeHours")).ToString("F1") : "0.0" %>h</span>
                                             <span class="hours-type">Overtime</span>
                                         </div>
                                     </div>

@@ -84,6 +84,7 @@
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
+    <Content Include="TimeManagement\EditTimesheet.aspx" />
     <Content Include="TimeManagement\EmployeeTimesheets.aspx" />
     <Content Include="TimeManagement\EmployeeTimeTracking.aspx" />
     <Content Include="TimeManagement\TimeManagement.aspx" />
@@ -161,6 +162,13 @@
     </Compile>
     <Compile Include="HR\ManageEmployeeOnboarding.aspx.designer.cs">
       <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="TimeManagement\EditTimesheet.aspx.cs">
+      <DependentUpon>EditTimesheet.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="TimeManagement\EditTimesheet.aspx.designer.cs">
+      <DependentUpon>EditTimesheet.aspx</DependentUpon>
     </Compile>
     <Compile Include="TimeManagement\EmployeeTimesheets.aspx.cs">
       <DependentUpon>EmployeeTimesheets.aspx</DependentUpon>
