@@ -11,7 +11,7 @@ namespace TPASystem2.TimeManagement
 {
 
 
-    public partial class EditTimesheet
+    public partial class ViewTimesheet
     {
 
         /// <summary>
@@ -78,22 +78,22 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litTimesheetStatus;
 
         /// <summary>
-        /// btnSaveProgress control.
+        /// btnEditTimesheet control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveProgress;
+        protected global::System.Web.UI.WebControls.Button btnEditTimesheet;
 
         /// <summary>
-        /// btnPreviewTimesheet control.
+        /// btnPrintTimesheet control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnPreviewTimesheet;
+        protected global::System.Web.UI.WebControls.Button btnPrintTimesheet;
 
         /// <summary>
         /// litTotalHours control.
@@ -141,40 +141,58 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litMondayDate;
 
         /// <summary>
-        /// txtMondayStart control.
+        /// litMondayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtMondayStart;
+        protected global::System.Web.UI.WebControls.Literal litMondayTotal;
 
         /// <summary>
-        /// txtMondayEnd control.
+        /// litMondayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtMondayEnd;
+        protected global::System.Web.UI.WebControls.Literal litMondayStart;
 
         /// <summary>
-        /// txtMondayBreak control.
+        /// litMondayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtMondayBreak;
+        protected global::System.Web.UI.WebControls.Literal litMondayEnd;
 
         /// <summary>
-        /// txtMondayNotes control.
+        /// litMondayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtMondayNotes;
+        protected global::System.Web.UI.WebControls.Literal litMondayBreak;
+
+        /// <summary>
+        /// mondayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl mondayNotes;
+
+        /// <summary>
+        /// litMondayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litMondayNotes;
 
         /// <summary>
         /// litTuesdayDate control.
@@ -186,40 +204,58 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litTuesdayDate;
 
         /// <summary>
-        /// txtTuesdayStart control.
+        /// litTuesdayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtTuesdayStart;
+        protected global::System.Web.UI.WebControls.Literal litTuesdayTotal;
 
         /// <summary>
-        /// txtTuesdayEnd control.
+        /// litTuesdayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtTuesdayEnd;
+        protected global::System.Web.UI.WebControls.Literal litTuesdayStart;
 
         /// <summary>
-        /// txtTuesdayBreak control.
+        /// litTuesdayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtTuesdayBreak;
+        protected global::System.Web.UI.WebControls.Literal litTuesdayEnd;
 
         /// <summary>
-        /// txtTuesdayNotes control.
+        /// litTuesdayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtTuesdayNotes;
+        protected global::System.Web.UI.WebControls.Literal litTuesdayBreak;
+
+        /// <summary>
+        /// tuesdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl tuesdayNotes;
+
+        /// <summary>
+        /// litTuesdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litTuesdayNotes;
 
         /// <summary>
         /// litWednesdayDate control.
@@ -231,40 +267,58 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litWednesdayDate;
 
         /// <summary>
-        /// txtWednesdayStart control.
+        /// litWednesdayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtWednesdayStart;
+        protected global::System.Web.UI.WebControls.Literal litWednesdayTotal;
 
         /// <summary>
-        /// txtWednesdayEnd control.
+        /// litWednesdayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtWednesdayEnd;
+        protected global::System.Web.UI.WebControls.Literal litWednesdayStart;
 
         /// <summary>
-        /// txtWednesdayBreak control.
+        /// litWednesdayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtWednesdayBreak;
+        protected global::System.Web.UI.WebControls.Literal litWednesdayEnd;
 
         /// <summary>
-        /// txtWednesdayNotes control.
+        /// litWednesdayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtWednesdayNotes;
+        protected global::System.Web.UI.WebControls.Literal litWednesdayBreak;
+
+        /// <summary>
+        /// wednesdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl wednesdayNotes;
+
+        /// <summary>
+        /// litWednesdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litWednesdayNotes;
 
         /// <summary>
         /// litThursdayDate control.
@@ -276,40 +330,58 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litThursdayDate;
 
         /// <summary>
-        /// txtThursdayStart control.
+        /// litThursdayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtThursdayStart;
+        protected global::System.Web.UI.WebControls.Literal litThursdayTotal;
 
         /// <summary>
-        /// txtThursdayEnd control.
+        /// litThursdayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtThursdayEnd;
+        protected global::System.Web.UI.WebControls.Literal litThursdayStart;
 
         /// <summary>
-        /// txtThursdayBreak control.
+        /// litThursdayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtThursdayBreak;
+        protected global::System.Web.UI.WebControls.Literal litThursdayEnd;
 
         /// <summary>
-        /// txtThursdayNotes control.
+        /// litThursdayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtThursdayNotes;
+        protected global::System.Web.UI.WebControls.Literal litThursdayBreak;
+
+        /// <summary>
+        /// thursdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl thursdayNotes;
+
+        /// <summary>
+        /// litThursdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litThursdayNotes;
 
         /// <summary>
         /// litFridayDate control.
@@ -321,40 +393,58 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litFridayDate;
 
         /// <summary>
-        /// txtFridayStart control.
+        /// litFridayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtFridayStart;
+        protected global::System.Web.UI.WebControls.Literal litFridayTotal;
 
         /// <summary>
-        /// txtFridayEnd control.
+        /// litFridayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtFridayEnd;
+        protected global::System.Web.UI.WebControls.Literal litFridayStart;
 
         /// <summary>
-        /// txtFridayBreak control.
+        /// litFridayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtFridayBreak;
+        protected global::System.Web.UI.WebControls.Literal litFridayEnd;
 
         /// <summary>
-        /// txtFridayNotes control.
+        /// litFridayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtFridayNotes;
+        protected global::System.Web.UI.WebControls.Literal litFridayBreak;
+
+        /// <summary>
+        /// fridayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl fridayNotes;
+
+        /// <summary>
+        /// litFridayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litFridayNotes;
 
         /// <summary>
         /// litSaturdayDate control.
@@ -366,40 +456,58 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litSaturdayDate;
 
         /// <summary>
-        /// txtSaturdayStart control.
+        /// litSaturdayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSaturdayStart;
+        protected global::System.Web.UI.WebControls.Literal litSaturdayTotal;
 
         /// <summary>
-        /// txtSaturdayEnd control.
+        /// litSaturdayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSaturdayEnd;
+        protected global::System.Web.UI.WebControls.Literal litSaturdayStart;
 
         /// <summary>
-        /// txtSaturdayBreak control.
+        /// litSaturdayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSaturdayBreak;
+        protected global::System.Web.UI.WebControls.Literal litSaturdayEnd;
 
         /// <summary>
-        /// txtSaturdayNotes control.
+        /// litSaturdayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSaturdayNotes;
+        protected global::System.Web.UI.WebControls.Literal litSaturdayBreak;
+
+        /// <summary>
+        /// saturdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl saturdayNotes;
+
+        /// <summary>
+        /// litSaturdayNotes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litSaturdayNotes;
 
         /// <summary>
         /// litSundayDate control.
@@ -411,84 +519,147 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litSundayDate;
 
         /// <summary>
-        /// txtSundayStart control.
+        /// litSundayTotal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSundayStart;
+        protected global::System.Web.UI.WebControls.Literal litSundayTotal;
 
         /// <summary>
-        /// txtSundayEnd control.
+        /// litSundayStart control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSundayEnd;
+        protected global::System.Web.UI.WebControls.Literal litSundayStart;
 
         /// <summary>
-        /// txtSundayBreak control.
+        /// litSundayEnd control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSundayBreak;
+        protected global::System.Web.UI.WebControls.Literal litSundayEnd;
 
         /// <summary>
-        /// txtSundayNotes control.
+        /// litSundayBreak control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSundayNotes;
+        protected global::System.Web.UI.WebControls.Literal litSundayBreak;
 
         /// <summary>
-        /// txtTimesheetNotes control.
+        /// sundayNotes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtTimesheetNotes;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl sundayNotes;
 
         /// <summary>
-        /// btnSaveDraft control.
+        /// litSundayNotes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveDraft;
+        protected global::System.Web.UI.WebControls.Literal litSundayNotes;
 
         /// <summary>
-        /// btnSubmitTimesheet control.
+        /// timesheetNotesSection control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSubmitTimesheet;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl timesheetNotesSection;
 
         /// <summary>
-        /// btnDelete control.
+        /// litTimesheetNotes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnDelete;
+        protected global::System.Web.UI.WebControls.Literal litTimesheetNotes;
 
         /// <summary>
-        /// btnCancel control.
+        /// approvalInfoSection control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCancel;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl approvalInfoSection;
+
+        /// <summary>
+        /// litSubmittedAt control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litSubmittedAt;
+
+        /// <summary>
+        /// approvedBySection control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl approvedBySection;
+
+        /// <summary>
+        /// litApprovedBy control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litApprovedBy;
+
+        /// <summary>
+        /// approvedAtSection control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl approvedAtSection;
+
+        /// <summary>
+        /// litApprovedAt control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litApprovedAt;
+
+        /// <summary>
+        /// btnBackToList control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnBackToList;
+
+        /// <summary>
+        /// btnEditTimesheetBottom control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnEditTimesheetBottom;
     }
 }

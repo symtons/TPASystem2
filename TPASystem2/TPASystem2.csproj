@@ -101,6 +101,7 @@
     <Content Include="OnBoarding\NewHirePaperWork.aspx" />
     <Content Include="OnBoarding\OnboardingManagement.aspx" />
     <Content Include="OnBoarding\OnboardingTasks.aspx" />
+    <Content Include="TimeManagement\ViewTimesheet.aspx" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -290,6 +291,13 @@
     </Compile>
     <Compile Include="Site.Master.designer.cs">
       <DependentUpon>Site.Master</DependentUpon>
+    </Compile>
+    <Compile Include="TimeManagement\ViewTimesheet.aspx.cs">
+      <DependentUpon>ViewTimesheet.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="TimeManagement\ViewTimesheet.aspx.designer.cs">
+      <DependentUpon>ViewTimesheet.aspx</DependentUpon>
     </Compile>
     <Compile Include="UrlHelper.cs" />
   </ItemGroup>
