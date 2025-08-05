@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Configuration;
-using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 
 namespace TPASystem2.OnBoarding
 {
@@ -10,8 +10,15 @@ namespace TPASystem2.OnBoarding
     {
         #region Properties and Fields
 
-        private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-        private int CurrentEmployeeId => GetCurrentEmployeeId();
+        private readonly string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+
+        private int CurrentEmployeeId
+        {
+            get
+            {
+                return GetCurrentEmployeeId();
+            }
+        }
 
         #endregion
 
@@ -19,74 +26,6 @@ namespace TPASystem2.OnBoarding
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // NUCLEAR VALIDATION FIX: Completely disable all validation
-            Page.UnobtrusiveValidationMode = UnobtrusiveValidationMode.None;
-
-            try
-            {
-                // Method 1: Disable all validators
-                for (int i = Page.Validators.Count - 1; i >= 0; i--)
-                {
-                    if (Page.Validators[i] is System.Web.UI.WebControls.BaseValidator validator)
-                    {
-                        validator.Enabled = false;
-                        validator.Visible = false;
-                    }
-                }
-
-                // Method 2: Find and remove specific problematic validators
-                var problemValidators = new string[] {
-                    "rfvDirectDepositAuth", "chkDirectDepositAuth",
-                    "rfvAuthorization", "chkAuthorization",
-                    "rfvBankingAccuracy", "rfvBankingPrivacy",
-                    "rfv19Attestation", "chk19Attestation"
-                };
-
-                foreach (string controlId in problemValidators)
-                {
-                    try
-                    {
-                        var control = FindControlRecursive(Page, controlId);
-                        if (control != null)
-                        {
-                            if (control is System.Web.UI.WebControls.BaseValidator badValidator)
-                            {
-                                badValidator.Enabled = false;
-                                badValidator.Visible = false;
-                                badValidator.ControlToValidate = "";
-                            }
-
-                            if (control.Parent != null)
-                            {
-                                control.Parent.Controls.Remove(control);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error removing validator {controlId}: {ex.Message}");
-                    }
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Emergency fix applied - disabled {Page.Validators.Count} validators");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in emergency validator fix: {ex.Message}");
-            }
-
-            // Override client-side validation completely
-            ClientScript.RegisterStartupScript(this.GetType(), "DisableAllValidation", @"
-                <script type='text/javascript'>
-                    function Page_ClientValidate() { return true; }
-                    if (typeof ValidatorOnSubmit === 'function') {
-                        ValidatorOnSubmit = function() { return true; };
-                    }
-                    if (typeof ValidatorCommonOnSubmit === 'function') {
-                        ValidatorCommonOnSubmit = function() { return true; };
-                    }
-                </script>", false);
-
             if (!IsPostBack)
             {
                 InitializePage();
@@ -94,31 +33,10 @@ namespace TPASystem2.OnBoarding
             }
         }
 
-        protected void Page_PreRender(object sender, EventArgs e)
-        {
-            // Final cleanup - disable all validators before rendering
-            try
-            {
-                foreach (var validator in Page.Validators)
-                {
-                    if (validator is System.Web.UI.WebControls.BaseValidator baseValidator)
-                    {
-                        baseValidator.Enabled = false;
-                        baseValidator.Visible = false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in Page_PreRender validator cleanup: {ex.Message}");
-            }
-        }
-
         protected void btnSubmit_Click(object sender, EventArgs e)
         {
             try
             {
-                // Skip Page.IsValid check and do manual validation instead
                 if (ManualValidateDirectDeposit())
                 {
                     SaveDirectDepositData();
@@ -140,6 +58,177 @@ namespace TPASystem2.OnBoarding
         protected void btnCancel_Click(object sender, EventArgs e)
         {
             Response.Redirect("~/OnBoarding/MyOnboarding.aspx");
+        }
+
+        #endregion
+
+        #region Initialization Methods
+
+        private void InitializePage()
+        {
+            try
+            {
+                string userRole = Session["UserRole"]?.ToString() ?? "";
+                if (!userRole.Equals("EMPLOYEE", StringComparison.OrdinalIgnoreCase))
+                {
+                    Response.Redirect("~/Dashboard.aspx");
+                    return;
+                }
+
+                if (CurrentEmployeeId <= 0)
+                {
+                    ShowErrorMessage("Employee record not found. Please contact HR.");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in InitializePage: {ex.Message}");
+                Response.Redirect("~/Login.aspx");
+            }
+        }
+
+        private void LoadEmployeeData()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        SELECT e.FirstName, e.LastName, e.Email
+                        FROM Employees e
+                        WHERE e.Id = @EmployeeId", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Loaded data for employee: {reader["FirstName"]} {reader["LastName"]}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading employee data: {ex.Message}");
+            }
+        }
+
+        #endregion
+
+        #region Data Saving Methods
+
+        private void SaveDirectDepositData()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // First, deactivate any existing direct deposit records for this employee
+                        using (SqlCommand deactivateCmd = new SqlCommand(@"
+                            UPDATE DirectDeposit 
+                            SET IsActive = 0, LastUpdated = GETUTCDATE(), UpdatedById = @EmployeeId
+                            WHERE EmployeeId = @EmployeeId AND IsActive = 1", conn, transaction))
+                        {
+                            deactivateCmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            deactivateCmd.ExecuteNonQuery();
+                        }
+
+                        // Insert new direct deposit record
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            INSERT INTO DirectDeposit 
+                            (EmployeeId, BankName, AccountType, RoutingNumber, AccountNumber, AccountNumberConfirm,
+                             IsDirectDepositAuthorized, IsBankingAccuracyConfirmed, IsBankingPrivacyAccepted,
+                             CreatedById, Notes, VerificationStatus)
+                            VALUES 
+                            (@EmployeeId, @BankName, @AccountType, @RoutingNumber, @AccountNumber, @AccountNumberConfirm,
+                             @IsDirectDepositAuthorized, @IsBankingAccuracyConfirmed, @IsBankingPrivacyAccepted,
+                             @CreatedById, @Notes, 'PENDING')", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@BankName", txtBankName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@AccountType", ddlAccountType.SelectedValue);
+                            cmd.Parameters.AddWithValue("@RoutingNumber", txtRoutingNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@AccountNumber", txtAccountNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@AccountNumberConfirm", txtConfirmAccountNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@IsDirectDepositAuthorized", chkDirectDepositAuth.Checked);
+                            cmd.Parameters.AddWithValue("@IsBankingAccuracyConfirmed", chkBankingAccuracy.Checked);
+                            cmd.Parameters.AddWithValue("@IsBankingPrivacyAccepted", chkBankingPrivacy.Checked);
+                            cmd.Parameters.AddWithValue("@CreatedById", CurrentEmployeeId);
+                            cmd.Parameters.AddWithValue("@Notes", "Direct deposit enrollment completed via employee portal");
+
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // Update employee record with basic info
+                        using (SqlCommand cmd = new SqlCommand(@"
+                            UPDATE Employees 
+                            SET LastUpdated = GETUTCDATE()
+                            WHERE Id = @EmployeeId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                        System.Diagnostics.Debug.WriteLine("Direct deposit data saved successfully to database");
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        System.Diagnostics.Debug.WriteLine($"Error in SaveDirectDepositData: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private void CompleteMandatoryTask()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Mark the Direct Deposit task as completed
+                    using (SqlCommand cmd = new SqlCommand(@"
+                        UPDATE OnboardingTasks 
+                        SET Status = 'COMPLETED',
+                            CompletedDate = GETUTCDATE(),
+                            CompletedById = @EmployeeId,
+                            Notes = 'Completed through employee portal - Direct deposit enrollment',
+                            LastUpdated = GETUTCDATE()
+                        WHERE EmployeeId = @EmployeeId 
+                          AND Category = 'DIRECT_DEPOSIT' 
+                          AND Status = 'PENDING'", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                        int rowsAffected = cmd.ExecuteNonQuery();
+
+                        if (rowsAffected > 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Successfully completed direct deposit task for employee {CurrentEmployeeId}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"No pending direct deposit task found for employee {CurrentEmployeeId}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error completing mandatory task: {ex.Message}");
+                // Don't throw error here as the data was saved successfully
+            }
         }
 
         #endregion
@@ -209,207 +298,36 @@ namespace TPASystem2.OnBoarding
                     errorMessage += "Account numbers must match. ";
                 }
 
-                // Check authorization checkboxes
-                if (chkDirectDepositAuth != null && !chkDirectDepositAuth.Checked)
+                // Check required checkboxes
+                if (!chkDirectDepositAuth?.Checked == true)
                 {
                     isValid = false;
                     errorMessage += "Direct deposit authorization is required. ";
                 }
 
-                if (chkBankingAccuracy != null && !chkBankingAccuracy.Checked)
+                if (!chkBankingAccuracy?.Checked == true)
                 {
                     isValid = false;
-                    errorMessage += "Data accuracy certification is required. ";
+                    errorMessage += "Banking accuracy confirmation is required. ";
                 }
 
-                if (chkBankingPrivacy != null && !chkBankingPrivacy.Checked)
+                if (!chkBankingPrivacy?.Checked == true)
                 {
                     isValid = false;
-                    errorMessage += "Privacy consent is required. ";
+                    errorMessage += "Banking privacy acknowledgment is required. ";
                 }
 
                 if (!isValid)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Validation failed: {errorMessage}");
+                    ShowErrorMessage(errorMessage.Trim());
                 }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("Manual validation passed");
-                }
+
+                return isValid;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in manual validation: {ex.Message}");
-                isValid = true; // Allow submission even if validation fails
-            }
-
-            return isValid;
-        }
-
-        #endregion
-
-        #region Initialization Methods
-
-        private void InitializePage()
-        {
-            // Check if user is logged in
-            if (Session["UserId"] == null)
-            {
-                Response.Redirect("~/Login.aspx");
-                return;
-            }
-
-            // Check if user is an employee
-            string userRole = Session["UserRole"]?.ToString() ?? "";
-            if (!userRole.Equals("EMPLOYEE", StringComparison.OrdinalIgnoreCase))
-            {
-                Response.Redirect("~/Dashboard.aspx");
-                return;
-            }
-
-            // Check if employee exists
-            if (CurrentEmployeeId <= 0)
-            {
-                ShowErrorMessage("Employee record not found. Please contact HR.");
-                return;
-            }
-        }
-
-        private void LoadEmployeeData()
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        SELECT e.FirstName, e.LastName, e.Email
-                        FROM Employees e
-                        WHERE e.Id = @EmployeeId", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                // Employee data loaded successfully
-                                System.Diagnostics.Debug.WriteLine($"Loaded data for employee: {reader["FirstName"]} {reader["LastName"]}");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading employee data: {ex.Message}");
-                // Don't show error to user, just log it
-            }
-        }
-
-        #endregion
-
-        #region Data Saving Methods
-
-        private void SaveDirectDepositData()
-        {
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlTransaction transaction = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        // Log the direct deposit information
-                        LogDirectDepositData();
-
-                        // Update employee record with basic info
-                        using (SqlCommand cmd = new SqlCommand(@"
-                            UPDATE Employees 
-                            SET LastUpdated = GETUTCDATE()
-                            WHERE Id = @EmployeeId", conn, transaction))
-                        {
-                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                            cmd.ExecuteNonQuery();
-                        }
-
-                        transaction.Commit();
-                        System.Diagnostics.Debug.WriteLine("Direct deposit data saved successfully");
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        System.Diagnostics.Debug.WriteLine($"Error in SaveDirectDepositData: {ex.Message}");
-                        throw;
-                    }
-                }
-            }
-        }
-
-        private void LogDirectDepositData()
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("=== DIRECT DEPOSIT ENROLLMENT DATA ===");
-                System.Diagnostics.Debug.WriteLine($"Employee ID: {CurrentEmployeeId}");
-                System.Diagnostics.Debug.WriteLine($"Bank Name: {txtBankName?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Account Type: {ddlAccountType?.SelectedValue}");
-                System.Diagnostics.Debug.WriteLine($"Routing Number: {txtRoutingNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Account Number: {txtAccountNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Confirm Account Number: {txtConfirmAccountNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Direct Deposit Authorization: {chkDirectDepositAuth?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Banking Accuracy: {chkBankingAccuracy?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Banking Privacy: {chkBankingPrivacy?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Timestamp: {DateTime.Now}");
-                System.Diagnostics.Debug.WriteLine("=== END DIRECT DEPOSIT DATA ===");
-
-                // TODO: When you create the DirectDeposit table, insert this data
-                // For now, we're just logging it
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error logging direct deposit data: {ex.Message}");
-            }
-        }
-
-        private void CompleteMandatoryTask()
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    // Mark the Direct Deposit task as completed
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        UPDATE OnboardingTasks 
-                        SET Status = 'COMPLETED',
-                            CompletedDate = GETUTCDATE(),
-                            CompletedById = @EmployeeId,
-                            Notes = 'Completed through employee portal - Direct deposit enrollment',
-                            LastUpdated = GETUTCDATE()
-                        WHERE EmployeeId = @EmployeeId 
-                          AND Category = 'DIRECT_DEPOSIT' 
-                          AND Status = 'PENDING'", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                        int rowsAffected = cmd.ExecuteNonQuery();
-
-                        if (rowsAffected > 0)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Successfully completed direct deposit task for employee {CurrentEmployeeId}");
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine($"No pending direct deposit task found for employee {CurrentEmployeeId}");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error completing mandatory task: {ex.Message}");
-                // Don't throw error here as the data was saved successfully
+                System.Diagnostics.Debug.WriteLine($"Error in ManualValidateDirectDeposit: {ex.Message}");
+                return false;
             }
         }
 
@@ -449,7 +367,6 @@ namespace TPASystem2.OnBoarding
         {
             try
             {
-                // Simple client-side alert for now
                 ClientScript.RegisterStartupScript(this.GetType(), "alert",
                     $"alert('Error: {message.Replace("'", "\\'")}');", true);
             }
@@ -468,29 +385,17 @@ namespace TPASystem2.OnBoarding
                     pnlSuccessMessage.Visible = true;
                 }
 
-                // Redirect after a brief delay using JavaScript
                 ClientScript.RegisterStartupScript(this.GetType(), "redirect",
                     @"
                     alert('Direct deposit enrollment completed successfully!');
                     setTimeout(function() {
                         window.location.href = '" + ResolveUrl("~/OnBoarding/MyOnboarding.aspx") + @"';
-                    }, 1000);
-                    ", true);
+                    }, 2000);", true);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in ShowSuccessAndRedirect: {ex.Message}");
-                // Fallback redirect
-                try
-                {
-                    Response.Redirect("~/OnBoarding/MyOnboarding.aspx");
-                }
-                catch
-                {
-                    // Final fallback
-                    ClientScript.RegisterStartupScript(this.GetType(), "fallbackRedirect",
-                        "window.location.href = '/OnBoarding/MyOnboarding.aspx';", true);
-                }
+                Response.Redirect("~/OnBoarding/MyOnboarding.aspx");
             }
         }
 

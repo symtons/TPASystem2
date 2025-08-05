@@ -84,7 +84,7 @@
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
-    <Content Include="HR\TimeManagement.aspx" />
+    <Content Include="TimeManagement\TimeManagement.aspx" />
     <Content Include="LeaveManagement\ApproveLeaves.aspx" />
     <Content Include="LeaveManagement\Default.aspx" />
     <Content Include="LeaveManagement\LeaveCalendar.aspx" />
@@ -160,11 +160,11 @@
     <Compile Include="HR\ManageEmployeeOnboarding.aspx.designer.cs">
       <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
     </Compile>
-    <Compile Include="HR\TimeManagement.aspx.cs">
+    <Compile Include="TimeManagement\TimeManagement.aspx.cs">
       <DependentUpon>TimeManagement.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="HR\TimeManagement.aspx.designer.cs">
+    <Compile Include="TimeManagement\TimeManagement.aspx.designer.cs">
       <DependentUpon>TimeManagement.aspx</DependentUpon>
     </Compile>
     <Compile Include="LeaveManagement\ApproveLeaves.aspx.cs">

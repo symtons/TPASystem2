@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
-namespace TPASystem2.HR
+namespace TPASystem2.TimeManagement
 {
     public partial class TimeManagement : System.Web.UI.Page
     {

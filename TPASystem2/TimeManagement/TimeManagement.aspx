@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Time Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="TimeManagement.aspx.cs" Inherits="TPASystem2.HR.TimeManagement" %>
+﻿<%@ Page Title="Time Management" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="TimeManagement.aspx.cs" Inherits="TPASystem2.TimeManagement.TimeManagement" %>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="DashboardContent" runat="server">
     
