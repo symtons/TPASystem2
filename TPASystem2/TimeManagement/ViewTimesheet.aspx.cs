@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
+using System.Collections.Generic;
 
 namespace TPASystem2.TimeManagement
 {
@@ -10,20 +11,45 @@ namespace TPASystem2.TimeManagement
     {
         #region Properties and Fields
 
-        private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-        private int CurrentEmployeeId => GetCurrentEmployeeId();
+        private string ConnectionString
+        {
+            get { return ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString; }
+        }
 
         private int TimesheetId
         {
             get
             {
-                if (Request.QueryString["id"] != null && int.TryParse(Request.QueryString["id"], out int id))
+                if (ViewState["TimesheetId"] == null)
                 {
-                    return id;
+                    if (!string.IsNullOrEmpty(Request.QueryString["id"]) && int.TryParse(Request.QueryString["id"], out int id))
+                    {
+                        ViewState["TimesheetId"] = id;
+                    }
+                    else
+                    {
+                        ViewState["TimesheetId"] = 0;
+                    }
+                }
+                return (int)ViewState["TimesheetId"];
+            }
+        }
+
+        private int CurrentEmployeeId
+        {
+            get
+            {
+                if (Session["EmployeeId"] != null && int.TryParse(Session["EmployeeId"].ToString(), out int empId))
+                {
+                    return empId;
                 }
                 return 0;
             }
         }
+
+        // Store timesheet data for use in helper methods
+        private Dictionary<string, object> timesheetData = new Dictionary<string, object>();
+        private Dictionary<string, Dictionary<string, object>> dailyData = new Dictionary<string, Dictionary<string, object>>();
 
         #endregion
 
@@ -31,60 +57,17 @@ namespace TPASystem2.TimeManagement
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            Page.UnobtrusiveValidationMode = UnobtrusiveValidationMode.None;
-
             if (!IsPostBack)
             {
-                CheckUserAccess();
+                if (TimesheetId == 0)
+                {
+                    ShowMessage("Invalid timesheet ID.", "error");
+                    Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
+                    return;
+                }
+
                 LoadTimesheetData();
             }
-        }
-
-        #endregion
-
-        #region Initialization Methods
-
-        private void CheckUserAccess()
-        {
-            if (Session["UserId"] == null)
-            {
-                Response.Redirect("~/Login.aspx");
-                return;
-            }
-
-            if (TimesheetId <= 0)
-            {
-                ShowMessage("Invalid timesheet ID.", "error");
-                Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
-                return;
-            }
-        }
-
-        private int GetCurrentEmployeeId()
-        {
-            if (Session["UserId"] != null)
-            {
-                try
-                {
-                    using (SqlConnection conn = new SqlConnection(connectionString))
-                    {
-                        conn.Open();
-                        string query = "SELECT Id FROM Employees WHERE UserId = @UserId AND IsActive = 1";
-                        using (SqlCommand cmd = new SqlCommand(query, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@UserId", Session["UserId"]);
-                            object result = cmd.ExecuteScalar();
-                            return result != null ? Convert.ToInt32(result) : 0;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error getting current employee ID: {ex.Message}");
-                    return 0;
-                }
-            }
-            return 0;
         }
 
         #endregion
@@ -95,269 +78,315 @@ namespace TPASystem2.TimeManagement
         {
             try
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
                 {
                     conn.Open();
 
-                    // Load timesheet details with employee information
-                    string query = @"
-                        SELECT 
-                            ts.Id,
-                            ts.EmployeeId,
-                            ts.WeekStartDate,
-                            ts.WeekEndDate,
-                            ts.TotalHours,
-                            ts.RegularHours,
-                            ts.OvertimeHours,
-                            ts.Status,
-                            ts.SubmittedAt,
-                            ts.ApprovedById,
-                            ts.ApprovedAt,
-                            ts.Notes,
-                            e.FirstName + ' ' + e.LastName AS EmployeeName,
-                            approver.FirstName + ' ' + approver.LastName AS ApprovedByName
-                        FROM TimeSheets ts
-                        INNER JOIN Employees e ON ts.EmployeeId = e.Id
-                        LEFT JOIN Employees approver ON ts.ApprovedById = approver.Id
-                        WHERE ts.Id = @TimesheetId";
-
-                    // Check if user has access to this timesheet
-                    string userRole = Session["UserRole"]?.ToString();
-                    if (userRole != "Admin" && userRole != "HR Admin" && userRole != "HR Manager")
-                    {
-                        query += " AND ts.EmployeeId = @CurrentEmployeeId";
-                    }
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-                        if (userRole != "Admin" && userRole != "HR Admin" && userRole != "HR Manager")
-                        {
-                            cmd.Parameters.AddWithValue("@CurrentEmployeeId", CurrentEmployeeId);
-                        }
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                LoadTimesheetHeader(reader);
-                                LoadTimesheetSummary(reader);
-                            }
-                            else
-                            {
-                                ShowMessage("Timesheet not found or you don't have permission to view it.", "error");
-                                Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
-                                return;
-                            }
-                        }
-                    }
+                    // Load timesheet basic information
+                    LoadTimesheetInfo(conn);
 
                     // Load daily time entries
                     LoadDailyTimeEntries(conn);
+
+                    // Calculate and display summary
+                    CalculateAndDisplaySummary();
+
+                    // Set approval information
+                    SetApprovalInformation();
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error loading timesheet data: {ex.Message}");
-                ShowMessage($"Error loading timesheet: {ex.Message}", "error");
+                ShowMessage("Error loading timesheet data. Please try again.", "error");
             }
         }
 
-        private void LoadTimesheetHeader(SqlDataReader reader)
+        private void LoadTimesheetInfo(SqlConnection conn)
         {
-            // Employee and period information
-            litEmployeeName.Text = reader["EmployeeName"].ToString();
-
-            DateTime startDate = Convert.ToDateTime(reader["WeekStartDate"]);
-            DateTime endDate = Convert.ToDateTime(reader["WeekEndDate"]);
-            litWeekPeriod.Text = $"{startDate:MMM dd} - {endDate:MMM dd, yyyy}";
-
-            // Status
-            string status = reader["Status"].ToString();
-            litTimesheetStatus.Text = status;
-
-            // Set status badge CSS class
-            string statusClass;
-            switch (status.ToLower())
+            using (SqlCommand cmd = new SqlCommand(@"
+                SELECT ts.Id, ts.EmployeeId, ts.WeekStartDate, ts.WeekEndDate, ts.TotalHours, 
+                       ts.RegularHours, ts.OvertimeHours, ts.Status, ts.SubmittedAt, 
+                       ts.ApprovedById, ts.ApprovedAt, ts.Notes,
+                       e.FirstName, e.LastName, e.EmployeeNumber, e.Department, e.Position,
+                       approver.FirstName as ApproverFirstName, approver.LastName as ApproverLastName
+                FROM TimeSheets ts
+                INNER JOIN Employees e ON ts.EmployeeId = e.Id
+                LEFT JOIN Employees approver ON ts.ApprovedById = approver.Id
+                WHERE ts.Id = @TimesheetId", conn))
             {
-                case "draft":
-                    statusClass = "status-draft";
-                    break;
-                case "submitted":
-                    statusClass = "status-submitted";
-                    break;
-                case "approved":
-                    statusClass = "status-approved";
-                    break;
-                case "rejected":
-                    statusClass = "status-rejected";
-                    break;
-                default:
-                    statusClass = "status-draft";
-                    break;
-            }
-            statusBadge.Attributes["class"] = $"status-badge {statusClass}";
+                cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
 
-            // Show/hide edit button based on status and permissions
-            bool canEdit = status == "Draft" || status == "Rejected";
-            string userRole = Session["UserRole"]?.ToString();
-            if (userRole == "Admin" || userRole == "HR Admin" || userRole == "HR Manager")
-            {
-                canEdit = true; // Admins can always edit
-            }
-
-            btnEditTimesheet.Visible = canEdit;
-            btnEditTimesheetBottom.Visible = canEdit;
-
-            // Approval information
-            if (reader["SubmittedAt"] != DBNull.Value)
-            {
-                approvalInfoSection.Visible = true;
-                litSubmittedAt.Text = Convert.ToDateTime(reader["SubmittedAt"]).ToString("MMM dd, yyyy hh:mm tt");
-
-                if (reader["ApprovedById"] != DBNull.Value && reader["ApprovedAt"] != DBNull.Value)
+                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    approvedBySection.Visible = true;
-                    approvedAtSection.Visible = true;
-                    litApprovedBy.Text = reader["ApprovedByName"].ToString();
-                    litApprovedAt.Text = Convert.ToDateTime(reader["ApprovedAt"]).ToString("MMM dd, yyyy hh:mm tt");
+                    if (reader.Read())
+                    {
+                        // Store data for use in helper methods
+                        foreach (var field in new[] { "Id", "EmployeeId", "WeekStartDate", "WeekEndDate", "TotalHours",
+                                                     "RegularHours", "OvertimeHours", "Status", "SubmittedAt",
+                                                     "ApprovedById", "ApprovedAt", "Notes", "FirstName", "LastName",
+                                                     "EmployeeNumber", "Department", "Position", "ApproverFirstName", "ApproverLastName" })
+                        {
+                            timesheetData[field] = reader[field] != DBNull.Value ? reader[field] : null;
+                        }
+
+                        // Set basic information
+                        string employeeName = $"{reader["FirstName"]} {reader["LastName"]}";
+                        litEmployeeName.Text = employeeName;
+                        litEmployeeNumber.Text = reader["EmployeeNumber"]?.ToString() ?? "";
+                        litDepartment.Text = reader["Department"]?.ToString() ?? "";
+                        litPosition.Text = reader["Position"]?.ToString() ?? "";
+
+                        // Set week information
+                        DateTime weekStart = Convert.ToDateTime(reader["WeekStartDate"]);
+                        DateTime weekEnd = Convert.ToDateTime(reader["WeekEndDate"]);
+                        litWeekRange.Text = $"{weekStart:MMM dd} - {weekEnd:MMM dd, yyyy}";
+
+                        // Set status
+                        string status = reader["Status"]?.ToString() ?? "Draft";
+                        litTimesheetStatus.Text = status;
+
+                        // Set submission date
+                        if (reader["SubmittedAt"] != DBNull.Value)
+                        {
+                            DateTime submittedAt = Convert.ToDateTime(reader["SubmittedAt"]);
+                            litSubmissionDate.Text = $"Submitted: {submittedAt:MMM dd, yyyy}";
+                        }
+                        else
+                        {
+                            litSubmissionDate.Text = "Not submitted";
+                        }
+
+                        // Set date headers for each day
+                        SetDayDates(weekStart);
+
+                        // Set timesheet notes if any
+                        if (!string.IsNullOrEmpty(reader["Notes"]?.ToString()))
+                        {
+                            litTimesheetNotes.Text = reader["Notes"].ToString().Replace("\n", "<br/>");
+                            timesheetNotesSection.Visible = true;
+                        }
+                    }
+                    else
+                    {
+                        ShowMessage("Timesheet not found.", "error");
+                        Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
+                    }
                 }
             }
-
-            // Timesheet notes
-            if (!string.IsNullOrEmpty(reader["Notes"].ToString()))
-            {
-                timesheetNotesSection.Visible = true;
-                litTimesheetNotes.Text = reader["Notes"].ToString().Replace("\n", "<br/>");
-            }
-        }
-
-        private void LoadTimesheetSummary(SqlDataReader reader)
-        {
-            decimal totalHours = reader["TotalHours"] != DBNull.Value ? Convert.ToDecimal(reader["TotalHours"]) : 0;
-            decimal regularHours = reader["RegularHours"] != DBNull.Value ? Convert.ToDecimal(reader["RegularHours"]) : 0;
-            decimal overtimeHours = reader["OvertimeHours"] != DBNull.Value ? Convert.ToDecimal(reader["OvertimeHours"]) : 0;
-
-            litTotalHours.Text = totalHours.ToString("F1");
-            litRegularHours.Text = regularHours.ToString("F1");
-            litOvertimeHours.Text = overtimeHours.ToString("F1");
-
-            // Calculate days worked (will be updated after loading daily entries)
-            litDaysWorked.Text = "0";
         }
 
         private void LoadDailyTimeEntries(SqlConnection conn)
         {
-            try
+            // Initialize daily data
+            var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+            foreach (var day in days)
             {
-                string query = @"
-                    SELECT 
-                        DayOfWeek,
-                        StartTime,
-                        EndTime,
-                        BreakDuration,
-                        Notes,
-                        TotalHours
-                    FROM TimesheetEntries 
-                    WHERE TimesheetId = @TimesheetId
-                    ORDER BY DayOfWeek";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn))
+                dailyData[day] = new Dictionary<string, object>
                 {
-                    cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
+                    ["StartTime"] = null,
+                    ["EndTime"] = null,
+                    ["BreakDuration"] = 0,
+                    ["TotalHours"] = 0m,
+                    ["RegularHours"] = 0m,
+                    ["OvertimeHours"] = 0m,
+                    ["Notes"] = ""
+                };
+            }
 
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+            using (SqlCommand cmd = new SqlCommand(@"
+                SELECT te.ClockIn, te.ClockOut, te.TotalHours, te.Notes,
+                       DATEPART(WEEKDAY, te.ClockIn) as DayOfWeek,
+                       DATEDIFF(MINUTE, te.ClockIn, te.ClockOut) as TotalMinutes
+                FROM TimeEntries te
+                INNER JOIN TimeSheets ts ON DATEPART(week, te.ClockIn) = DATEPART(week, ts.WeekStartDate)
+                    AND YEAR(te.ClockIn) = YEAR(ts.WeekStartDate)
+                WHERE ts.Id = @TimesheetId AND te.EmployeeId = @EmployeeId
+                ORDER BY te.ClockIn", conn))
+            {
+                cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
+                cmd.Parameters.AddWithValue("@EmployeeId", timesheetData["EmployeeId"]);
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
                     {
-                        int daysWorked = 0;
-                        DateTime weekStart = GetWeekStartDate();
+                        DateTime clockIn = Convert.ToDateTime(reader["ClockIn"]);
+                        string startTime = clockIn.ToString("HH:mm");
+                        string endTime = "--:--";
+                        decimal totalHours = 0m;
+                        int breakDuration = 0;
 
-                        // Initialize all day dates
-                        SetDayDates(weekStart);
-
-                        while (reader.Read())
+                        if (reader["ClockOut"] != DBNull.Value)
                         {
-                            int dayOfWeek = Convert.ToInt32(reader["DayOfWeek"]);
-                            string startTime = reader["StartTime"] != DBNull.Value ?
-                                Convert.ToDateTime(reader["StartTime"]).ToString("HH:mm") : "--:--";
-                            string endTime = reader["EndTime"] != DBNull.Value ?
-                                Convert.ToDateTime(reader["EndTime"]).ToString("HH:mm") : "--:--";
-                            int breakDuration = reader["BreakDuration"] != DBNull.Value ?
-                                Convert.ToInt32(reader["BreakDuration"]) : 0;
-                            string notes = reader["Notes"]?.ToString() ?? "";
-                            decimal dayTotal = reader["TotalHours"] != DBNull.Value ?
-                                Convert.ToDecimal(reader["TotalHours"]) : 0;
+                            DateTime clockOut = Convert.ToDateTime(reader["ClockOut"]);
+                            endTime = clockOut.ToString("HH:mm");
 
-                            // Count days worked
-                            if (dayTotal > 0)
+                            if (reader["TotalHours"] != DBNull.Value)
                             {
-                                daysWorked++;
+                                totalHours = Convert.ToDecimal(reader["TotalHours"]);
+                            }
+                            else
+                            {
+                                // Calculate total hours
+                                double totalMinutes = (clockOut - clockIn).TotalMinutes;
+                                totalHours = (decimal)(totalMinutes / 60.0);
                             }
 
-                            // Set day-specific data
-                            switch (dayOfWeek)
+                            // Calculate break duration (assume 30 min break for 8+ hour days)
+                            if (totalHours >= 8)
                             {
-                                case 1: // Monday
-                                    SetDayData(litMondayStart, litMondayEnd, litMondayBreak, litMondayNotes,
-                                             litMondayTotal, mondayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
-                                case 2: // Tuesday
-                                    SetDayData(litTuesdayStart, litTuesdayEnd, litTuesdayBreak, litTuesdayNotes,
-                                             litTuesdayTotal, tuesdayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
-                                case 3: // Wednesday
-                                    SetDayData(litWednesdayStart, litWednesdayEnd, litWednesdayBreak, litWednesdayNotes,
-                                             litWednesdayTotal, wednesdayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
-                                case 4: // Thursday
-                                    SetDayData(litThursdayStart, litThursdayEnd, litThursdayBreak, litThursdayNotes,
-                                             litThursdayTotal, thursdayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
-                                case 5: // Friday
-                                    SetDayData(litFridayStart, litFridayEnd, litFridayBreak, litFridayNotes,
-                                             litFridayTotal, fridayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
-                                case 6: // Saturday
-                                    SetDayData(litSaturdayStart, litSaturdayEnd, litSaturdayBreak, litSaturdayNotes,
-                                             litSaturdayTotal, saturdayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
-                                case 0: // Sunday
-                                    SetDayData(litSundayStart, litSundayEnd, litSundayBreak, litSundayNotes,
-                                             litSundayTotal, sundayNotes, startTime, endTime, breakDuration, notes, dayTotal);
-                                    break;
+                                breakDuration = 30;
                             }
                         }
 
-                        // Update days worked count
-                        litDaysWorked.Text = daysWorked.ToString();
+                        string notes = reader["Notes"]?.ToString() ?? "";
+                        int sqlDayOfWeek = Convert.ToInt32(reader["DayOfWeek"]);
+
+                        // Map SQL DATEPART weekday to day name
+                        string dayName = GetDayNameFromSqlWeekday(sqlDayOfWeek);
+
+                        // Store daily data
+                        if (dailyData.ContainsKey(dayName))
+                        {
+                            dailyData[dayName]["StartTime"] = startTime;
+                            dailyData[dayName]["EndTime"] = endTime;
+                            dailyData[dayName]["BreakDuration"] = breakDuration;
+                            dailyData[dayName]["TotalHours"] = totalHours;
+                            dailyData[dayName]["Notes"] = notes;
+
+                            // Calculate regular and overtime hours
+                            if (totalHours > 8)
+                            {
+                                dailyData[dayName]["RegularHours"] = 8m;
+                                dailyData[dayName]["OvertimeHours"] = totalHours - 8m;
+                            }
+                            else
+                            {
+                                dailyData[dayName]["RegularHours"] = totalHours;
+                                dailyData[dayName]["OvertimeHours"] = 0m;
+                            }
+                        }
+
+                        // Set day data in UI
+                        SetDayDataInUI(dayName, startTime, endTime, breakDuration, notes, totalHours);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading daily time entries: {ex.Message}");
-                ShowMessage("Error loading daily time entries.", "warning");
             }
         }
 
-        private DateTime GetWeekStartDate()
+        private void SetDayDataInUI(string dayName, string startTime, string endTime, int breakDuration, string notes, decimal totalHours)
         {
-            try
+            switch (dayName.ToLower())
             {
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                case "monday":
+                    SetDayData(litMondayStart, litMondayEnd, litMondayBreak, litMondayNotes, litMondayTotal, litMondayRegular, litMondayOvertime,
+                              mondayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+                case "tuesday":
+                    SetDayData(litTuesdayStart, litTuesdayEnd, litTuesdayBreak, litTuesdayNotes, litTuesdayTotal, litTuesdayRegular, litTuesdayOvertime,
+                              tuesdayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+                case "wednesday":
+                    SetDayData(litWednesdayStart, litWednesdayEnd, litWednesdayBreak, litWednesdayNotes, litWednesdayTotal, litWednesdayRegular, litWednesdayOvertime,
+                              wednesdayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+                case "thursday":
+                    SetDayData(litThursdayStart, litThursdayEnd, litThursdayBreak, litThursdayNotes, litThursdayTotal, litThursdayRegular, litThursdayOvertime,
+                              thursdayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+                case "friday":
+                    SetDayData(litFridayStart, litFridayEnd, litFridayBreak, litFridayNotes, litFridayTotal, litFridayRegular, litFridayOvertime,
+                              fridayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+                case "saturday":
+                    SetDayData(litSaturdayStart, litSaturdayEnd, litSaturdayBreak, litSaturdayNotes, litSaturdayTotal, litSaturdayRegular, litSaturdayOvertime,
+                              saturdayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+                case "sunday":
+                    SetDayData(litSundayStart, litSundayEnd, litSundayBreak, litSundayNotes, litSundayTotal, litSundayRegular, litSundayOvertime,
+                              sundayNotesSection, startTime, endTime, breakDuration, notes, totalHours);
+                    break;
+            }
+        }
+
+        private void CalculateAndDisplaySummary()
+        {
+            decimal totalHours = 0m;
+            decimal regularHours = 0m;
+            decimal overtimeHours = 0m;
+            int daysWorked = 0;
+
+            foreach (var dayData in dailyData.Values)
+            {
+                decimal dayTotal = (decimal)dayData["TotalHours"];
+                if (dayTotal > 0)
                 {
-                    conn.Open();
-                    string query = "SELECT WeekStartDate FROM TimeSheets WHERE Id = @TimesheetId";
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    daysWorked++;
+                    totalHours += dayTotal;
+                    regularHours += (decimal)dayData["RegularHours"];
+                    overtimeHours += (decimal)dayData["OvertimeHours"];
+                }
+            }
+
+            // Display summary
+            litTotalHours.Text = totalHours.ToString("F1");
+            litRegularHours.Text = regularHours.ToString("F1");
+            litOvertimeHours.Text = overtimeHours.ToString("F1");
+            litDaysWorked.Text = daysWorked.ToString();
+        }
+
+        private void SetApprovalInformation()
+        {
+            string status = timesheetData["Status"]?.ToString() ?? "Draft";
+
+            if (status != "Draft")
+            {
+                approvalInfoSection.Visible = true;
+
+                // Set submitted information
+                if (timesheetData["SubmittedAt"] != null)
+                {
+                    DateTime submittedAt = Convert.ToDateTime(timesheetData["SubmittedAt"]);
+                    litSubmittedAt.Text = submittedAt.ToString("MMM dd, yyyy 'at' hh:mm tt");
+                }
+
+                // Set approval information if approved
+                if (status == "Approved" && timesheetData["ApprovedAt"] != null)
+                {
+                    approvedTimelineItem.Visible = true;
+
+                    DateTime approvedAt = Convert.ToDateTime(timesheetData["ApprovedAt"]);
+                    litApprovedAt.Text = approvedAt.ToString("MMM dd, yyyy 'at' hh:mm tt");
+                    approvedAtSection.Visible = true;
+
+                    if (timesheetData["ApproverFirstName"] != null && timesheetData["ApproverLastName"] != null)
                     {
-                        cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-                        object result = cmd.ExecuteScalar();
-                        return result != null ? Convert.ToDateTime(result) : DateTime.Today;
+                        string approverName = $"{timesheetData["ApproverFirstName"]} {timesheetData["ApproverLastName"]}";
+                        litApprovedBy.Text = approverName;
+                        approvedBySection.Visible = true;
                     }
                 }
             }
-            catch
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private string GetDayNameFromSqlWeekday(int sqlWeekday)
+        {
+            // SQL DATEPART weekday: 1=Sunday, 2=Monday, 3=Tuesday, 4=Wednesday, 5=Thursday, 6=Friday, 7=Saturday
+            switch (sqlWeekday)
             {
-                return DateTime.Today;
+                case 1: return "Sunday";
+                case 2: return "Monday";
+                case 3: return "Tuesday";
+                case 4: return "Wednesday";
+                case 5: return "Thursday";
+                case 6: return "Friday";
+                case 7: return "Saturday";
+                default: return "Monday";
             }
         }
 
@@ -374,7 +403,8 @@ namespace TPASystem2.TimeManagement
 
         private void SetDayData(System.Web.UI.WebControls.Literal startLit, System.Web.UI.WebControls.Literal endLit,
                                System.Web.UI.WebControls.Literal breakLit, System.Web.UI.WebControls.Literal notesLit,
-                               System.Web.UI.WebControls.Literal totalLit, System.Web.UI.HtmlControls.HtmlGenericControl notesDiv,
+                               System.Web.UI.WebControls.Literal totalLit, System.Web.UI.WebControls.Literal regularLit,
+                               System.Web.UI.WebControls.Literal overtimeLit, System.Web.UI.HtmlControls.HtmlGenericControl notesDiv,
                                string startTime, string endTime, int breakDuration, string notes, decimal dayTotal)
         {
             startLit.Text = startTime;
@@ -382,11 +412,59 @@ namespace TPASystem2.TimeManagement
             breakLit.Text = breakDuration > 0 ? $"{breakDuration} min" : "0 min";
             totalLit.Text = dayTotal.ToString("F1") + "h";
 
+            // Calculate regular and overtime
+            decimal regular = dayTotal > 8 ? 8m : dayTotal;
+            decimal overtime = dayTotal > 8 ? dayTotal - 8m : 0m;
+
+            regularLit.Text = regular.ToString("F1") + "h";
+            overtimeLit.Text = overtime.ToString("F1") + "h";
+
             if (!string.IsNullOrEmpty(notes))
             {
                 notesLit.Text = notes.Replace("\n", "<br/>");
                 notesDiv.Visible = true;
             }
+        }
+
+        // Helper methods for status display (used in ASPX inline code)
+        protected string GetStatusClass()
+        {
+            string status = timesheetData.ContainsKey("Status") ? timesheetData["Status"]?.ToString() ?? "draft" : "draft";
+            return status.ToLower();
+        }
+
+        protected string GetStatusIcon()
+        {
+            string status = timesheetData.ContainsKey("Status") ? timesheetData["Status"]?.ToString() ?? "Draft" : "Draft";
+            switch (status.ToLower())
+            {
+                case "draft": return "edit";
+                case "submitted": return "send";
+                case "approved": return "check_circle";
+                case "rejected": return "cancel";
+                default: return "help";
+            }
+        }
+
+        protected string GetDayStatus(string dayName)
+        {
+            if (dailyData.ContainsKey(dayName))
+            {
+                decimal totalHours = (decimal)dailyData[dayName]["TotalHours"];
+                if (totalHours == 0)
+                {
+                    return "No Work";
+                }
+                else if (totalHours > 8)
+                {
+                    return "Overtime";
+                }
+                else
+                {
+                    return "Completed";
+                }
+            }
+            return "No Work";
         }
 
         #endregion

@@ -33,6 +33,15 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litMessage;
 
         /// <summary>
+        /// litWeekRange control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litWeekRange;
+
+        /// <summary>
         /// btnBackToTimesheets control.
         /// </summary>
         /// <remarks>
@@ -40,6 +49,15 @@ namespace TPASystem2.TimeManagement
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnBackToTimesheets;
+
+        /// <summary>
+        /// litTimesheetStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litTimesheetStatus;
 
         /// <summary>
         /// litEmployeeName control.
@@ -51,31 +69,31 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Literal litEmployeeName;
 
         /// <summary>
-        /// litWeekPeriod control.
+        /// litEmployeeNumber control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litWeekPeriod;
+        protected global::System.Web.UI.WebControls.Literal litEmployeeNumber;
 
         /// <summary>
-        /// statusBadge control.
+        /// litDepartment control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl statusBadge;
+        protected global::System.Web.UI.WebControls.Literal litDepartment;
 
         /// <summary>
-        /// litTimesheetStatus control.
+        /// litPosition control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litTimesheetStatus;
+        protected global::System.Web.UI.WebControls.Literal litPosition;
 
         /// <summary>
         /// btnSaveProgress control.

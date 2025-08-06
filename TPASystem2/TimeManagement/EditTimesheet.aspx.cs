@@ -13,20 +13,42 @@ namespace TPASystem2.TimeManagement
 
         private readonly string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
-        private int CurrentEmployeeId
+        /// <summary>
+        /// Gets the current timesheet ID from query string or ViewState
+        /// </summary>
+        protected int TimesheetId
         {
             get
             {
-                return GetCurrentEmployeeId();
+                if (ViewState["TimesheetId"] != null)
+                    return Convert.ToInt32(ViewState["TimesheetId"]);
+
+                if (Request.QueryString["id"] != null && int.TryParse(Request.QueryString["id"], out int id))
+                {
+                    ViewState["TimesheetId"] = id;
+                    return id;
+                }
+
+                return 0;
             }
         }
 
-        private int TimesheetId
+        /// <summary>
+        /// Gets the current employee ID from session
+        /// </summary>
+        protected int CurrentEmployeeId
         {
             get
             {
-                if (int.TryParse(Request.QueryString["id"], out int id))
-                    return id;
+                if (Session["EmployeeId"] != null)
+                    return Convert.ToInt32(Session["EmployeeId"]);
+
+                // Alternative: Get from User.Identity or other authentication mechanism
+                // if (User.Identity.IsAuthenticated)
+                // {
+                //     // Extract employee ID from user claims or database lookup
+                // }
+
                 return 0;
             }
         }
@@ -39,224 +61,191 @@ namespace TPASystem2.TimeManagement
         {
             if (!IsPostBack)
             {
-                if (TimesheetId <= 0)
+                ValidateAccess();
+                LoadTimesheetData();
+            }
+        }
+
+        #endregion
+
+        #region Validation and Security
+
+        /// <summary>
+        /// Validates user access to edit this timesheet
+        /// </summary>
+        private void ValidateAccess()
+        {
+            try
+            {
+                if (CurrentEmployeeId == 0)
+                {
+                    Response.Redirect("~/Login.aspx");
+                    return;
+                }
+
+                if (TimesheetId == 0)
                 {
                     ShowMessage("Invalid timesheet ID.", "error");
                     Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
                     return;
                 }
 
-                ValidateUserAccess();
-                LoadTimesheetData();
-                SetupWeekDates();
-            }
-        }
-
-        #endregion
-
-        #region Button Events
-
-        protected void btnBackToTimesheets_Click(object sender, EventArgs e)
-        {
-            Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
-        }
-
-        protected void btnSaveDraft_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (SaveTimesheet("Draft"))
-                {
-                    ShowMessage("Timesheet saved successfully as draft.", "success");
-                }
-                else
-                {
-                    ShowMessage("Error saving timesheet. Please try again.", "error");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving draft: {ex.Message}");
-                ShowMessage("An error occurred while saving the timesheet.", "error");
-            }
-        }
-
-        protected void btnSubmitTimesheet_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // Validate that there are time entries
-                if (!HasTimeEntries())
-                {
-                    ShowMessage("Please add at least one day of time entries before submitting.", "error");
-                    return;
-                }
-
-                if (SaveTimesheet("Submitted"))
-                {
-                    ShowMessage("Timesheet submitted successfully for approval!", "success");
-                    Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
-                }
-                else
-                {
-                    ShowMessage("Error submitting timesheet. Please try again.", "error");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error submitting timesheet: {ex.Message}");
-                ShowMessage("An error occurred while submitting the timesheet.", "error");
-            }
-        }
-
-        protected void btnDelete_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (DeleteTimesheet())
-                {
-                    ShowMessage("Timesheet deleted successfully.", "success");
-                    Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
-                }
-                else
-                {
-                    ShowMessage("Error deleting timesheet. Only draft timesheets can be deleted.", "error");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deleting timesheet: {ex.Message}");
-                ShowMessage("An error occurred while deleting the timesheet.", "error");
-            }
-        }
-
-        #endregion
-
-        #region Data Loading Methods
-
-        private void ValidateUserAccess()
-        {
-            try
-            {
-                string userRole = Session["UserRole"]?.ToString() ?? "";
-                if (!userRole.Equals("EMPLOYEE", StringComparison.OrdinalIgnoreCase))
-                {
-                    Response.Redirect("~/Dashboard.aspx");
-                    return;
-                }
-
-                if (CurrentEmployeeId <= 0)
-                {
-                    ShowMessage("Employee record not found. Please contact HR.", "error");
-                    Response.Redirect("~/Dashboard.aspx");
-                    return;
-                }
-
-                // Verify the timesheet belongs to this employee
-                if (!VerifyTimesheetOwnership())
-                {
-                    ShowMessage("You do not have permission to edit this timesheet.", "error");
-                    Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error validating user access: {ex.Message}");
-                Response.Redirect("~/Login.aspx");
-            }
-        }
-
-        private bool VerifyTimesheetOwnership()
-        {
-            try
-            {
+                // Check if user has permission to edit this timesheet
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        SELECT COUNT(*) 
+                    string query = @"
+                        SELECT Status, EmployeeId 
                         FROM TimeSheets 
-                        WHERE Id = @TimesheetId AND EmployeeId = @EmployeeId", conn))
+                        WHERE Id = @TimesheetId";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                        conn.Open();
 
-                        int count = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
-                        return count > 0;
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                int timesheetEmployeeId = Convert.ToInt32(reader["EmployeeId"]);
+                                string status = reader["Status"].ToString();
+
+                                // Check ownership
+                                if (timesheetEmployeeId != CurrentEmployeeId)
+                                {
+                                    ShowMessage("You do not have permission to edit this timesheet.", "error");
+                                    Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
+                                    return;
+                                }
+
+                                // Check if timesheet is still editable
+                                if (status == "APPROVED" || status == "LOCKED")
+                                {
+                                    ShowMessage("This timesheet has been approved and cannot be edited.", "warning");
+                                    Response.Redirect($"~/TimeManagement/ViewTimesheet.aspx?id={TimesheetId}");
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                ShowMessage("Timesheet not found.", "error");
+                                Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
+                                return;
+                            }
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error verifying timesheet ownership: {ex.Message}");
-                return false;
+                ShowMessage($"Error validating access: {ex.Message}", "error");
+                Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
             }
         }
 
+        #endregion
+
+        #region Data Loading
+
+        /// <summary>
+        /// Loads timesheet data and populates the form controls
+        /// </summary>
         private void LoadTimesheetData()
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    conn.Open();
-
-                    // Load timesheet header information
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        SELECT ts.WeekStartDate, ts.WeekEndDate, ts.Status, ts.Notes,
-                               e.FirstName, e.LastName
+                    string query = @"
+                        SELECT ts.*, e.FirstName, e.LastName, e.EmployeeNumber, 
+                               d.Name as DepartmentName, e.Position
                         FROM TimeSheets ts
                         INNER JOIN Employees e ON ts.EmployeeId = e.Id
-                        WHERE ts.Id = @TimesheetId", conn))
+                        LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                        WHERE ts.Id = @TimesheetId";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
+                        conn.Open();
 
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
+                                // Populate employee information
+                                litEmployeeName.Text = $"{reader["FirstName"]} {reader["LastName"]}";
+                                litEmployeeNumber.Text = reader["EmployeeNumber"].ToString();
+                                litDepartment.Text = reader["DepartmentName"]?.ToString() ?? "N/A";
+                                litPosition.Text = reader["Position"]?.ToString() ?? "N/A";
+
+                                // Populate timesheet data
                                 DateTime weekStart = Convert.ToDateTime(reader["WeekStartDate"]);
                                 DateTime weekEnd = Convert.ToDateTime(reader["WeekEndDate"]);
+                                litWeekRange.Text = $"{weekStart:MMM dd} - {weekEnd:MMM dd, yyyy}";
 
-                                litWeekPeriod.Text = $"{weekStart:MMM dd} - {weekEnd:MMM dd, yyyy}";
-                                litEmployeeName.Text = $"{reader["FirstName"]} {reader["LastName"]}";
-                                litTimesheetStatus.Text = reader["Status"].ToString();
+                                string status = reader["Status"].ToString();
+                                litTimesheetStatus.Text = status;
+                                ViewState["TimesheetStatus"] = status;
+
+                                litTotalHours.Text = Convert.ToDecimal(reader["TotalHours"] ?? 0).ToString("F1");
+                                litRegularHours.Text = Convert.ToDecimal(reader["RegularHours"] ?? 0).ToString("F1");
+                                litOvertimeHours.Text = Convert.ToDecimal(reader["OvertimeHours"] ?? 0).ToString("F1");
+
                                 txtTimesheetNotes.Text = reader["Notes"]?.ToString() ?? "";
 
-                                // Disable editing if not in draft or rejected status
-                                string status = reader["Status"].ToString();
-                                if (status != "Draft" && status != "Rejected")
-                                {
-                                    DisableEditing();
-                                }
+                                // Set date literals for each day
+                                SetDayDates(weekStart);
                             }
                         }
                     }
 
-                    // Load existing time entries
-                    LoadExistingTimeEntries(conn);
+                    // Load individual day entries
+                    LoadDayEntries(conn);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading timesheet data: {ex.Message}");
-                ShowMessage("Error loading timesheet data.", "error");
+                ShowMessage($"Error loading timesheet data: {ex.Message}", "error");
             }
         }
 
-        private void LoadExistingTimeEntries(SqlConnection conn)
+        /// <summary>
+        /// Sets the date literals for each day of the week
+        /// </summary>
+        /// <param name="weekStart">Start date of the week</param>
+        private void SetDayDates(DateTime weekStart)
+        {
+            litMondayDate.Text = weekStart.ToString("MMM dd");
+            litTuesdayDate.Text = weekStart.AddDays(1).ToString("MMM dd");
+            litWednesdayDate.Text = weekStart.AddDays(2).ToString("MMM dd");
+            litThursdayDate.Text = weekStart.AddDays(3).ToString("MMM dd");
+            litFridayDate.Text = weekStart.AddDays(4).ToString("MMM dd");
+            litSaturdayDate.Text = weekStart.AddDays(5).ToString("MMM dd");
+            litSundayDate.Text = weekStart.AddDays(6).ToString("MMM dd");
+        }
+
+        /// <summary>
+        /// Loads individual day time entries from TimeEntries table
+        /// </summary>
+        /// <param name="conn">Database connection</param>
+        private void LoadDayEntries(SqlConnection conn)
         {
             try
             {
-                using (SqlCommand cmd = new SqlCommand(@"
-                    SELECT te.ClockIn, te.ClockOut, te.Notes, te.TotalHours,
-                           DATEPART(WEEKDAY, te.ClockIn) as DayOfWeek
-                    FROM TimeEntries te
-                    INNER JOIN TimeSheets ts ON DATEPART(week, te.ClockIn) = DATEPART(week, ts.WeekStartDate)
-                        AND YEAR(te.ClockIn) = YEAR(ts.WeekStartDate)
-                    WHERE ts.Id = @TimesheetId AND te.EmployeeId = @EmployeeId
-                    ORDER BY te.ClockIn", conn))
+                string query = @"
+                    SELECT DATEPART(WEEKDAY, ClockIn) as DayOfWeek,
+                           FORMAT(ClockIn, 'HH:mm') as StartTime,
+                           FORMAT(ClockOut, 'HH:mm') as EndTime,
+                           ISNULL(DATEDIFF(MINUTE, ClockIn, ClockOut), 0) as TotalMinutes,
+                           Notes
+                    FROM TimeEntries 
+                    WHERE EmployeeId = @EmployeeId 
+                        AND ClockIn >= (SELECT WeekStartDate FROM TimeSheets WHERE Id = @TimesheetId)
+                        AND ClockIn < (SELECT DATEADD(DAY, 7, WeekStartDate) FROM TimeSheets WHERE Id = @TimesheetId)
+                    ORDER BY ClockIn";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
                     cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
@@ -265,35 +254,37 @@ namespace TPASystem2.TimeManagement
                     {
                         while (reader.Read())
                         {
-                            DateTime clockIn = Convert.ToDateTime(reader["ClockIn"]);
-                            DateTime clockOut = DateTime.MinValue;
-                            bool hasClockOut = false;
-
-                            if (reader["ClockOut"] != DBNull.Value)
-                            {
-                                clockOut = Convert.ToDateTime(reader["ClockOut"]);
-                                hasClockOut = true;
-                            }
-
-                            string notes = reader["Notes"]?.ToString() ?? "";
                             int dayOfWeek = Convert.ToInt32(reader["DayOfWeek"]);
+                            string startTime = reader["StartTime"]?.ToString() ?? "";
+                            string endTime = reader["EndTime"]?.ToString() ?? "";
+                            int totalMinutes = Convert.ToInt32(reader["TotalMinutes"] ?? 0);
+                            string notes = reader["Notes"]?.ToString() ?? "";
 
-                            // Map SQL DATEPART weekday (1=Sunday, 2=Monday, etc.) to our day controls
-                            PopulateDayControls(dayOfWeek, clockIn, clockOut, hasClockOut, notes);
+                            // Calculate break time (assume 30 min default, adjust based on your business logic)
+                            int workMinutes = totalMinutes;
+                            int breakMinutes = 30; // Default break
+                            if (totalMinutes > 360) // More than 6 hours
+                                breakMinutes = 60; // 1 hour break
+
+                            PopulateDayControls(dayOfWeek, startTime, endTime, breakMinutes, notes);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading time entries: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error loading day entries: {ex.Message}");
             }
         }
 
-        private void PopulateDayControls(int sqlDayOfWeek, DateTime clockIn, DateTime clockOut, bool hasClockOut, string notes)
+        /// <summary>
+        /// Populates day controls with time entry data
+        /// </summary>
+        private void PopulateDayControls(int sqlDayOfWeek, string startTime, string endTime, int breakMinutes, string notes)
         {
-            // Convert SQL DATEPART weekday to our naming convention
+            // Convert SQL DATEPART weekday to our controls
             // SQL: 1=Sunday, 2=Monday, 3=Tuesday, 4=Wednesday, 5=Thursday, 6=Friday, 7=Saturday
+
             TextBox startControl = null, endControl = null, notesControl = null, breakControl = null;
 
             switch (sqlDayOfWeek)
@@ -344,88 +335,96 @@ namespace TPASystem2.TimeManagement
 
             if (startControl != null)
             {
-                startControl.Text = clockIn.ToString("HH:mm");
-                if (hasClockOut)
-                {
-                    endControl.Text = clockOut.ToString("HH:mm");
-                }
+                startControl.Text = startTime;
+                endControl.Text = endTime;
+                breakControl.Text = breakMinutes.ToString();
                 notesControl.Text = notes;
-
-                // Calculate break time if we have both start and end times
-                if (hasClockOut)
-                {
-                    var workDuration = clockOut - clockIn;
-                    var expectedBreakMinutes = workDuration.TotalHours > 6 ? 30 : 0; // Assume 30 min break for 6+ hour days
-                    breakControl.Text = expectedBreakMinutes.ToString();
-                }
             }
-        }
-
-        private void SetupWeekDates()
-        {
-            //try
-            //{
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        SELECT WeekStartDate FROM TimeSheets WHERE Id = @TimesheetId", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-
-                        object result = cmd.ExecuteScalar();
-                        if (result != null)
-                        {
-                            DateTime weekStart = Convert.ToDateTime(result);
-
-                            // Set date labels for each day
-                            litMondayDate.Text = weekStart.ToString("MMM dd");
-                            litTuesdayDate.Text = weekStart.AddDays(1).ToString("MMM dd");
-                            litWednesdayDate.Text = weekStart.AddDays(2).ToString("MMM dd");
-                            litThursdayDate.Text = weekStart.AddDays(3).ToString("MMM dd");
-                            litFridayDate.Text = weekStart.AddDays(4).ToString("MMM dd");
-                            litSaturdayDate.Text = weekStart.AddDays(5).ToString("MMM dd");
-                            litSundayDate.Text = weekStart.AddDays(6).ToString("MMM dd");
-                        }
-                    }
-                }
-            //}
-            //catch (Exception ex)
-            //{
-            //    System.Diagnostics.Debug.WriteLine($"Error setting up week dates: {ex.Message}");
-            //}
-        }
-
-        private void DisableEditing()
-        {
-            // Disable all input controls
-            var textBoxes = new TextBox[] {
-                txtMondayStart, txtMondayEnd, txtMondayBreak, txtMondayNotes,
-                txtTuesdayStart, txtTuesdayEnd, txtTuesdayBreak, txtTuesdayNotes,
-                txtWednesdayStart, txtWednesdayEnd, txtWednesdayBreak, txtWednesdayNotes,
-                txtThursdayStart, txtThursdayEnd, txtThursdayBreak, txtThursdayNotes,
-                txtFridayStart, txtFridayEnd, txtFridayBreak, txtFridayNotes,
-                txtSaturdayStart, txtSaturdayEnd, txtSaturdayBreak, txtSaturdayNotes,
-                txtSundayStart, txtSundayEnd, txtSundayBreak, txtSundayNotes,
-                txtTimesheetNotes
-            };
-
-            foreach (var textBox in textBoxes)
-            {
-                textBox.Enabled = false;
-            }
-
-            // Disable action buttons except back button
-            btnSaveDraft.Visible = false;
-            btnSubmitTimesheet.Visible = false;
-            btnDelete.Visible = false;
         }
 
         #endregion
 
-        #region Save and Validation Methods
+        #region Button Event Handlers
 
-        private bool SaveTimesheet(string status)
+        protected void btnBackToTimesheets_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
+        }
+
+        protected void btnSaveDraft_Click(object sender, EventArgs e)
+        {
+            SaveTimesheet(false);
+        }
+
+        protected void btnSubmitTimesheet_Click(object sender, EventArgs e)
+        {
+            if (ValidateTimesheet())
+            {
+                SaveTimesheet(true);
+            }
+        }
+
+        protected void btnPreviewTimesheet_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Save current data first
+                SaveTimesheet(false);
+
+                // Redirect to view page
+                Response.Redirect($"ViewTimesheet.aspx?id={TimesheetId}");
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error previewing timesheet: {ex.Message}", "error");
+            }
+        }
+
+        protected void btnDelete_Click(object sender, EventArgs e)
+        {
+            DeleteTimesheet();
+        }
+
+        #endregion
+
+        #region Save and Validation Logic
+
+        /// <summary>
+        /// Validates timesheet data before submission
+        /// </summary>
+        /// <returns>True if valid, false otherwise</returns>
+        private bool ValidateTimesheet()
+        {
+            try
+            {
+                var (totalHours, _, _) = CalculateTimesheetTotals();
+
+                if (totalHours == 0)
+                {
+                    ShowMessage("Please enter at least one day of time before submitting.", "warning");
+                    return false;
+                }
+
+                if (totalHours > 80) // More than 80 hours per week seems excessive
+                {
+                    ShowMessage("Total hours exceed maximum allowed (80 hours). Please review your entries.", "warning");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error validating timesheet: {ex.Message}", "error");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Saves timesheet data to database
+        /// </summary>
+        /// <param name="submitForApproval">Whether to submit for approval or save as draft</param>
+        private void SaveTimesheet(bool submitForApproval = false)
         {
             try
             {
@@ -437,73 +436,102 @@ namespace TPASystem2.TimeManagement
                         try
                         {
                             // Calculate totals
-                            var totals = CalculateTotals();
+                            var (totalHours, regularHours, overtimeHours) = CalculateTimesheetTotals();
+                            int daysWorked = CountDaysWorked();
 
-                            // Update timesheet header
-                            using (SqlCommand cmd = new SqlCommand(@"
+                            // Update timesheet record
+                            string status = submitForApproval ? "SUBMITTED" : "DRAFT";
+                            DateTime? submittedAt = submitForApproval ? DateTime.UtcNow : (DateTime?)null;
+
+                            string updateQuery = @"
                                 UPDATE TimeSheets 
-                                SET TotalHours = @TotalHours, 
-                                    RegularHours = @RegularHours, 
+                                SET TotalHours = @TotalHours,
+                                    RegularHours = @RegularHours,
                                     OvertimeHours = @OvertimeHours,
                                     Status = @Status,
+                                    SubmittedAt = @SubmittedAt,
                                     Notes = @Notes,
-                                    UpdatedAt = GETDATE(),
-                                    SubmittedAt = CASE WHEN @Status = 'Submitted' THEN GETDATE() ELSE SubmittedAt END
-                                WHERE Id = @TimesheetId AND EmployeeId = @EmployeeId", conn, transaction))
+                                    UpdatedAt = GETUTCDATE()
+                                WHERE Id = @TimesheetId";
+
+                            using (SqlCommand cmd = new SqlCommand(updateQuery, conn, transaction))
                             {
-                                cmd.Parameters.AddWithValue("@TotalHours", totals.TotalHours);
-                                cmd.Parameters.AddWithValue("@RegularHours", totals.RegularHours);
-                                cmd.Parameters.AddWithValue("@OvertimeHours", totals.OvertimeHours);
+                                cmd.Parameters.AddWithValue("@TotalHours", totalHours);
+                                cmd.Parameters.AddWithValue("@RegularHours", regularHours);
+                                cmd.Parameters.AddWithValue("@OvertimeHours", overtimeHours);
                                 cmd.Parameters.AddWithValue("@Status", status);
-                                cmd.Parameters.AddWithValue("@Notes", txtTimesheetNotes.Text.Trim());
+                                cmd.Parameters.AddWithValue("@SubmittedAt", submittedAt ?? (object)DBNull.Value);
+                                cmd.Parameters.AddWithValue("@Notes", txtTimesheetNotes.Text ?? "");
                                 cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-                                cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
 
                                 cmd.ExecuteNonQuery();
                             }
 
-                            // Clear existing time entries for this week and employee
+                            // Clear existing time entries for this timesheet period
                             ClearExistingTimeEntries(conn, transaction);
 
                             // Save new time entries
                             SaveTimeEntries(conn, transaction);
 
                             transaction.Commit();
-                            return true;
+
+                            string message = submitForApproval ?
+                                "Timesheet submitted for approval successfully!" :
+                                "Timesheet saved as draft successfully!";
+                            ShowMessage(message, "success");
+
+                            // Update display
+                            ViewState["TimesheetStatus"] = status;
+                            litTimesheetStatus.Text = status;
+                            litTotalHours.Text = totalHours.ToString("F1");
+                            litRegularHours.Text = regularHours.ToString("F1");
+                            litOvertimeHours.Text = overtimeHours.ToString("F1");
+                            litDaysWorked.Text = daysWorked.ToString();
+
+                            if (submitForApproval)
+                            {
+                                // Redirect to view mode after submission
+                                Response.Redirect($"ViewTimesheet.aspx?id={TimesheetId}");
+                            }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             transaction.Rollback();
-                            System.Diagnostics.Debug.WriteLine($"Error in SaveTimesheet transaction: {ex.Message}");
-                            return false;
+                            throw;
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error saving timesheet: {ex.Message}");
-                return false;
+                ShowMessage($"Error saving timesheet: {ex.Message}", "error");
             }
         }
 
+        /// <summary>
+        /// Clears existing time entries for this timesheet period
+        /// </summary>
         private void ClearExistingTimeEntries(SqlConnection conn, SqlTransaction transaction)
         {
-            using (SqlCommand cmd = new SqlCommand(@"
-                DELETE te FROM TimeEntries te
-                INNER JOIN TimeSheets ts ON DATEPART(week, te.ClockIn) = DATEPART(week, ts.WeekStartDate)
-                    AND YEAR(te.ClockIn) = YEAR(ts.WeekStartDate)
-                WHERE ts.Id = @TimesheetId AND te.EmployeeId = @EmployeeId", conn, transaction))
+            string deleteQuery = @"
+                DELETE FROM TimeEntries 
+                WHERE EmployeeId = @EmployeeId 
+                    AND ClockIn >= (SELECT WeekStartDate FROM TimeSheets WHERE Id = @TimesheetId)
+                    AND ClockIn < (SELECT DATEADD(DAY, 7, WeekStartDate) FROM TimeSheets WHERE Id = @TimesheetId)";
+
+            using (SqlCommand cmd = new SqlCommand(deleteQuery, conn, transaction))
             {
-                cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
                 cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
                 cmd.ExecuteNonQuery();
             }
         }
 
+        /// <summary>
+        /// Saves time entries for each day that has data
+        /// </summary>
         private void SaveTimeEntries(SqlConnection conn, SqlTransaction transaction)
         {
-            // Get week start date
             DateTime weekStart = GetWeekStartDate();
 
             // Save entries for each day that has data
@@ -516,6 +544,9 @@ namespace TPASystem2.TimeManagement
             SaveDayEntry(conn, transaction, weekStart, 6, txtSundayStart, txtSundayEnd, txtSundayBreak, txtSundayNotes); // Sunday
         }
 
+        /// <summary>
+        /// Saves a single day's time entry
+        /// </summary>
         private void SaveDayEntry(SqlConnection conn, SqlTransaction transaction, DateTime weekStart, int dayOffset,
             TextBox startControl, TextBox endControl, TextBox breakControl, TextBox notesControl)
         {
@@ -529,45 +560,117 @@ namespace TPASystem2.TimeManagement
                 DateTime endTime = DateTime.Parse($"{entryDate:yyyy-MM-dd} {endControl.Text}");
                 int breakMinutes = int.TryParse(breakControl.Text, out int breakMins) ? breakMins : 0;
 
-                // Calculate total hours
-                double totalHours = (endTime - startTime).TotalHours - (breakMinutes / 60.0);
-
-                if (totalHours > 0)
+                // Handle overnight shifts
+                if (endTime <= startTime)
                 {
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        INSERT INTO TimeEntries (EmployeeId, ClockIn, ClockOut, TotalHours, Status, Notes, CreatedAt)
-                        VALUES (@EmployeeId, @ClockIn, @ClockOut, @TotalHours, 'Completed', @Notes, GETDATE())", conn, transaction))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                        cmd.Parameters.AddWithValue("@ClockIn", startTime);
-                        cmd.Parameters.AddWithValue("@ClockOut", endTime);
-                        cmd.Parameters.AddWithValue("@TotalHours", Math.Round(totalHours, 2));
-                        cmd.Parameters.AddWithValue("@Notes", notesControl.Text.Trim());
+                    endTime = endTime.AddDays(1);
+                }
 
-                        cmd.ExecuteNonQuery();
+                // Calculate total hours
+                double totalMinutes = (endTime - startTime).TotalMinutes - breakMinutes;
+                decimal totalHours = (decimal)(Math.Max(0, totalMinutes) / 60.0);
+
+                string insertQuery = @"
+                    INSERT INTO TimeEntries (EmployeeId, ClockIn, ClockOut, TotalHours, Status, Notes, CreatedAt)
+                    VALUES (@EmployeeId, @ClockIn, @ClockOut, @TotalHours, 'Completed', @Notes, GETUTCDATE())";
+
+                using (SqlCommand cmd = new SqlCommand(insertQuery, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                    cmd.Parameters.AddWithValue("@ClockIn", startTime);
+                    cmd.Parameters.AddWithValue("@ClockOut", endTime);
+                    cmd.Parameters.AddWithValue("@TotalHours", totalHours);
+                    cmd.Parameters.AddWithValue("@Notes", notesControl.Text ?? "");
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving day entry: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets the week start date for this timesheet
+        /// </summary>
+        private DateTime GetWeekStartDate()
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                string query = "SELECT WeekStartDate FROM TimeSheets WHERE Id = @TimesheetId";
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
+                    conn.Open();
+                    object result = cmd.ExecuteScalar();
+                    return result != null ? Convert.ToDateTime(result) : DateTime.Today;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Deletes the timesheet
+        /// </summary>
+        private void DeleteTimesheet()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // First delete related time entries
+                            ClearExistingTimeEntries(conn, transaction);
+
+                            // Then delete the timesheet
+                            string deleteQuery = "DELETE FROM TimeSheets WHERE Id = @TimesheetId AND EmployeeId = @EmployeeId";
+                            using (SqlCommand cmd = new SqlCommand(deleteQuery, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
+                                cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+                                int rowsAffected = cmd.ExecuteNonQuery();
+
+                                if (rowsAffected > 0)
+                                {
+                                    transaction.Commit();
+                                    ShowMessage("Timesheet deleted successfully!", "success");
+                                    Response.Redirect("~/TimeManagement/EmployeeTimesheets.aspx");
+                                }
+                                else
+                                {
+                                    transaction.Rollback();
+                                    ShowMessage("Unable to delete timesheet. Please try again.", "error");
+                                }
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error saving day entry for day {dayOffset}: {ex.Message}");
+                ShowMessage($"Error deleting timesheet: {ex.Message}", "error");
             }
         }
 
-        private DateTime GetWeekStartDate()
-        {
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand("SELECT WeekStartDate FROM TimeSheets WHERE Id = @TimesheetId", conn))
-                {
-                    cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-                    return Convert.ToDateTime(cmd.ExecuteScalar());
-                }
-            }
-        }
+        #endregion
 
-        private (decimal TotalHours, decimal RegularHours, decimal OvertimeHours) CalculateTotals()
+        #region Calculation Methods
+
+        /// <summary>
+        /// Calculate timesheet totals from form inputs
+        /// </summary>
+        /// <returns>Tuple of total, regular, and overtime hours</returns>
+        private (decimal totalHours, decimal regularHours, decimal overtimeHours) CalculateTimesheetTotals()
         {
             decimal totalHours = 0;
             decimal regularHours = 0;
@@ -593,6 +696,12 @@ namespace TPASystem2.TimeManagement
                         DateTime start = DateTime.Parse($"2000-01-01 {day.start.Text}");
                         DateTime end = DateTime.Parse($"2000-01-01 {day.end.Text}");
                         int breakMinutes = int.TryParse(day.breakTime.Text, out int breakMins) ? breakMins : 0;
+
+                        // Handle overnight shifts
+                        if (end <= start)
+                        {
+                            end = end.AddDays(1);
+                        }
 
                         double dayHours = (end - start).TotalHours - (breakMinutes / 60.0);
 
@@ -621,8 +730,14 @@ namespace TPASystem2.TimeManagement
             return (Math.Round(totalHours, 2), Math.Round(regularHours, 2), Math.Round(overtimeHours, 2));
         }
 
-        private bool HasTimeEntries()
+        /// <summary>
+        /// Counts the number of days with time entries
+        /// </summary>
+        /// <returns>Number of days worked</returns>
+        private int CountDaysWorked()
         {
+            int daysWorked = 0;
+
             var dayControls = new (TextBox start, TextBox end)[]
             {
                 (txtMondayStart, txtMondayEnd),
@@ -638,94 +753,69 @@ namespace TPASystem2.TimeManagement
             {
                 if (!string.IsNullOrEmpty(day.start.Text) && !string.IsNullOrEmpty(day.end.Text))
                 {
-                    return true;
+                    daysWorked++;
                 }
             }
 
-            return false;
-        }
-
-        private bool DeleteTimesheet()
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        DELETE FROM TimeSheets 
-                        WHERE Id = @TimesheetId AND EmployeeId = @EmployeeId AND Status = 'Draft'", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@TimesheetId", TimesheetId);
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-
-                        int rowsAffected = cmd.ExecuteNonQuery();
-                        return rowsAffected > 0;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error deleting timesheet: {ex.Message}");
-                return false;
-            }
+            return daysWorked;
         }
 
         #endregion
 
         #region Helper Methods
 
-        private int GetCurrentEmployeeId()
+        /// <summary>
+        /// Gets the CSS class for the timesheet status badge
+        /// </summary>
+        /// <returns>CSS class name for status styling</returns>
+        protected string GetStatusClass()
+        {
+            if (ViewState["TimesheetStatus"] == null) return "draft";
+
+            string status = ViewState["TimesheetStatus"].ToString().ToLower();
+
+            switch (status)
+            {
+                case "draft":
+                    return "draft";
+                case "submitted":
+                case "pending":
+                    return "submitted";
+                case "approved":
+                    return "approved";
+                case "rejected":
+                    return "rejected";
+                default:
+                    return "draft";
+            }
+        }
+
+        /// <summary>
+        /// Shows a message to the user
+        /// </summary>
+        /// <param name="message">Message text</param>
+        /// <param name="type">Message type (success, error, warning, info)</param>
+        protected void ShowMessage(string message, string type)
         {
             try
             {
-                if (Session["UserId"] != null)
+                if (pnlMessage != null && litMessage != null)
                 {
-                    int userId = Convert.ToInt32(Session["UserId"]);
+                    pnlMessage.Visible = true;
+                    litMessage.Text = message;
+                    pnlMessage.CssClass = $"alert-panel {type}";
 
-                    using (SqlConnection conn = new SqlConnection(connectionString))
+                    // Auto-hide success messages after 5 seconds
+                    if (type == "success")
                     {
-                        conn.Open();
-                        using (SqlCommand cmd = new SqlCommand("SELECT Id FROM Employees WHERE UserId = @UserId AND IsActive = 1", conn))
-                        {
-                            cmd.Parameters.AddWithValue("@UserId", userId);
-                            object result = cmd.ExecuteScalar();
-                            return result != null ? Convert.ToInt32(result) : 0;
-                        }
+                        ClientScript.RegisterStartupScript(this.GetType(), "hideMessage",
+                            "setTimeout(function() { document.querySelector('.alert-panel').style.display = 'none'; }, 5000);", true);
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error getting current employee ID: {ex.Message}");
-            }
-
-            return 0;
-        }
-
-        private void ShowMessage(string message, string type)
-        {
-            if (pnlMessage != null && litMessage != null)
-            {
-                pnlMessage.Visible = true;
-                litMessage.Text = message;
-
-                switch (type.ToLower())
-                {
-                    case "success":
-                        pnlMessage.CssClass = "alert alert-success";
-                        break;
-                    case "error":
-                        pnlMessage.CssClass = "alert alert-error";
-                        break;
-                    case "info":
-                        pnlMessage.CssClass = "alert alert-info";
-                        break;
-                    default:
-                        pnlMessage.CssClass = "alert";
-                        break;
-                }
+                System.Diagnostics.Debug.WriteLine($"Error showing message: {ex.Message}");
             }
         }
 
