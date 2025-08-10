@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 
 namespace TPASystem2.OnBoarding
 {
@@ -19,185 +21,81 @@ namespace TPASystem2.OnBoarding
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // NUCLEAR OPTION: Completely disable validation at the earliest possible stage
+            // Disable validation for employment application form
             Page.UnobtrusiveValidationMode = UnobtrusiveValidationMode.None;
-
-            // Override the page's validation method
-            this.ClientScript.RegisterStartupScript(this.GetType(), "DisableValidation",
-                "if (typeof Page_ClientValidate === 'function') { Page_ClientValidate = function() { return true; }; }", true);
 
             if (!IsPostBack)
             {
                 InitializePage();
-                LoadEmployeeData();
-            }
-        }
-
-        protected void Page_PreInit(object sender, EventArgs e)
-        {
-            // Disable validation before the page is fully constructed
-            // Note: EnableEventValidation can only be set in page directive, not code-behind
-        }
-
-        protected override void OnInit(EventArgs e)
-        {
-            // Override the base OnInit to catch validators as they're added
-            base.OnInit(e);
-            NukeAllValidators();
-        }
-
-        protected void Page_PreRender(object sender, EventArgs e)
-        {
-            // Final cleanup - disable all validators before rendering
-            NukeAllValidators();
-
-            // JavaScript to completely disable client-side validation
-            this.ClientScript.RegisterStartupScript(this.GetType(), "ForceDisableValidation", @"
-                <script type='text/javascript'>
-                    function Page_ClientValidate() { return true; }
-                    if (typeof ValidatorOnSubmit === 'function') {
-                        ValidatorOnSubmit = function() { return true; };
-                    }
-                    if (typeof ValidatorCommonOnSubmit === 'function') {
-                        ValidatorCommonOnSubmit = function() { return true; };
-                    }
-                </script>", false);
-        }
-
-        private void NukeAllValidators()
-        {
-            try
-            {
-                // Method 1: Disable all validators on the page
-                for (int i = Page.Validators.Count - 1; i >= 0; i--)
-                {
-                    var validator = Page.Validators[i];
-
-                    // Cast to BaseValidator to access properties
-                    if (validator is System.Web.UI.WebControls.BaseValidator baseValidator)
-                    {
-                        baseValidator.Enabled = false;
-                        baseValidator.Visible = false;
-
-                        // Try to remove from parent if possible
-                        try
-                        {
-                            if (baseValidator.Parent != null)
-                            {
-                                baseValidator.Parent.Controls.Remove(baseValidator);
-                            }
-                        }
-                        catch { /* Ignore removal errors */ }
-                    }
-                }
-
-                // Method 2: Find and neutralize specific problematic validators
-                var problemValidators = new string[] { "rfv19Attestation", "chk19Attestation", "rfvI9Attestation" };
-
-                foreach (string controlId in problemValidators)
-                {
-                    try
-                    {
-                        var control = FindControlRecursive(Page, controlId);
-                        if (control is System.Web.UI.WebControls.BaseValidator validator)
-                        {
-                            validator.Enabled = false;
-                            validator.Visible = false;
-                            validator.ControlToValidate = ""; // Clear the problematic reference
-
-                            if (validator.Parent != null)
-                            {
-                                validator.Parent.Controls.Remove(validator);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error handling validator {controlId}: {ex.Message}");
-                    }
-                }
-
-                // Method 3: Disable all BaseValidator controls recursively
-                DisableValidatorsRecursive(Page);
-
-                System.Diagnostics.Debug.WriteLine($"Disabled {Page.Validators.Count} validators");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in NukeAllValidators: {ex.Message}");
-            }
-        }
-
-        private System.Web.UI.Control FindControlRecursive(System.Web.UI.Control container, string controlId)
-        {
-            if (container.ID == controlId)
-                return container;
-
-            foreach (System.Web.UI.Control control in container.Controls)
-            {
-                var found = FindControlRecursive(control, controlId);
-                if (found != null)
-                    return found;
-            }
-
-            return null;
-        }
-
-        private void DisableValidatorsRecursive(System.Web.UI.Control container)
-        {
-            foreach (System.Web.UI.Control control in container.Controls)
-            {
-                if (control is System.Web.UI.WebControls.BaseValidator validator)
-                {
-                    validator.Enabled = false;
-                    validator.Visible = false;
-                }
-
-                if (control.HasControls())
-                {
-                    DisableValidatorsRecursive(control);
-                }
             }
         }
 
         protected void btnSubmit_Click(object sender, EventArgs e)
         {
+            if (Page.IsValid && ValidateForm())
+            {
+                try
+                {
+                    int applicationId = SaveApplicationToDatabase();
+                    if (applicationId > 0)
+                    {
+                        // Save additional data
+                        SaveEducationData(applicationId);
+                        SaveLicensesData(applicationId);
+                        SaveEmploymentHistoryData(applicationId);
+                        SaveReferencesData(applicationId);
+                        SaveCriminalHistoryData(applicationId);
+
+                        ShowSuccessMessage("Your employment application has been completed successfully! Application #: " + GenerateApplicationNumber(applicationId));
+                        ClearForm();
+
+                        // Redirect back to onboarding dashboard after 3 seconds
+                        ClientScript.RegisterStartupScript(this.GetType(), "redirect",
+                            "setTimeout(function(){ window.location.href = 'MyOnboarding.aspx'; }, 3000);", true);
+                    }
+                    else
+                    {
+                        ShowErrorMessage("An error occurred while submitting your application. Please try again.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ShowErrorMessage("An error occurred: " + ex.Message);
+                }
+            }
+        }
+
+        protected void btnSaveProgress_Click(object sender, EventArgs e)
+        {
+            // Implementation for saving progress without full validation
             try
             {
-                // Skip Page.IsValid check completely and do manual validation
-                if (ManualValidation())
+                int applicationId = SaveApplicationToDatabase(false);
+                if (applicationId > 0)
                 {
-                    SavePaperworkData();
-                    CompleteMandatoryTask();
-                    ShowSuccessAndRedirect();
+                    ShowSuccessMessage("Your progress has been saved. You can continue later.");
                 }
                 else
                 {
-                    ShowErrorMessage("Please complete all required fields.");
+                    ShowErrorMessage("An error occurred while saving your progress. Please try again.");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error submitting paperwork: {ex.Message}");
-                ShowErrorMessage("An error occurred while saving your paperwork. Please try again.");
+                ShowErrorMessage("An error occurred: " + ex.Message);
             }
-        }
-
-        protected void btnCancel_Click(object sender, EventArgs e)
-        {
-            Response.Redirect("~/OnBoarding/MyOnboarding.aspx");
         }
 
         #endregion
 
-        #region Manual Validation
+        #region Validation Methods
 
-        private bool ManualValidation()
+        private bool ValidateForm()
         {
             bool isValid = true;
             string errorMessage = "";
 
-            // Check required fields manually
+            // Validate required fields
             if (string.IsNullOrWhiteSpace(txtFirstName?.Text))
             {
                 isValid = false;
@@ -210,10 +108,34 @@ namespace TPASystem2.OnBoarding
                 errorMessage += "Last name is required. ";
             }
 
-            if (string.IsNullOrWhiteSpace(txtPersonalEmail?.Text))
+            if (string.IsNullOrWhiteSpace(txtHomeAddress?.Text))
             {
                 isValid = false;
-                errorMessage += "Personal email is required. ";
+                errorMessage += "Home address is required. ";
+            }
+
+            if (string.IsNullOrWhiteSpace(txtCity?.Text))
+            {
+                isValid = false;
+                errorMessage += "City is required. ";
+            }
+
+            if (string.IsNullOrWhiteSpace(txtState?.Text))
+            {
+                isValid = false;
+                errorMessage += "State is required. ";
+            }
+
+            if (string.IsNullOrWhiteSpace(txtZipCode?.Text))
+            {
+                isValid = false;
+                errorMessage += "Zip code is required. ";
+            }
+
+            if (string.IsNullOrWhiteSpace(txtSSN?.Text))
+            {
+                isValid = false;
+                errorMessage += "Social Security Number is required. ";
             }
 
             if (string.IsNullOrWhiteSpace(txtPhoneNumber?.Text))
@@ -222,29 +144,16 @@ namespace TPASystem2.OnBoarding
                 errorMessage += "Phone number is required. ";
             }
 
-            // Check checkboxes if they exist
-            if (chkI9Attestation != null && !chkI9Attestation.Checked)
+            if (string.IsNullOrWhiteSpace(txtPosition1?.Text))
             {
                 isValid = false;
-                errorMessage += "I-9 attestation is required. ";
+                errorMessage += "At least one position must be specified. ";
             }
 
-            if (chkEmployeeHandbook != null && !chkEmployeeHandbook.Checked)
+            if (!chkAcknowledgment.Checked)
             {
                 isValid = false;
-                errorMessage += "Employee handbook acknowledgment is required. ";
-            }
-
-            if (chkDataAccuracy != null && !chkDataAccuracy.Checked)
-            {
-                isValid = false;
-                errorMessage += "Data accuracy certification is required. ";
-            }
-
-            if (chkPrivacyConsent != null && !chkPrivacyConsent.Checked)
-            {
-                isValid = false;
-                errorMessage += "Privacy consent is required. ";
+                errorMessage += "You must acknowledge the certification. ";
             }
 
             if (!isValid)
@@ -282,175 +191,28 @@ namespace TPASystem2.OnBoarding
                 ShowErrorMessage("Employee record not found. Please contact HR.");
                 return;
             }
+
+            // Set application date to today
+            txtApplicationDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+
+            // Hide messages panel initially
+            pnlMessages.Visible = false;
+            pnlSuccessMessage.Visible = false;
         }
-
-        private void LoadEmployeeData()
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        SELECT e.FirstName, e.LastName, e.Email, e.PhoneNumber
-                        FROM Employees e
-                        WHERE e.Id = @EmployeeId", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                // Pre-populate only basic existing data
-                                if (txtFirstName != null)
-                                    txtFirstName.Text = reader["FirstName"]?.ToString() ?? "";
-
-                                if (txtLastName != null)
-                                    txtLastName.Text = reader["LastName"]?.ToString() ?? "";
-
-                                if (txtPersonalEmail != null)
-                                    txtPersonalEmail.Text = reader["Email"]?.ToString() ?? "";
-
-                                if (txtPhoneNumber != null)
-                                    txtPhoneNumber.Text = reader["PhoneNumber"]?.ToString() ?? "";
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error loading employee data: {ex.Message}");
-                // Don't show error to user, just log it
-            }
-        }
-
-        #endregion
-
-        #region Data Saving Methods
-
-        private void SavePaperworkData()
-        {
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlTransaction transaction = conn.BeginTransaction())
-                {
-                    try
-                    {
-                        // Update only the basic employee fields that definitely exist
-                        using (SqlCommand cmd = new SqlCommand(@"
-                            UPDATE Employees 
-                            SET FirstName = @FirstName,
-                                LastName = @LastName,
-                                Email = @Email,
-                                PhoneNumber = @PhoneNumber,
-                                LastUpdated = GETUTCDATE()
-                            WHERE Id = @EmployeeId", conn, transaction))
-                        {
-                            cmd.Parameters.AddWithValue("@FirstName", txtFirstName?.Text?.Trim() ?? "");
-                            cmd.Parameters.AddWithValue("@LastName", txtLastName?.Text?.Trim() ?? "");
-                            cmd.Parameters.AddWithValue("@Email", txtPersonalEmail?.Text?.Trim() ?? "");
-                            cmd.Parameters.AddWithValue("@PhoneNumber", txtPhoneNumber?.Text?.Trim() ?? "");
-                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-
-                            cmd.ExecuteNonQuery();
-                        }
-
-                        // Log all other form data
-                        LogFormData();
-
-                        transaction.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        System.Diagnostics.Debug.WriteLine($"Error in SavePaperworkData: {ex.Message}");
-                        throw;
-                    }
-                }
-            }
-        }
-
-        private void LogFormData()
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine("=== NEW HIRE PAPERWORK DATA ===");
-                System.Diagnostics.Debug.WriteLine($"Address: {txtAddress?.Text}");
-                System.Diagnostics.Debug.WriteLine($"City: {txtCity?.Text}");
-                System.Diagnostics.Debug.WriteLine($"State: {ddlState?.SelectedValue}");
-                System.Diagnostics.Debug.WriteLine($"ZipCode: {txtZipCode?.Text}");
-                System.Diagnostics.Debug.WriteLine($"DateOfBirth: {txtDateOfBirth?.Text}");
-                System.Diagnostics.Debug.WriteLine($"SSN: {txtSocialSecurityNumber?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Emergency Contact: {txtEmergencyContactName?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Emergency Relationship: {txtEmergencyContactRelationship?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Emergency Phone: {txtEmergencyContactPhone?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Filing Status: {ddlFilingStatus?.SelectedValue}");
-                System.Diagnostics.Debug.WriteLine($"Dependents: {txtDependents?.Text}");
-                System.Diagnostics.Debug.WriteLine($"Work Authorization: {ddlWorkAuthorization?.SelectedValue}");
-                System.Diagnostics.Debug.WriteLine($"I9 Attestation: {chkI9Attestation?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Employee Handbook: {chkEmployeeHandbook?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Data Accuracy: {chkDataAccuracy?.Checked}");
-                System.Diagnostics.Debug.WriteLine($"Privacy Consent: {chkPrivacyConsent?.Checked}");
-                System.Diagnostics.Debug.WriteLine("=== END PAPERWORK DATA ===");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error logging form data: {ex.Message}");
-            }
-        }
-
-        private void CompleteMandatoryTask()
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    // Mark the New Hire Paperwork task as completed
-                    using (SqlCommand cmd = new SqlCommand(@"
-                        UPDATE OnboardingTasks 
-                        SET Status = 'COMPLETED',
-                            CompletedDate = GETUTCDATE(),
-                            CompletedById = @EmployeeId,
-                            Notes = 'Completed through employee portal',
-                            LastUpdated = GETUTCDATE()
-                        WHERE EmployeeId = @EmployeeId 
-                          AND Category = 'NEW_HIRE_PAPERWORK' 
-                          AND Status = 'PENDING'", conn))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error completing mandatory task: {ex.Message}");
-                // Don't throw error here as the data was saved successfully
-            }
-        }
-
-        #endregion
-
-        #region Helper Methods
 
         private int GetCurrentEmployeeId()
         {
             try
             {
                 int userId = Convert.ToInt32(Session["UserId"]);
-
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    using (SqlCommand cmd = new SqlCommand("SELECT Id FROM Employees WHERE UserId = @UserId", conn))
+                    string sql = "SELECT Id FROM Employees WHERE UserId = @UserId AND IsActive = 1";
+                    using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
                         cmd.Parameters.AddWithValue("@UserId", userId);
-                        object result = cmd.ExecuteScalar();
+                        var result = cmd.ExecuteScalar();
                         return result != null ? Convert.ToInt32(result) : 0;
                     }
                 }
@@ -461,29 +223,317 @@ namespace TPASystem2.OnBoarding
             }
         }
 
-        private void ShowErrorMessage(string message)
+        #endregion
+
+        #region Database Operations
+
+        private int SaveApplicationToDatabase(bool isSubmission = true)
         {
-            // Simple client-side alert for now
-            ClientScript.RegisterStartupScript(this.GetType(), "alert",
-                $"alert('Error: {message.Replace("'", "\\'")}');", true);
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        string sql = @"
+                            INSERT INTO [EmploymentApplications] (
+                                [ApplicationNumber], [ApplicationDate], [Status], [EmployeeId],
+                                [FirstName], [MiddleName], [LastName], [HomeAddress], [AptNumber],
+                                [City], [State], [ZipCode], [SSN], [DriversLicense], [DLState],
+                                [PhoneNumber], [CellNumber], [EmergencyContactName], [EmergencyContactRelationship],
+                                [EmergencyContactAddress], [EmergencyContactPhone], [Position1], [Position2],
+                                [SalaryDesired], [SalaryType], [EmploymentSought], [AvailableStartDate],
+                                [NashvilleLocation], [FranklinLocation], [ShelbyvilleLocation], [WaynesboroLocation], [OtherLocation],
+                                [FirstShift], [SecondShift], [ThirdShift], [WeekendsOnly],
+                                [MondayAvailable], [TuesdayAvailable], [WednesdayAvailable], [ThursdayAvailable],
+                                [FridayAvailable], [SaturdayAvailable], [SundayAvailable],
+                                [PreviouslyAppliedToTPA], [PreviousApplicationDate], [PreviouslyWorkedForTPA], [PreviousWorkDate],
+                                [FamilyMembersEmployedByTPA], [FamilyMemberDetails],
+                                [USCitizen], [PermanentResident], [AlienNumber], [LegallyEntitledToWork], [Is18OrOlder],
+                                [CreatedAt], [UpdatedAt]
+                            )
+                            VALUES (
+                                @ApplicationNumber, @ApplicationDate, @Status, @EmployeeId,
+                                @FirstName, @MiddleName, @LastName, @HomeAddress, @AptNumber,
+                                @City, @State, @ZipCode, @SSN, @DriversLicense, @DLState,
+                                @PhoneNumber, @CellNumber, @EmergencyContactName, @EmergencyContactRelationship,
+                                @EmergencyContactAddress, @EmergencyContactPhone, @Position1, @Position2,
+                                @SalaryDesired, @SalaryType, @EmploymentSought, @AvailableStartDate,
+                                @NashvilleLocation, @FranklinLocation, @ShelbyvilleLocation, @WaynesboroLocation, @OtherLocation,
+                                @FirstShift, @SecondShift, @ThirdShift, @WeekendsOnly,
+                                @MondayAvailable, @TuesdayAvailable, @WednesdayAvailable, @ThursdayAvailable,
+                                @FridayAvailable, @SaturdayAvailable, @SundayAvailable,
+                                @PreviouslyAppliedToTPA, @PreviousApplicationDate, @PreviouslyWorkedForTPA, @PreviousWorkDate,
+                                @FamilyMembersEmployedByTPA, @FamilyMemberDetails,
+                                @USCitizen, @PermanentResident, @AlienNumber, @LegallyEntitledToWork, @Is18OrOlder,
+                                @CreatedAt, @UpdatedAt
+                            );
+                            SELECT SCOPE_IDENTITY();";
+
+                        using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+                        {
+                            DateTime applicationDate = DateTime.Parse(txtApplicationDate.Text);
+                            string tempAppNumber = "EMP-" + DateTime.Now.Ticks.ToString().Substring(10);
+
+                            // Add parameters
+                            cmd.Parameters.AddWithValue("@ApplicationNumber", tempAppNumber);
+                            cmd.Parameters.AddWithValue("@ApplicationDate", applicationDate);
+                            cmd.Parameters.AddWithValue("@Status", isSubmission ? "SUBMITTED" : "DRAFT");
+                            cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
+
+                            // Personal Information
+                            cmd.Parameters.AddWithValue("@FirstName", txtFirstName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@MiddleName", GetTextOrNull(txtMiddleName.Text));
+                            cmd.Parameters.AddWithValue("@LastName", txtLastName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@HomeAddress", txtHomeAddress.Text.Trim());
+                            cmd.Parameters.AddWithValue("@AptNumber", GetTextOrNull(txtAptNumber.Text));
+                            cmd.Parameters.AddWithValue("@City", txtCity.Text.Trim());
+                            cmd.Parameters.AddWithValue("@State", txtState.Text.Trim());
+                            cmd.Parameters.AddWithValue("@ZipCode", txtZipCode.Text.Trim());
+                            cmd.Parameters.AddWithValue("@SSN", txtSSN.Text.Trim());
+                            cmd.Parameters.AddWithValue("@DriversLicense", GetTextOrNull(txtDriversLicense.Text));
+                            cmd.Parameters.AddWithValue("@DLState", GetTextOrNull(txtDLState.Text));
+                            cmd.Parameters.AddWithValue("@PhoneNumber", txtPhoneNumber.Text.Trim());
+                            cmd.Parameters.AddWithValue("@CellNumber", GetTextOrNull(txtCellNumber.Text));
+
+                            // Emergency Contact
+                            cmd.Parameters.AddWithValue("@EmergencyContactName", txtEmergencyContactName.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmergencyContactRelationship", txtEmergencyContactRelationship.Text.Trim());
+                            cmd.Parameters.AddWithValue("@EmergencyContactAddress", GetTextOrNull(txtEmergencyContactAddress.Text));
+                            cmd.Parameters.AddWithValue("@EmergencyContactPhone", txtEmergencyContactPhone.Text.Trim());
+
+                            // Position Information
+                            cmd.Parameters.AddWithValue("@Position1", txtPosition1.Text.Trim());
+                            cmd.Parameters.AddWithValue("@Position2", GetTextOrNull(txtPosition2.Text));
+                            cmd.Parameters.AddWithValue("@SalaryDesired", GetDecimalOrNull(txtSalaryDesired.Text));
+                            cmd.Parameters.AddWithValue("@SalaryType", GetSalaryType());
+                            cmd.Parameters.AddWithValue("@EmploymentSought", GetEmploymentType());
+                            cmd.Parameters.AddWithValue("@AvailableStartDate", GetDateOrNull(txtAvailableStartDate.Text));
+
+                            // Location Preferences
+                            cmd.Parameters.AddWithValue("@NashvilleLocation", chkNashville.Checked);
+                            cmd.Parameters.AddWithValue("@FranklinLocation", chkFranklin.Checked);
+                            cmd.Parameters.AddWithValue("@ShelbyvilleLocation", chkShelbyville.Checked);
+                            cmd.Parameters.AddWithValue("@WaynesboroLocation", chkWaynesboro.Checked);
+                            cmd.Parameters.AddWithValue("@OtherLocation", GetTextOrNull(txtOtherLocation.Text));
+
+                            // Shift Preferences
+                            cmd.Parameters.AddWithValue("@FirstShift", chk1stShift.Checked);
+                            cmd.Parameters.AddWithValue("@SecondShift", chk2ndShift.Checked);
+                            cmd.Parameters.AddWithValue("@ThirdShift", chk3rdShift.Checked);
+                            cmd.Parameters.AddWithValue("@WeekendsOnly", chkWeekendsOnly.Checked);
+
+                            // Days Available
+                            cmd.Parameters.AddWithValue("@MondayAvailable", chkMonday.Checked);
+                            cmd.Parameters.AddWithValue("@TuesdayAvailable", chkTuesday.Checked);
+                            cmd.Parameters.AddWithValue("@WednesdayAvailable", chkWednesday.Checked);
+                            cmd.Parameters.AddWithValue("@ThursdayAvailable", chkThursday.Checked);
+                            cmd.Parameters.AddWithValue("@FridayAvailable", chkFriday.Checked);
+                            cmd.Parameters.AddWithValue("@SaturdayAvailable", chkSaturday.Checked);
+                            cmd.Parameters.AddWithValue("@SundayAvailable", chkSunday.Checked);
+
+                            // Previous TPA Employment
+                            cmd.Parameters.AddWithValue("@PreviouslyAppliedToTPA", rbAppliedYes.Checked);
+                            cmd.Parameters.AddWithValue("@PreviousApplicationDate", GetTextOrNull(txtPreviousApplicationDate.Text));
+                            cmd.Parameters.AddWithValue("@PreviouslyWorkedForTPA", rbWorkedYes.Checked);
+                            cmd.Parameters.AddWithValue("@PreviousWorkDate", GetTextOrNull(txtPreviousWorkDate.Text));
+
+                            // Family Employment
+                            cmd.Parameters.AddWithValue("@FamilyMembersEmployedByTPA", rbFamilyYes.Checked);
+                            cmd.Parameters.AddWithValue("@FamilyMemberDetails", GetTextOrNull(txtFamilyMemberDetails.Text));
+
+                            // Legal Status
+                            cmd.Parameters.AddWithValue("@USCitizen", rbCitizenYes.Checked);
+                            cmd.Parameters.AddWithValue("@PermanentResident", rbCitizenNo.Checked);
+                            cmd.Parameters.AddWithValue("@AlienNumber", GetTextOrNull(txtAlienNumber.Text));
+                            cmd.Parameters.AddWithValue("@LegallyEntitledToWork", rbLegallyEntitledYes.Checked);
+                            cmd.Parameters.AddWithValue("@Is18OrOlder", rb18OrOlderYes.Checked);
+
+                            // Metadata
+                            cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+                            cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
+
+                            var result = cmd.ExecuteScalar();
+                            int applicationId = Convert.ToInt32(result);
+
+                            // Update with proper application number
+                            if (applicationId > 0)
+                            {
+                                string properAppNumber = GenerateApplicationNumber(applicationId);
+                                string updateSql = "UPDATE [EmploymentApplications] SET [ApplicationNumber] = @ProperAppNumber WHERE [Id] = @ApplicationId";
+                                using (SqlCommand updateCmd = new SqlCommand(updateSql, conn, transaction))
+                                {
+                                    updateCmd.Parameters.AddWithValue("@ProperAppNumber", properAppNumber);
+                                    updateCmd.Parameters.AddWithValue("@ApplicationId", applicationId);
+                                    updateCmd.ExecuteNonQuery();
+                                }
+                            }
+
+                            transaction.Commit();
+                            return applicationId;
+                        }
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
         }
 
-        private void ShowSuccessAndRedirect()
+        // Placeholder methods for additional data saving (these controls don't exist in the simplified form)
+        private void SaveEducationData(int applicationId)
         {
-            try
-            {
-                if (pnlSuccessMessage != null)
-                    pnlSuccessMessage.Visible = true;
+            // Implementation for education data if form had education fields
+            // Currently this form only has basic employment application info
+        }
 
-                // Redirect after a delay using JavaScript
-                ClientScript.RegisterStartupScript(this.GetType(), "redirect",
-                    "alert('Paperwork completed successfully!'); window.location.href = '" + ResolveUrl("~/OnBoarding/MyOnboarding.aspx") + "';", true);
-            }
-            catch (Exception ex)
+        private void SaveLicensesData(int applicationId)
+        {
+            // Implementation for licenses data if form had license fields
+        }
+
+        private void SaveEmploymentHistoryData(int applicationId)
+        {
+            // Implementation for employment history if form had employment history fields
+        }
+
+        private void SaveReferencesData(int applicationId)
+        {
+            // Implementation for references if form had reference fields
+        }
+
+        private void SaveCriminalHistoryData(int applicationId)
+        {
+            // Implementation for criminal history if form had criminal history fields
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private string GenerateApplicationNumber(int applicationId)
+        {
+            return "EMP-" + DateTime.Now.Year + "-" + applicationId.ToString("0000");
+        }
+
+        private string GetSalaryType()
+        {
+            if (rbHourly.Checked) return "Hourly";
+            if (rbYearly.Checked) return "Yearly";
+            return null;
+        }
+
+        private string GetEmploymentType()
+        {
+            var types = new List<string>();
+            if (chkFullTime.Checked) types.Add("Full Time");
+            if (chkPartTime.Checked) types.Add("Part Time");
+            if (chkTemporary.Checked) types.Add("Temporary");
+            return types.Count > 0 ? string.Join(", ", types) : null;
+        }
+
+        private object GetTextOrNull(string text)
+        {
+            return string.IsNullOrWhiteSpace(text) ? (object)DBNull.Value : text.Trim();
+        }
+
+        private object GetDateOrNull(string dateText)
+        {
+            if (string.IsNullOrWhiteSpace(dateText)) return DBNull.Value;
+
+            if (DateTime.TryParse(dateText, out DateTime date))
+                return date;
+
+            return DBNull.Value;
+        }
+
+        private object GetDecimalOrNull(string decimalText)
+        {
+            if (string.IsNullOrWhiteSpace(decimalText)) return DBNull.Value;
+
+            if (decimal.TryParse(decimalText, out decimal value))
+                return value;
+
+            return DBNull.Value;
+        }
+
+        private object GetIntOrNull(string intText)
+        {
+            if (string.IsNullOrWhiteSpace(intText)) return DBNull.Value;
+
+            if (int.TryParse(intText, out int value))
+                return value;
+
+            return DBNull.Value;
+        }
+
+        private void ShowSuccessMessage(string message)
+        {
+            pnlSuccessMessage.Visible = true;
+            pnlMessages.Visible = false;
+            // Update the success message text
+            foreach (Control control in pnlSuccessMessage.Controls)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in ShowSuccessAndRedirect: {ex.Message}");
-                // Fallback redirect
-                Response.Redirect("~/OnBoarding/MyOnboarding.aspx");
+                if (control is System.Web.UI.LiteralControl)
+                {
+                    // Replace the existing message
+                    pnlSuccessMessage.Controls.Clear();
+                    pnlSuccessMessage.Controls.Add(new System.Web.UI.LiteralControl(
+                        "<i class=\"material-icons\" style=\"vertical-align: middle; margin-right: 0.5rem;\">check_circle</i>" +
+                        "<strong>" + message + "</strong>"));
+                    break;
+                }
+            }
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            pnlMessages.Visible = true;
+            pnlMessages.CssClass = "message-panel error";
+            lblMessage.Text = message;
+            lblMessage.CssClass = "message-text error";
+            pnlSuccessMessage.Visible = false;
+        }
+
+        private void ClearForm()
+        {
+            // Clear all form fields
+            foreach (Control control in this.Controls)
+            {
+                ClearControls(control);
+            }
+
+            // Reset application date
+            txtApplicationDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
+        }
+
+        private void ClearControls(Control parent)
+        {
+            foreach (Control control in parent.Controls)
+            {
+                if (control is TextBox textBox && textBox.ID != "txtApplicationDate")
+                {
+                    textBox.Text = "";
+                }
+                else if (control is CheckBox checkBox)
+                {
+                    checkBox.Checked = false;
+                }
+                else if (control is RadioButton radioButton)
+                {
+                    radioButton.Checked = false;
+                }
+                else if (control is DropDownList dropDown)
+                {
+                    dropDown.SelectedIndex = -1;
+                }
+                else if (control.HasControls())
+                {
+                    ClearControls(control);
+                }
             }
         }
 

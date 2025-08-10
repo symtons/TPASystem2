@@ -95,7 +95,7 @@ namespace TPASystem2
                 menuHtml.AppendLine(CreateNavItem("Dashboard", $"{appPath}/Dashboard.aspx", "dashboard", currentPage == "dashboard"));
 
                 // Time Management (everyone) - DYNAMIC PATH
-                menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
+               // menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
 
                 // Role-based menu items
                 switch (userRole.ToUpper())
@@ -130,7 +130,7 @@ namespace TPASystem2
                     case "HRADMIN":
                         // HR Admin gets HR-focused functionality - DYNAMIC PATHS
                         menuHtml.AppendLine(CreateNavItem("Employees", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
-                        menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
+                        menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/TimeManagement/TimeManagement.aspx", "schedule", currentPage == "time-management"));
                         menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("HR Reports", "/reports", "assessment", currentPage == "reports"));
                         menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
@@ -145,8 +145,8 @@ namespace TPASystem2
                     case "PROGRAMDIRECTOR":
                         menuHtml.AppendLine(CreateNavItem("Program Overview", "/programs", "business", currentPage == "programs"));
                         menuHtml.AppendLine(CreateNavItem("Employees", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
-                        menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
-                        menuHtml.AppendLine(CreateNavItem("Leave Management", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                    menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/HR/TimeManagement.aspx", "schedule", currentPage == "time-management"));
+                    menuHtml.AppendLine(CreateNavItem("Leave Management", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("Director Reports", "/reports", "assessment", currentPage == "reports"));
 
                         // Director Section

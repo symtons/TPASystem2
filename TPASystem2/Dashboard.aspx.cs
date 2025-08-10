@@ -645,10 +645,7 @@ namespace TPASystem2
 
                 case "EMPLOYEE":
                 default:
-                    stats.AppendLine(CreateStatCard("My Hours", "38.5", "schedule", "#2196f3", "This week"));
-                    stats.AppendLine(CreateStatCard("Leave Balance", "12", "event_available", "#4caf50", "Days remaining"));
-                    stats.AppendLine(CreateStatCard("My Tasks", "3", "assignment", "#ff9800", "Pending"));
-                    stats.AppendLine(CreateStatCard("Completed Projects", "8", "check_circle", "#9c27b0", "This quarter"));
+                   
                     break;
             }
 
