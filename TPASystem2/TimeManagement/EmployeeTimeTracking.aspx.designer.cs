@@ -42,6 +42,15 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.Button btnViewTimesheets;
 
         /// <summary>
+        /// btnTimeReports control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnTimeReports;
+
+        /// <summary>
         /// pnlMessage control.
         /// </summary>
         /// <remarks>
@@ -85,6 +94,15 @@ namespace TPASystem2.TimeManagement
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litWeekTotal;
+
+        /// <summary>
+        /// litBreakStatus control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litBreakStatus;
 
         /// <summary>
         /// litLastAction control.
@@ -141,6 +159,15 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.TextBox txtEntryDate;
 
         /// <summary>
+        /// rfvEntryDate control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEntryDate;
+
+        /// <summary>
         /// txtStartTime control.
         /// </summary>
         /// <remarks>
@@ -150,6 +177,15 @@ namespace TPASystem2.TimeManagement
         protected global::System.Web.UI.WebControls.TextBox txtStartTime;
 
         /// <summary>
+        /// rfvStartTime control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvStartTime;
+
+        /// <summary>
         /// txtEndTime control.
         /// </summary>
         /// <remarks>
@@ -157,6 +193,42 @@ namespace TPASystem2.TimeManagement
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtEndTime;
+
+        /// <summary>
+        /// rfvEndTime control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEndTime;
+
+        /// <summary>
+        /// txtBreakDuration control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtBreakDuration;
+
+        /// <summary>
+        /// rvBreakDuration control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RangeValidator rvBreakDuration;
+
+        /// <summary>
+        /// txtLocation control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtLocation;
 
         /// <summary>
         /// txtEntryNotes control.
@@ -175,6 +247,60 @@ namespace TPASystem2.TimeManagement
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnAddEntry;
+
+        /// <summary>
+        /// vsManualEntry control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.ValidationSummary vsManualEntry;
+
+        /// <summary>
+        /// pnlTodaysSchedule control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlTodaysSchedule;
+
+        /// <summary>
+        /// litScheduledStart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litScheduledStart;
+
+        /// <summary>
+        /// litScheduledEnd control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litScheduledEnd;
+
+        /// <summary>
+        /// litExpectedHours control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litExpectedHours;
+
+        /// <summary>
+        /// ddlEntryFilter control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlEntryFilter;
 
         /// <summary>
         /// btnViewAllEntries control.
@@ -211,5 +337,41 @@ namespace TPASystem2.TimeManagement
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnHiddenRefresh;
+
+        /// <summary>
+        /// hfActiveEntryId control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfActiveEntryId;
+
+        /// <summary>
+        /// hfClockInTime control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfClockInTime;
+
+        /// <summary>
+        /// hfBreakStartTime control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfBreakStartTime;
+
+        /// <summary>
+        /// hfIsOnBreak control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfIsOnBreak;
     }
 }
