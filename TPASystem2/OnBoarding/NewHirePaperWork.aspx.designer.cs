@@ -11,7 +11,7 @@ namespace TPASystem2.OnBoarding
 {
 
 
-    public partial class NewHirePaperwork
+    public partial class NewHirePaperWorkTabbed
     {
 
         /// <summary>
@@ -40,6 +40,33 @@ namespace TPASystem2.OnBoarding
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label lblMessage;
+
+        /// <summary>
+        /// upMain control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel upMain;
+
+        /// <summary>
+        /// hfCurrentTab control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfCurrentTab;
+
+        /// <summary>
+        /// hfApplicationId control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfApplicationId;
 
         /// <summary>
         /// txtApplicationDate control.
@@ -240,22 +267,22 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtSalaryDesired;
 
         /// <summary>
-        /// rbHourly control.
+        /// chkHourly control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbHourly;
+        protected global::System.Web.UI.WebControls.CheckBox chkHourly;
 
         /// <summary>
-        /// rbYearly control.
+        /// chkYearly control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbYearly;
+        protected global::System.Web.UI.WebControls.CheckBox chkYearly;
 
         /// <summary>
         /// txtAvailableStartDate control.
@@ -348,31 +375,31 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtOtherLocation;
 
         /// <summary>
-        /// chkFirstShift control.
+        /// chk1stShift control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkFirstShift;
+        protected global::System.Web.UI.WebControls.CheckBox chk1stShift;
 
         /// <summary>
-        /// chkSecondShift control.
+        /// chk2ndShift control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkSecondShift;
+        protected global::System.Web.UI.WebControls.CheckBox chk2ndShift;
 
         /// <summary>
-        /// chkThirdShift control.
+        /// chk3rdShift control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkThirdShift;
+        protected global::System.Web.UI.WebControls.CheckBox chk3rdShift;
 
         /// <summary>
         /// chkWeekendsOnly control.
@@ -384,148 +411,148 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.CheckBox chkWeekendsOnly;
 
         /// <summary>
-        /// chkMonday control.
+        /// chkMon control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkMonday;
+        protected global::System.Web.UI.WebControls.CheckBox chkMon;
 
         /// <summary>
-        /// chkTuesday control.
+        /// chkTues control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkTuesday;
+        protected global::System.Web.UI.WebControls.CheckBox chkTues;
 
         /// <summary>
-        /// chkWednesday control.
+        /// chkWed control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkWednesday;
+        protected global::System.Web.UI.WebControls.CheckBox chkWed;
 
         /// <summary>
-        /// chkThursday control.
+        /// chkThurs control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkThursday;
+        protected global::System.Web.UI.WebControls.CheckBox chkThurs;
 
         /// <summary>
-        /// chkFriday control.
+        /// chkFri control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkFriday;
+        protected global::System.Web.UI.WebControls.CheckBox chkFri;
 
         /// <summary>
-        /// chkSaturday control.
+        /// chkSat control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkSaturday;
+        protected global::System.Web.UI.WebControls.CheckBox chkSat;
 
         /// <summary>
-        /// chkSunday control.
+        /// chkSun control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkSunday;
+        protected global::System.Web.UI.WebControls.CheckBox chkSun;
 
         /// <summary>
-        /// rbPreviouslyAppliedYes control.
+        /// rbAppliedTPAYes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbPreviouslyAppliedYes;
+        protected global::System.Web.UI.WebControls.RadioButton rbAppliedTPAYes;
 
         /// <summary>
-        /// rbPreviouslyAppliedNo control.
+        /// rbAppliedTPANo control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbPreviouslyAppliedNo;
+        protected global::System.Web.UI.WebControls.RadioButton rbAppliedTPANo;
 
         /// <summary>
-        /// txtPreviousApplicationDate control.
+        /// txtAppliedTPADate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPreviousApplicationDate;
+        protected global::System.Web.UI.WebControls.TextBox txtAppliedTPADate;
 
         /// <summary>
-        /// rbPreviouslyWorkedYes control.
+        /// rbWorkedTPAYes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbPreviouslyWorkedYes;
+        protected global::System.Web.UI.WebControls.RadioButton rbWorkedTPAYes;
 
         /// <summary>
-        /// rbPreviouslyWorkedNo control.
+        /// rbWorkedTPANo control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbPreviouslyWorkedNo;
+        protected global::System.Web.UI.WebControls.RadioButton rbWorkedTPANo;
 
         /// <summary>
-        /// txtPreviousWorkDate control.
+        /// txtWorkedTPADate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPreviousWorkDate;
+        protected global::System.Web.UI.WebControls.TextBox txtWorkedTPADate;
 
         /// <summary>
-        /// rbFamilyMembersYes control.
+        /// rbFamilyTPAYes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbFamilyMembersYes;
+        protected global::System.Web.UI.WebControls.RadioButton rbFamilyTPAYes;
 
         /// <summary>
-        /// rbFamilyMembersNo control.
+        /// rbFamilyTPANo control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbFamilyMembersNo;
+        protected global::System.Web.UI.WebControls.RadioButton rbFamilyTPANo;
 
         /// <summary>
-        /// txtFamilyMemberDetails control.
+        /// txtFamilyTPADetails control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtFamilyMemberDetails;
+        protected global::System.Web.UI.WebControls.TextBox txtFamilyTPADetails;
 
         /// <summary>
         /// rbUSCitizenYes control.
@@ -555,22 +582,22 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtAlienNumber;
 
         /// <summary>
-        /// rbLegallyEntitledYes control.
+        /// rbLegalWorkYes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbLegallyEntitledYes;
+        protected global::System.Web.UI.WebControls.RadioButton rbLegalWorkYes;
 
         /// <summary>
-        /// rbLegallyEntitledNo control.
+        /// rbLegalWorkNo control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbLegallyEntitledNo;
+        protected global::System.Web.UI.WebControls.RadioButton rbLegalWorkNo;
 
         /// <summary>
         /// rb18OrOlderYes control.
@@ -645,13 +672,13 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtCriminalCharge1;
 
         /// <summary>
-        /// txtCriminalOutcome1 control.
+        /// txtCriminalStatus1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtCriminalOutcome1;
+        protected global::System.Web.UI.WebControls.TextBox txtCriminalStatus1;
 
         /// <summary>
         /// txtCriminalDate2 control.
@@ -672,13 +699,13 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtCriminalCharge2;
 
         /// <summary>
-        /// txtCriminalOutcome2 control.
+        /// txtCriminalStatus2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtCriminalOutcome2;
+        protected global::System.Web.UI.WebControls.TextBox txtCriminalStatus2;
 
         /// <summary>
         /// txtCriminalDate3 control.
@@ -699,13 +726,13 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtCriminalCharge3;
 
         /// <summary>
-        /// txtCriminalOutcome3 control.
+        /// txtCriminalStatus3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtCriminalOutcome3;
+        protected global::System.Web.UI.WebControls.TextBox txtCriminalStatus3;
 
         /// <summary>
         /// rbAbuseRegistryYes control.
@@ -726,22 +753,22 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.RadioButton rbAbuseRegistryNo;
 
         /// <summary>
-        /// rbFoundGuiltyYes control.
+        /// rbAbuseFoundGuiltyYes control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbFoundGuiltyYes;
+        protected global::System.Web.UI.WebControls.RadioButton rbAbuseFoundGuiltyYes;
 
         /// <summary>
-        /// rbFoundGuiltyNo control.
+        /// rbAbuseFoundGuiltyNo control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RadioButton rbFoundGuiltyNo;
+        protected global::System.Web.UI.WebControls.RadioButton rbAbuseFoundGuiltyNo;
 
         /// <summary>
         /// rbLicenseRevokedYes control.
@@ -780,166 +807,364 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtHighSchool;
 
         /// <summary>
-        /// txtUndergraduateSchool control.
+        /// txtUndergraduate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtUndergraduateSchool;
+        protected global::System.Web.UI.WebControls.TextBox txtUndergraduate;
 
         /// <summary>
-        /// txtGraduateSchool control.
+        /// txtGraduate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtGraduateSchool;
+        protected global::System.Web.UI.WebControls.TextBox txtGraduate;
 
         /// <summary>
-        /// txtElementaryYears control.
+        /// chkElem1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtElementaryYears;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem1;
 
         /// <summary>
-        /// txtHighSchoolYears control.
+        /// chkElem2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtHighSchoolYears;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem2;
 
         /// <summary>
-        /// txtUndergraduateYears control.
+        /// chkElem3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtUndergraduateYears;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem3;
 
         /// <summary>
-        /// txtGraduateYears control.
+        /// chkElem4 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtGraduateYears;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem4;
 
         /// <summary>
-        /// chkElementaryDiploma control.
+        /// chkElem5 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkElementaryDiploma;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem5;
 
         /// <summary>
-        /// chkHighSchoolDiploma control.
+        /// chkElem6 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkHighSchoolDiploma;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem6;
 
         /// <summary>
-        /// chkUndergraduateDiploma control.
+        /// chkElem7 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkUndergraduateDiploma;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem7;
 
         /// <summary>
-        /// chkGraduateDiploma control.
+        /// chkElem8 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkGraduateDiploma;
+        protected global::System.Web.UI.WebControls.CheckBox chkElem8;
 
         /// <summary>
-        /// txtElementaryMajor control.
+        /// chkHS9 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtElementaryMajor;
+        protected global::System.Web.UI.WebControls.CheckBox chkHS9;
 
         /// <summary>
-        /// txtHighSchoolMajor control.
+        /// chkHS10 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtHighSchoolMajor;
+        protected global::System.Web.UI.WebControls.CheckBox chkHS10;
 
         /// <summary>
-        /// txtUndergraduateMajor control.
+        /// chkHS11 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtUndergraduateMajor;
+        protected global::System.Web.UI.WebControls.CheckBox chkHS11;
 
         /// <summary>
-        /// txtGraduateMajor control.
+        /// chkHS12 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtGraduateMajor;
+        protected global::System.Web.UI.WebControls.CheckBox chkHS12;
 
         /// <summary>
-        /// txtElementaryTraining control.
+        /// chkUG1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlTextArea txtElementaryTraining;
+        protected global::System.Web.UI.WebControls.CheckBox chkUG1;
 
         /// <summary>
-        /// txtHighSchoolTraining control.
+        /// chkUG2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlTextArea txtHighSchoolTraining;
+        protected global::System.Web.UI.WebControls.CheckBox chkUG2;
 
         /// <summary>
-        /// txtUndergraduateTraining control.
+        /// chkUG3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlTextArea txtUndergraduateTraining;
+        protected global::System.Web.UI.WebControls.CheckBox chkUG3;
 
         /// <summary>
-        /// txtGraduateTraining control.
+        /// chkUG4 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlTextArea txtGraduateTraining;
+        protected global::System.Web.UI.WebControls.CheckBox chkUG4;
+
+        /// <summary>
+        /// chkUG5 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkUG5;
+
+        /// <summary>
+        /// chkGrad1 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkGrad1;
+
+        /// <summary>
+        /// chkGrad2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkGrad2;
+
+        /// <summary>
+        /// chkGrad3 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkGrad3;
+
+        /// <summary>
+        /// chkGrad4 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkGrad4;
+
+        /// <summary>
+        /// chkGrad5 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox chkGrad5;
+
+        /// <summary>
+        /// rbElemDiplomaYes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbElemDiplomaYes;
+
+        /// <summary>
+        /// rbElemDiplomaNo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbElemDiplomaNo;
+
+        /// <summary>
+        /// rbHSDiplomaYes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbHSDiplomaYes;
+
+        /// <summary>
+        /// rbHSDiplomaNo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbHSDiplomaNo;
+
+        /// <summary>
+        /// rbUGDiplomaYes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbUGDiplomaYes;
+
+        /// <summary>
+        /// rbUGDiplomaNo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbUGDiplomaNo;
+
+        /// <summary>
+        /// rbGradDiplomaYes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbGradDiplomaYes;
+
+        /// <summary>
+        /// rbGradDiplomaNo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RadioButton rbGradDiplomaNo;
+
+        /// <summary>
+        /// txtElemMajor control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtElemMajor;
+
+        /// <summary>
+        /// txtHSMajor control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtHSMajor;
+
+        /// <summary>
+        /// txtUGMajor control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtUGMajor;
+
+        /// <summary>
+        /// txtGradMajor control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtGradMajor;
+
+        /// <summary>
+        /// txtElemSkills control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtElemSkills;
+
+        /// <summary>
+        /// txtHSSkills control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtHSSkills;
+
+        /// <summary>
+        /// txtUGSkills control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtUGSkills;
+
+        /// <summary>
+        /// txtGradSkills control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtGradSkills;
 
         /// <summary>
         /// txtSpecialSkills control.
@@ -1572,22 +1797,67 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtReference3Years;
 
         /// <summary>
-        /// txtBGFullName control.
+        /// txtBGLastName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtBGFullName;
+        protected global::System.Web.UI.WebControls.TextBox txtBGLastName;
 
         /// <summary>
-        /// txtBGAddress control.
+        /// txtBGFirstName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtBGAddress;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFirstName;
+
+        /// <summary>
+        /// txtBGMiddleName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtBGMiddleName;
+
+        /// <summary>
+        /// txtBGStreet control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtBGStreet;
+
+        /// <summary>
+        /// txtBGCity control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtBGCity;
+
+        /// <summary>
+        /// txtBGState control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtBGState;
+
+        /// <summary>
+        /// txtBGZipCode control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtBGZipCode;
 
         /// <summary>
         /// txtBGSSN control.
@@ -1635,13 +1905,13 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtBGDriversLicense;
 
         /// <summary>
-        /// txtBGDLState control.
+        /// txtBGDriversLicenseState control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtBGDLState;
+        protected global::System.Web.UI.WebControls.TextBox txtBGDriversLicenseState;
 
         /// <summary>
         /// txtBGDateOfBirth control.
@@ -1662,112 +1932,112 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtBGNameOnLicense;
 
         /// <summary>
-        /// txtPrevAddress1Street control.
+        /// txtBGFormerStreet1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress1Street;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerStreet1;
 
         /// <summary>
-        /// txtPrevAddress1City control.
+        /// txtBGFormerCity1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress1City;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerCity1;
 
         /// <summary>
-        /// txtPrevAddress1State control.
+        /// txtBGFormerState1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress1State;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerState1;
 
         /// <summary>
-        /// txtPrevAddress1Years control.
+        /// txtBGFormerYears1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress1Years;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerYears1;
 
         /// <summary>
-        /// txtPrevAddress2Street control.
+        /// txtBGFormerStreet2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress2Street;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerStreet2;
 
         /// <summary>
-        /// txtPrevAddress2City control.
+        /// txtBGFormerCity2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress2City;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerCity2;
 
         /// <summary>
-        /// txtPrevAddress2State control.
+        /// txtBGFormerState2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress2State;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerState2;
 
         /// <summary>
-        /// txtPrevAddress2Years control.
+        /// txtBGFormerYears2 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress2Years;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerYears2;
 
         /// <summary>
-        /// txtPrevAddress3Street control.
+        /// txtBGFormerStreet3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress3Street;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerStreet3;
 
         /// <summary>
-        /// txtPrevAddress3City control.
+        /// txtBGFormerCity3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress3City;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerCity3;
 
         /// <summary>
-        /// txtPrevAddress3State control.
+        /// txtBGFormerState3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress3State;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerState3;
 
         /// <summary>
-        /// txtPrevAddress3Years control.
+        /// txtBGFormerYears3 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtPrevAddress3Years;
+        protected global::System.Web.UI.WebControls.TextBox txtBGFormerYears3;
 
         /// <summary>
         /// rbBGConvicted7YearsYes control.
@@ -1806,22 +2076,22 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.RadioButton rbBGChargedInvestigationNo;
 
         /// <summary>
-        /// txtSSNLast4 control.
+        /// txtBGSSNLast4 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSSNLast4;
+        protected global::System.Web.UI.WebControls.TextBox txtBGSSNLast4;
 
         /// <summary>
-        /// txtReferenceAuthDate control.
+        /// txtBGSignatureDate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtReferenceAuthDate;
+        protected global::System.Web.UI.WebControls.TextBox txtBGSignatureDate;
 
         /// <summary>
         /// chkDIDDNoAbuse control.
@@ -1869,13 +2139,13 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.TextBox txtDIDDDateOfBirth;
 
         /// <summary>
-        /// txtDIDDLicenseID control.
+        /// txtDIDDDriverLicense control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtDIDDLicenseID;
+        protected global::System.Web.UI.WebControls.TextBox txtDIDDDriverLicense;
 
         /// <summary>
         /// chkProtectionNoAbuse control.
@@ -1905,13 +2175,22 @@ namespace TPASystem2.OnBoarding
         protected global::System.Web.UI.WebControls.CheckBox chkFinalAcknowledgment;
 
         /// <summary>
-        /// rfvFinalAcknowledgment control.
+        /// btnPrevious control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvFinalAcknowledgment;
+        protected global::System.Web.UI.WebControls.Button btnPrevious;
+
+        /// <summary>
+        /// btnNext control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnNext;
 
         /// <summary>
         /// btnSaveDraft control.
