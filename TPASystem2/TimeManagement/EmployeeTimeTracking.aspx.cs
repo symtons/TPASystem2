@@ -78,8 +78,8 @@ namespace TPASystem2.TimeManagement
 
         protected void btnClockOut_Click(object sender, EventArgs e)
         {
-            try
-            {
+            //try
+            //{
                 var activeEntry = GetActiveEntry();
                 if (activeEntry == null)
                 {
@@ -105,12 +105,12 @@ namespace TPASystem2.TimeManagement
                 {
                     ShowMessage("Error clocking out. Please try again.", "error");
                 }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                ShowMessage("An error occurred while clocking out. Please try again.", "error");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    LogError(ex);
+            //    ShowMessage("An error occurred while clocking out. Please try again.", "error");
+            //}
         }
 
         protected void btnStartBreak_Click(object sender, EventArgs e)
@@ -286,7 +286,7 @@ namespace TPASystem2.TimeManagement
                     using (SqlCommand cmd = new SqlCommand(@"
                         SELECT e.FirstName, e.LastName, e.EmployeeNumber, e.Position
                         FROM Employees e
-                        WHERE e.UserId = @EmployeeId AND e.Status='Active'", conn))
+                        WHERE e.Id = @EmployeeId AND e.Status='Active'", conn))
                     {
                         cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
 
@@ -478,27 +478,96 @@ namespace TPASystem2.TimeManagement
 
         #region Time Tracking Methods
 
-        private int ClockIn()
+        /// <summary>
+        /// CORRECTED GetCurrentEmployeeId method
+        /// This will return EmployeeId 26 for UserId 33 (Alice Johnson)
+        /// </summary>
+        private int GetCurrentEmployeeId()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            try
             {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(@"
-                    INSERT INTO TimeEntries (EmployeeId, ClockIn, Status, Location, CreatedAt)
-                    OUTPUT INSERTED.Id
-                    VALUES (@EmployeeId, @ClockIn, 'Active', @Location, @CreatedAt)", conn))
+                if (Session["UserId"] == null)
                 {
-                    cmd.Parameters.AddWithValue("@EmployeeId", CurrentEmployeeId);
-                    cmd.Parameters.AddWithValue("@ClockIn", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@Location", GetUserLocation());
-                    cmd.Parameters.AddWithValue("@CreatedAt", DateTime.Now);
-
-                    object result = cmd.ExecuteScalar();
-                    return result != null ? Convert.ToInt32(result) : 0;
+                    return 0;
                 }
+
+                int userId = Convert.ToInt32(Session["UserId"]); // This is 33
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Query the Employees table to get the Employee.Id where Employee.UserId = session UserId
+                    using (SqlCommand cmd = new SqlCommand(@"
+                SELECT Id 
+                FROM Employees 
+                WHERE UserId = @UserId AND Status = 'Active'", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        object result = cmd.ExecuteScalar();
+
+                        if (result != null)
+                        {
+                            int employeeId = Convert.ToInt32(result);
+                            System.Diagnostics.Debug.WriteLine($"GetCurrentEmployeeId: UserId {userId} -> EmployeeId {employeeId}");
+                            return employeeId; // This should return 26 for UserId 33
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"GetCurrentEmployeeId: No employee found for UserId {userId}");
+                            return 0;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetCurrentEmployeeId: Error - {ex.Message}");
+                LogError(ex);
+                return 0;
             }
         }
 
+        /// <summary>
+        /// Updated ClockIn method (no changes needed, just for reference)
+        /// This should now work correctly with EmployeeId 26
+        /// </summary>
+        private int ClockIn()
+        {
+            try
+            {
+                int employeeId = GetCurrentEmployeeId(); // Should return 26, not 33
+                if (employeeId <= 0)
+                {
+                    ShowMessage("Unable to identify employee. Please contact support.", "error");
+                    return 0;
+                }
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand(@"
+                INSERT INTO TimeEntries (EmployeeId, ClockIn, Status, Location, CreatedAt)
+                OUTPUT INSERTED.Id
+                VALUES (@EmployeeId, @ClockIn, 'Active', @Location, @CreatedAt)", conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId); // Now uses 26 instead of 33
+                        cmd.Parameters.AddWithValue("@ClockIn", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@Location", GetUserLocation());
+                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.Now);
+
+                        object result = cmd.ExecuteScalar();
+                        return result != null ? Convert.ToInt32(result) : 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error clocking in. Please try again.", "error");
+                return 0;
+            }
+        }
         private bool ClockOut(int entryId)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -1124,38 +1193,7 @@ namespace TPASystem2.TimeManagement
             }
         }
 
-        private int GetCurrentEmployeeId()
-        {
-            
-                if (Session["UserId"] != null)
-                {
-                    return Convert.ToInt32(Session["UserId"]);
-                }
-
-                // Fallback: Get from Users table
-                if (Session["UserId"] != null)
-                {
-                    int userId = Convert.ToInt32(Session["UserId"]);
-                    using (SqlConnection conn = new SqlConnection(connectionString))
-                    {
-                        conn.Open();
-                        using (SqlCommand cmd = new SqlCommand("SELECT EmployeeId FROM Users WHERE Id = @UserId", conn))
-                        {
-                            cmd.Parameters.AddWithValue("@UserId", userId);
-                            object result = cmd.ExecuteScalar();
-                            if (result != null)
-                            {
-                                int employeeId = Convert.ToInt32(result);
-                                Session["EmployeeId"] = employeeId;
-                                return employeeId;
-                            }
-                        }
-                    }
-                }
-
-                throw new Exception("Employee ID not found");
-            
-        }
+      
 
         private void ShowMessage(string message, string type)
         {
