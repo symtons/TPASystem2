@@ -84,6 +84,8 @@
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
+    <Content Include="LeaveManagement\EmployeeLeavePortal.aspx" />
+    <Content Include="LeaveManagement\EmployeeRequestLeave.aspx" />
     <Content Include="TimeManagement\EditTimesheet.aspx" />
     <Content Include="TimeManagement\EmployeeTimesheets.aspx" />
     <Content Include="TimeManagement\EmployeeTimeTracking.aspx" />
@@ -163,6 +165,20 @@
     </Compile>
     <Compile Include="HR\ManageEmployeeOnboarding.aspx.designer.cs">
       <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="LeaveManagement\EmployeeLeavePortal.aspx.cs">
+      <DependentUpon>EmployeeLeavePortal.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LeaveManagement\EmployeeLeavePortal.aspx.designer.cs">
+      <DependentUpon>EmployeeLeavePortal.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="LeaveManagement\EmployeeRequestLeave.aspx.cs">
+      <DependentUpon>EmployeeRequestLeave.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="LeaveManagement\EmployeeRequestLeave.aspx.designer.cs">
+      <DependentUpon>EmployeeRequestLeave.aspx</DependentUpon>
     </Compile>
     <Compile Include="TimeManagement\EditTimesheet.aspx.cs">
       <DependentUpon>EditTimesheet.aspx</DependentUpon>

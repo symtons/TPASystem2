@@ -10,64 +10,75 @@ namespace TPASystem2.LeaveManagement
     public partial class RequestLeave : System.Web.UI.Page
     {
         private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+        private int CurrentUserId => Convert.ToInt32(Session["UserId"] ?? "0");
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                //if (Session["UserId"] == null)
-                //{
-                //    Response.Redirect("~/Login.aspx", false);
-                //    return;
-                //}
-
-                InitializePage();
+                ValidateUserAccess();
                 LoadEmployeeInformation();
+                LoadLeaveTypes();
                 SetDateValidators();
             }
         }
 
-        #region Page Initialization
+        #region User Access and Employee Info
 
-        private void InitializePage()
+        private void ValidateUserAccess()
         {
-            cvStartDate.ValueToCompare = DateTime.Today.ToString("yyyy-MM-dd");
+            if (Session["UserId"] == null)
+            {
+                Response.Redirect("~/Login.aspx", false);
+                return;
+            }
         }
 
         private void LoadEmployeeInformation()
         {
             try
             {
-                int userId = Convert.ToInt32(Session["UserId"]);
-
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
+
                     string query = @"
                         SELECT 
-                            e.Id,
-                            CONCAT(e.FirstName, ' ', e.LastName) as FullName,
-                            d.Name as DepartmentName
+                            e.FirstName + ' ' + e.LastName as FullName,
+                            e.EmployeeNumber,
+                            ISNULL(d.Name, 'No Department') as DepartmentName
                         FROM Employees e
                         LEFT JOIN Departments d ON e.DepartmentId = d.Id
-                        WHERE e.UserId = @UserId";
+                        WHERE e.UserId = @UserId AND e.IsActive = 1";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        cmd.Parameters.AddWithValue("@UserId", CurrentUserId);
 
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                txtEmployeeName.Text = reader["FullName"].ToString();
-                                txtDepartment.Text = reader["DepartmentName"]?.ToString() ?? "Not Assigned";
-                                ViewState["EmployeeId"] = reader["Id"];
+                                string fullName = reader["FullName"].ToString();
+                                string employeeNumber = reader["EmployeeNumber"].ToString();
+                                string departmentName = reader["DepartmentName"].ToString();
+
+                                // Set hidden fields for form processing
+                                txtEmployeeName.Text = fullName;
+                                txtDepartment.Text = departmentName;
+
+                                // Update client-side display using JavaScript
+                                string script = $@"
+                                    document.getElementById('employeeNameDisplay').textContent = '{fullName}';
+                                    document.getElementById('employeeNumberDisplay').textContent = '{employeeNumber}';
+                                ";
+                                ClientScript.RegisterStartupScript(this.GetType(), "UpdateEmployeeInfo", script, true);
                             }
                             else
                             {
                                 ShowMessage("Employee information not found. Please contact HR.", "error");
                                 pnlRequestForm.Visible = false;
+                                return;
                             }
                         }
                     }
@@ -81,29 +92,99 @@ namespace TPASystem2.LeaveManagement
             }
         }
 
-        private void SetDateValidators()
-        {
-            cvStartDate.ValueToCompare = DateTime.Today.ToString("yyyy-MM-dd");
-        }
-
         #endregion
 
-        #region Leave Balance Management
+        #region Leave Types and Balance Management
+
+        private void LoadLeaveTypes()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string query = @"
+                        SELECT TypeName
+                        FROM LeaveTypes 
+                        WHERE IsActive = 1 
+                        ORDER BY TypeName";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        ddlLeaveType.Items.Clear();
+                        ddlLeaveType.Items.Add(new ListItem("Select leave type...", ""));
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string typeName = reader["TypeName"].ToString();
+                                ddlLeaveType.Items.Add(new ListItem(typeName, typeName));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error loading leave types.", "error");
+            }
+        }
 
         private void LoadLeaveBalance(string leaveType)
         {
             if (string.IsNullOrEmpty(leaveType))
             {
-                txtAvailableBalance.Text = "--";
+                txtAvailableBalance.Text = "Select leave type first";
                 return;
             }
 
             try
             {
-                // In a real implementation, this would query leave balance tables
-                // For now, showing sample balances based on leave type
-                int availableBalance = GetAvailableBalance(leaveType);
-                txtAvailableBalance.Text = availableBalance + " days";
+                int employeeId = GetEmployeeIdFromUserId(CurrentUserId);
+                if (employeeId == 0)
+                {
+                    txtAvailableBalance.Text = "Employee not found";
+                    return;
+                }
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Query to get balance using LeaveType string (matching your schema)
+                    string query = @"
+                        SELECT 
+                            ISNULL(lb.AllocatedDays, lt.DefaultAllocation) as Total,
+                            ISNULL(lb.UsedDays, 0) as Used,
+                            (ISNULL(lb.AllocatedDays, lt.DefaultAllocation) - ISNULL(lb.UsedDays, 0)) as Available
+                        FROM LeaveTypes lt
+                        LEFT JOIN LeaveBalances lb ON lt.TypeName = lb.LeaveType AND lb.EmployeeId = @EmployeeId
+                        WHERE lt.TypeName = @LeaveType AND lt.IsActive = 1";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                        cmd.Parameters.AddWithValue("@LeaveType", leaveType);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                decimal available = Convert.ToDecimal(reader["Available"]);
+                                txtAvailableBalance.Text = $"{available} days available";
+                            }
+                            else
+                            {
+                                // If no record found, create default balance
+                                CreateDefaultLeaveBalance(employeeId, leaveType);
+                                txtAvailableBalance.Text = "Balance created - please refresh";
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -112,74 +193,91 @@ namespace TPASystem2.LeaveManagement
             }
         }
 
-        private int GetAvailableBalance(string leaveType)
+        private void CreateDefaultLeaveBalance(int employeeId, string leaveType)
         {
-            // Sample balance logic - replace with actual database query in production
-            switch (leaveType.ToLower())
+            try
             {
-                case "vacation":
-                    return 15;
-                case "sick":
-                    return 10;
-                case "personal":
-                    return 5;
-                case "maternity":
-                case "paternity":
-                    return 90;
-                case "bereavement":
-                    return 3;
-                case "emergency":
-                    return 2;
-                default:
-                    return 0;
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Get default allocation for this leave type
+                    string getDefaultQuery = "SELECT DefaultAllocation FROM LeaveTypes WHERE TypeName = @LeaveType";
+                    decimal defaultAllocation = 0;
+
+                    using (SqlCommand cmd = new SqlCommand(getDefaultQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@LeaveType", leaveType);
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
+                        {
+                            defaultAllocation = Convert.ToDecimal(result);
+                        }
+                    }
+
+                    // Create balance record
+                    string insertQuery = @"
+                        INSERT INTO LeaveBalances (EmployeeId, LeaveType, AllocatedDays, UsedDays, EffectiveDate)
+                        VALUES (@EmployeeId, @LeaveType, @AllocatedDays, 0, @EffectiveDate)";
+
+                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                        cmd.Parameters.AddWithValue("@LeaveType", leaveType);
+                        cmd.Parameters.AddWithValue("@AllocatedDays", defaultAllocation);
+                        cmd.Parameters.AddWithValue("@EffectiveDate", DateTime.Today);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
             }
         }
 
         #endregion
 
-        #region Date Calculations
+        #region Business Logic
 
         private void CalculateDaysRequested()
         {
-            if (!string.IsNullOrEmpty(txtStartDate.Text) && !string.IsNullOrEmpty(txtEndDate.Text))
+            try
             {
-                try
-                {
-                    DateTime startDate = DateTime.Parse(txtStartDate.Text);
-                    DateTime endDate = DateTime.Parse(txtEndDate.Text);
-
-                    if (endDate >= startDate)
-                    {
-                        int businessDays = CalculateBusinessDays(startDate, endDate);
-
-                        if (chkHalfDay.Checked && businessDays == 1)
-                        {
-                            txtDaysRequested.Text = "0.5";
-                        }
-                        else
-                        {
-                            txtDaysRequested.Text = businessDays.ToString();
-                        }
-                    }
-                    else
-                    {
-                        txtDaysRequested.Text = "0";
-                    }
-                }
-                catch
+                if (!DateTime.TryParse(txtStartDate.Text, out DateTime startDate) ||
+                    !DateTime.TryParse(txtEndDate.Text, out DateTime endDate))
                 {
                     txtDaysRequested.Text = "0";
+                    return;
                 }
+
+                if (startDate > endDate)
+                {
+                    txtDaysRequested.Text = "0";
+                    return;
+                }
+
+                decimal businessDays = CalculateBusinessDays(startDate, endDate);
+
+                // Apply half-day calculation if checked
+                if (chkHalfDay.Checked && businessDays > 0)
+                {
+                    businessDays = 0.5m;
+                }
+
+                txtDaysRequested.Text = businessDays.ToString("F1");
             }
-            else
+            catch (Exception ex)
             {
+                LogError(ex);
                 txtDaysRequested.Text = "0";
             }
         }
 
-        private int CalculateBusinessDays(DateTime startDate, DateTime endDate)
+        private decimal CalculateBusinessDays(DateTime startDate, DateTime endDate)
         {
-            int businessDays = 0;
+            decimal businessDays = 0;
             DateTime current = startDate;
 
             while (current <= endDate)
@@ -192,6 +290,11 @@ namespace TPASystem2.LeaveManagement
             }
 
             return businessDays;
+        }
+
+        private void SetDateValidators()
+        {
+            cvStartDate.ValueToCompare = DateTime.Today.ToString("yyyy-MM-dd");
         }
 
         #endregion
@@ -221,7 +324,7 @@ namespace TPASystem2.LeaveManagement
 
         protected void btnSubmitRequest_Click(object sender, EventArgs e)
         {
-            if (Page.IsValid)
+            if (Page.IsValid && ValidateLeaveRequest())
             {
                 SubmitLeaveRequest("Pending");
             }
@@ -239,84 +342,158 @@ namespace TPASystem2.LeaveManagement
 
         protected void btnBackToDashboard_Click(object sender, EventArgs e)
         {
-            Response.Redirect("Default.aspx", false);
+            Response.Redirect("~/Dashboard.aspx", false);
         }
 
         #endregion
 
-        #region Leave Request Submission
+        #region Request Submission
+
+        private bool ValidateLeaveRequest()
+        {
+            try
+            {
+                // Validate leave type selection
+                if (string.IsNullOrEmpty(ddlLeaveType.SelectedValue))
+                {
+                    ShowMessage("Please select a leave type.", "error");
+                    return false;
+                }
+
+                // Validate dates
+                if (!DateTime.TryParse(txtStartDate.Text, out DateTime startDate) ||
+                    !DateTime.TryParse(txtEndDate.Text, out DateTime endDate))
+                {
+                    ShowMessage("Please provide valid start and end dates.", "error");
+                    return false;
+                }
+
+                if (startDate < DateTime.Today)
+                {
+                    ShowMessage("Start date cannot be in the past.", "error");
+                    return false;
+                }
+
+                if (endDate < startDate)
+                {
+                    ShowMessage("End date must be after start date.", "error");
+                    return false;
+                }
+
+                // Validate reason
+                if (string.IsNullOrWhiteSpace(txtReason.Text))
+                {
+                    ShowMessage("Please provide a reason for your leave request.", "error");
+                    return false;
+                }
+
+                // Validate balance
+                decimal daysRequested = Convert.ToDecimal(txtDaysRequested.Text);
+                if (!CheckLeaveBalance(ddlLeaveType.SelectedValue, daysRequested))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error validating leave request.", "error");
+                return false;
+            }
+        }
+
+        private bool CheckLeaveBalance(string leaveType, decimal daysRequested)
+        {
+            try
+            {
+                int employeeId = GetEmployeeIdFromUserId(CurrentUserId);
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string query = @"
+                        SELECT 
+                            (ISNULL(lb.AllocatedDays, lt.DefaultAllocation) - ISNULL(lb.UsedDays, 0)) as Available
+                        FROM LeaveTypes lt
+                        LEFT JOIN LeaveBalances lb ON lt.TypeName = lb.LeaveType AND lb.EmployeeId = @EmployeeId
+                        WHERE lt.TypeName = @LeaveType AND lt.IsActive = 1";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                        cmd.Parameters.AddWithValue("@LeaveType", leaveType);
+
+                        object result = cmd.ExecuteScalar();
+                        if (result != null)
+                        {
+                            decimal available = Convert.ToDecimal(result);
+                            if (daysRequested > available)
+                            {
+                                ShowMessage($"Insufficient leave balance. You have {available} days available.", "error");
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error checking leave balance.", "error");
+                return false;
+            }
+        }
 
         private void SubmitLeaveRequest(string status)
         {
             try
             {
-                if (!ValidateRequest())
-                    return;
+                int employeeId = GetEmployeeIdFromUserId(CurrentUserId);
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
 
-                    string query = @"
-                        INSERT INTO LeaveRequests 
-                        (EmployeeId, LeaveType, StartDate, EndDate, DaysRequested, Reason, Status, RequestedAt, CreatedAt, WorkflowStatus, CurrentApprovalStep)
-                        VALUES 
-                        (@EmployeeId, @LeaveType, @StartDate, @EndDate, @DaysRequested, @Reason, @Status, GETDATE(), GETDATE(), @WorkflowStatus, @CurrentApprovalStep)";
+                    string insertQuery = @"
+                        INSERT INTO LeaveRequests (
+                            EmployeeId, LeaveType, StartDate, EndDate, DaysRequested, 
+                            Reason, Status, RequestedAt, CreatedAt
+                        ) 
+                        VALUES (
+                            @EmployeeId, @LeaveType, @StartDate, @EndDate, @DaysRequested, 
+                            @Reason, @Status, @RequestedAt, @CreatedAt
+                        )";
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
                     {
-                        cmd.Parameters.AddWithValue("@EmployeeId", ViewState["EmployeeId"]);
+                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
                         cmd.Parameters.AddWithValue("@LeaveType", ddlLeaveType.SelectedValue);
                         cmd.Parameters.AddWithValue("@StartDate", DateTime.Parse(txtStartDate.Text));
                         cmd.Parameters.AddWithValue("@EndDate", DateTime.Parse(txtEndDate.Text));
-
-                        // Handle half-day requests
-                        if (chkHalfDay.Checked)
-                        {
-                            cmd.Parameters.AddWithValue("@DaysRequested", 0.5);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue("@DaysRequested", CalculateBusinessDays(
-                                DateTime.Parse(txtStartDate.Text),
-                                DateTime.Parse(txtEndDate.Text)));
-                        }
-
+                        cmd.Parameters.AddWithValue("@DaysRequested", Convert.ToDecimal(txtDaysRequested.Text));
                         cmd.Parameters.AddWithValue("@Reason", txtReason.Text.Trim());
                         cmd.Parameters.AddWithValue("@Status", status);
-                        cmd.Parameters.AddWithValue("@WorkflowStatus", status == "Draft" ? "DRAFT" : "PENDING");
-                        cmd.Parameters.AddWithValue("@CurrentApprovalStep", 1);
+                        cmd.Parameters.AddWithValue("@RequestedAt", DateTime.UtcNow);
+                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
 
-                        int result = cmd.ExecuteNonQuery();
+                        int rowsAffected = cmd.ExecuteNonQuery();
 
-                        if (result > 0)
+                        if (rowsAffected > 0)
                         {
-                            // Log the activity
-                            LogUserActivity(Convert.ToInt32(Session["UserId"]),
-                                          status == "Draft" ? "Leave Draft Saved" : "Leave Request Submitted",
-                                          "LeaveRequests",
-                                          $"Leave request for {ddlLeaveType.SelectedValue} from {txtStartDate.Text} to {txtEndDate.Text}",
-                                          GetClientIP());
+                            string message = status == "Pending" ?
+                                "Leave request submitted successfully! Your Program Director will review it shortly." :
+                                "Leave request saved as draft successfully.";
 
-                            if (status == "Draft")
-                            {
-                                ShowMessage("Leave request saved as draft successfully.", "success");
-                                ClearForm();
-                            }
-                            else
-                            {
-                                ShowMessage("Leave request submitted successfully. You will be notified once it's reviewed.", "success");
-
-                                // TODO: Send email notification to manager
-                                // TODO: Create notification record
-
-                                // Redirect to dashboard after successful submission
-                                Response.Redirect("Default.aspx?message=Leave request submitted successfully", false);
-                            }
+                            ShowMessage(message, "success");
+                            ClearForm();
                         }
                         else
                         {
-                            ShowMessage("Error submitting leave request. Please try again.", "error");
+                            ShowMessage("Failed to submit leave request. Please try again.", "error");
                         }
                     }
                 }
@@ -324,108 +501,54 @@ namespace TPASystem2.LeaveManagement
             catch (Exception ex)
             {
                 LogError(ex);
-                ShowMessage("An error occurred while processing your request. Please try again.", "error");
-            }
-        }
-
-        private bool ValidateRequest()
-        {
-            bool isValid = true;
-
-            // Check if dates overlap with existing approved leave
-            if (HasOverlappingLeave())
-            {
-                ShowMessage("You already have approved leave during this period.", "error");
-                isValid = false;
-            }
-
-            // Check available balance
-            decimal requestedDays = decimal.Parse(txtDaysRequested.Text);
-            int availableBalance = GetAvailableBalance(ddlLeaveType.SelectedValue);
-
-            if (requestedDays > availableBalance)
-            {
-                ShowMessage($"Insufficient leave balance. You have {availableBalance} days available.", "error");
-                isValid = false;
-            }
-
-            // Check minimum notice period (except for sick and emergency leave)
-            if (ddlLeaveType.SelectedValue == "Vacation" || ddlLeaveType.SelectedValue == "Personal")
-            {
-                DateTime startDate = DateTime.Parse(txtStartDate.Text);
-                int daysNotice = (startDate - DateTime.Today).Days;
-                int minimumNotice = ddlLeaveType.SelectedValue == "Vacation" ? 14 : 7;
-
-                if (daysNotice < minimumNotice)
-                {
-                    ShowMessage($"{ddlLeaveType.SelectedValue} leave requires at least {minimumNotice} days advance notice.", "warning");
-                    // Don't block submission, but warn user
-                }
-            }
-
-            return isValid;
-        }
-
-        private bool HasOverlappingLeave()
-        {
-            try
-            {
-                DateTime startDate = DateTime.Parse(txtStartDate.Text);
-                DateTime endDate = DateTime.Parse(txtEndDate.Text);
-
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    string query = @"
-                        SELECT COUNT(*) 
-                        FROM LeaveRequests 
-                        WHERE EmployeeId = @EmployeeId 
-                        AND Status = 'Approved'
-                        AND (
-                            (@StartDate BETWEEN StartDate AND EndDate) OR
-                            (@EndDate BETWEEN StartDate AND EndDate) OR
-                            (StartDate BETWEEN @StartDate AND @EndDate) OR
-                            (EndDate BETWEEN @StartDate AND @EndDate)
-                        )";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", ViewState["EmployeeId"]);
-                        cmd.Parameters.AddWithValue("@StartDate", startDate);
-                        cmd.Parameters.AddWithValue("@EndDate", endDate);
-
-                        int count = (int)cmd.ExecuteScalar();
-                        return count > 0;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                return false;
+                ShowMessage("Error submitting leave request. Please try again.", "error");
             }
         }
 
         private void ClearForm()
         {
             ddlLeaveType.SelectedIndex = 0;
+            txtAvailableBalance.Text = "Select leave type first";
             txtStartDate.Text = "";
             txtEndDate.Text = "";
             txtDaysRequested.Text = "0";
-            txtReason.Text = "";
-            txtAvailableBalance.Text = "--";
             chkHalfDay.Checked = false;
+            txtReason.Text = "";
         }
 
         #endregion
 
-        #region Utility Methods
+        #region Helper Methods
+
+        private int GetEmployeeIdFromUserId(int userId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = "SELECT Id FROM Employees WHERE UserId = @UserId AND IsActive = 1";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        object result = cmd.ExecuteScalar();
+                        return result != null ? Convert.ToInt32(result) : 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                return 0;
+            }
+        }
 
         private void ShowMessage(string message, string type)
         {
             pnlMessage.Visible = true;
-            pnlMessage.CssClass = $"alert-panel {type}";
             litMessage.Text = message;
+            pnlMessage.CssClass = $"alert alert-{type}";
         }
 
         private void LogError(Exception ex)
@@ -436,22 +559,17 @@ namespace TPASystem2.LeaveManagement
                 {
                     conn.Open();
                     string query = @"
-                        INSERT INTO ErrorLogs (ErrorId, ErrorMessage, StackTrace, Source, Timestamp, RequestUrl, UserAgent, IPAddress, UserId, Severity, CreatedAt)
-                        VALUES (@ErrorId, @ErrorMessage, @StackTrace, @Source, @Timestamp, @RequestUrl, @UserAgent, @IPAddress, @UserId, @Severity, @CreatedAt)";
+                        INSERT INTO ErrorLogs (ErrorMessage, StackTrace, Source, RequestUrl, UserId, CreatedAt)
+                        VALUES (@ErrorMessage, @StackTrace, @Source, @RequestUrl, @UserId, @CreatedAt)";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        cmd.Parameters.AddWithValue("@ErrorId", Guid.NewGuid().ToString());
-                        cmd.Parameters.AddWithValue("@ErrorMessage", ex.Message ?? "");
+                        cmd.Parameters.AddWithValue("@ErrorMessage", ex.Message);
                         cmd.Parameters.AddWithValue("@StackTrace", ex.StackTrace ?? "");
-                        cmd.Parameters.AddWithValue("@Source", ex.Source ?? "LeaveManagement.RequestLeave");
-                        cmd.Parameters.AddWithValue("@Timestamp", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@Source", ex.Source ?? "RequestLeave");
                         cmd.Parameters.AddWithValue("@RequestUrl", Request.Url?.ToString() ?? "");
-                        cmd.Parameters.AddWithValue("@UserAgent", Request.UserAgent ?? "");
-                        cmd.Parameters.AddWithValue("@IPAddress", GetClientIP());
-                        cmd.Parameters.AddWithValue("@UserId", Session["UserId"] ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Severity", "High");
-                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@UserId", CurrentUserId);
+                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
 
                         cmd.ExecuteNonQuery();
                     }
@@ -459,48 +577,8 @@ namespace TPASystem2.LeaveManagement
             }
             catch
             {
-                // Fail silently for logging errors
+                // Silent fail on logging errors
             }
-        }
-
-        private void LogUserActivity(int userId, string action, string module, string description, string ipAddress)
-        {
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    string query = @"
-                        INSERT INTO ActivityLogs (UserId, Action, Module, Description, IPAddress, Timestamp)
-                        VALUES (@UserId, @Action, @Module, @Description, @IPAddress, @Timestamp)";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@UserId", userId);
-                        cmd.Parameters.AddWithValue("@Action", action);
-                        cmd.Parameters.AddWithValue("@Module", module);
-                        cmd.Parameters.AddWithValue("@Description", description);
-                        cmd.Parameters.AddWithValue("@IPAddress", ipAddress);
-                        cmd.Parameters.AddWithValue("@Timestamp", DateTime.Now);
-
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch
-            {
-                // Fail silently for activity logging
-            }
-        }
-
-        private string GetClientIP()
-        {
-            string ip = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
-            if (string.IsNullOrEmpty(ip))
-            {
-                ip = Request.ServerVariables["REMOTE_ADDR"];
-            }
-            return ip ?? "Unknown";
         }
 
         #endregion

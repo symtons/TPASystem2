@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Request Leave" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="RequestLeave.aspx.cs" Inherits="TPASystem2.LeaveManagement.RequestLeave" %>
+﻿<%@ Page Title="Request Leave" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="EmployeeRequestLeave.aspx.cs" Inherits="TPASystem2.LeaveManagement.EmployeeRequestLeave" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="DashboardContent" runat="server">
     <!-- CSS Links -->
@@ -6,7 +6,7 @@
     <link href='<%=ResolveUrl("~/Content/css/tpa-common.css") %>' rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-    <!-- Welcome Header - Matching Time Tracking Style -->
+    <!-- Welcome Header -->
     <div class="onboarding-header">
         <div class="welcome-content">
             <div class="welcome-text">
@@ -14,16 +14,16 @@
                     <i class="material-icons">event_note</i>
                     Request Time Off
                 </h1>
-                <p class="welcome-subtitle">Submit a leave request for Program Director approval</p>
+                <p class="welcome-subtitle">Submit a new leave request for Program Director approval</p>
                 
                 <div class="employee-info">
                     <div class="employee-detail">
                         <i class="material-icons">person</i>
-                        <span id="employeeNameDisplay">Loading...</span>
+                        <span><asp:Literal ID="litEmployeeName" runat="server"></asp:Literal></span>
                     </div>
                     <div class="employee-detail">
                         <i class="material-icons">badge</i>
-                        <span id="employeeNumberDisplay">Loading...</span>
+                        <span><asp:Literal ID="litEmployeeNumber" runat="server"></asp:Literal></span>
                     </div>
                     <div class="employee-detail">
                         <i class="material-icons">supervisor_account</i>
@@ -32,8 +32,8 @@
                 </div>
             </div>
             <div class="header-actions">
-                <asp:Button ID="btnBackToDashboard" runat="server" Text="Back to Dashboard" 
-                    CssClass="btn btn-outline-light" OnClick="btnBackToDashboard_Click" />
+                <asp:Button ID="btnBackToPortal" runat="server" Text="Back to Leave Portal" 
+                    CssClass="btn btn-outline-light" OnClick="btnBackToPortal_Click" />
             </div>
         </div>
     </div>
@@ -52,16 +52,12 @@
                 Leave Request Details
             </h3>
             <div class="status-indicator">
-                New Request
+                <asp:Literal ID="litFormMode" runat="server" Text="New Request"></asp:Literal>
             </div>
         </div>
 
         <asp:Panel ID="pnlRequestForm" runat="server">
             <div class="form-grid">
-                <!-- Employee Information (Hidden from user, populated from database) -->
-                <asp:TextBox ID="txtEmployeeName" runat="server" style="display: none;"></asp:TextBox>
-                <asp:TextBox ID="txtDepartment" runat="server" style="display: none;"></asp:TextBox>
-
                 <!-- Leave Type Selection -->
                 <div class="form-group">
                     <label class="form-label" for="<%= ddlLeaveType.ClientID %>">
@@ -124,7 +120,18 @@
                         CssClass="field-validation-error" Display="Dynamic" />
                 </div>
 
-                <!-- Total Days Calculation -->
+                <!-- Half Day Option -->
+                <div class="form-group checkbox-group">
+                    <asp:CheckBox ID="chkHalfDay" runat="server" CssClass="form-check-input" 
+                        AutoPostBack="true" OnCheckedChanged="chkHalfDay_CheckedChanged" />
+                    <label class="form-check-label" for="<%= chkHalfDay.ClientID %>">
+                        <i class="material-icons">schedule</i>
+                        Half Day Request
+                    </label>
+                    <small class="form-text text-muted">Check if this is a half-day leave request</small>
+                </div>
+
+                <!-- Days Calculation -->
                 <div class="form-group">
                     <label class="form-label">
                         <i class="material-icons">today</i>
@@ -135,17 +142,6 @@
                             ReadOnly="true" Text="0"></asp:TextBox>
                         <small class="calculation-note">Business days only (excludes weekends)</small>
                     </div>
-                </div>
-
-                <!-- Half Day Option -->
-                <div class="form-group checkbox-group">
-                    <asp:CheckBox ID="chkHalfDay" runat="server" CssClass="form-check-input" 
-                        AutoPostBack="true" OnCheckedChanged="chkHalfDay_CheckedChanged" />
-                    <label class="form-check-label" for="<%= chkHalfDay.ClientID %>">
-                        <i class="material-icons">schedule</i>
-                        Half Day Request
-                    </label>
-                    <small class="form-text text-muted">Check if this is a half-day leave request</small>
                 </div>
 
                 <!-- Reason -->
@@ -200,44 +196,100 @@
                     CausesValidation="false" />
             </div>
         </asp:Panel>
+
+        <!-- Success Panel -->
+        <asp:Panel ID="pnlSuccess" runat="server" Visible="false" CssClass="success-panel">
+            <div class="success-content">
+                <i class="material-icons success-icon">check_circle</i>
+                <h3>Leave Request Submitted Successfully!</h3>
+                <p>Your leave request has been submitted for Program Director approval.</p>
+                <div class="success-details">
+                    <div class="detail-item">
+                        <strong>Request ID:</strong> <asp:Literal ID="litRequestId" runat="server"></asp:Literal>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Leave Type:</strong> <asp:Literal ID="litSubmittedLeaveType" runat="server"></asp:Literal>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Dates:</strong> <asp:Literal ID="litSubmittedDates" runat="server"></asp:Literal>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Status:</strong> <span class="status-badge status-pending">Pending Approval</span>
+                    </div>
+                </div>
+                <div class="success-actions">
+                    <asp:Button ID="btnViewMyRequests" runat="server" Text="View My Requests" 
+                        CssClass="btn btn-primary" OnClick="btnViewMyRequests_Click" />
+                    <asp:Button ID="btnCreateAnother" runat="server" Text="Create Another Request" 
+                        CssClass="btn btn-outline-primary" OnClick="btnCreateAnother_Click" />
+                </div>
+            </div>
+        </asp:Panel>
     </div>
 
+    <!-- Hidden Fields -->
+    <asp:HiddenField ID="hfEditingRequestId" runat="server" />
+    
+</asp:Content>
+
+<asp:Content ID="Content2" ContentPlaceHolderID="Scripts" runat="server">
     <script type="text/javascript">
-        $(document).ready(function () {
+        $(document).ready(function() {
             // Initialize date pickers with minimum date
+            initializeDatePickers();
+            
+            // Setup character counting
+            setupCharacterCounting();
+            
+            // Initialize form validation
+            setupFormValidation();
+        });
+
+        function initializeDatePickers() {
             const today = new Date().toISOString().split('T')[0];
             $('.date-picker').attr('min', today);
+        }
 
-            // Setup character counting for reason field
+        function setupCharacterCounting() {
             const reasonTextbox = document.getElementById('<%= txtReason.ClientID %>');
             const charCount = document.getElementById('reasonCharCount');
-
+            
             if (reasonTextbox && charCount) {
-                reasonTextbox.addEventListener('input', function () {
+                reasonTextbox.addEventListener('input', function() {
                     const count = this.value.length;
                     charCount.textContent = count;
-
+                    
                     if (count > 900) {
                         charCount.style.color = '#dc3545';
                     } else {
                         charCount.style.color = '#6c757d';
                     }
                 });
-
+                
                 // Initial count
                 charCount.textContent = reasonTextbox.value.length;
             }
+        }
 
-            // Update employee info display from hidden fields
-            updateEmployeeDisplay();
-        });
+        function setupFormValidation() {
+            // Add real-time validation feedback
+            $('.form-control').on('blur', function() {
+                validateField(this);
+            });
+        }
 
-        function updateEmployeeDisplay() {
-            const employeeName = document.getElementById('<%= txtEmployeeName.ClientID %>').value;
-            const employeeNumber = document.getElementById('<%= txtDepartment.ClientID %>').value;
+        function validateField(field) {
+            const $field = $(field);
+            const value = $field.val().trim();
             
-            if (employeeName) {
-                document.getElementById('employeeNameDisplay').textContent = employeeName;
+            // Remove existing validation classes
+            $field.removeClass('is-valid is-invalid');
+            
+            // Basic validation
+            if (value === '' && $field.prop('required')) {
+                $field.addClass('is-invalid');
+            } else if (value !== '') {
+                $field.addClass('is-valid');
             }
         }
 
@@ -293,7 +345,7 @@
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Submitting...';
-
+                
                 // Re-enable after 10 seconds to prevent permanent disable
                 setTimeout(() => {
                     submitBtn.disabled = false;
@@ -303,6 +355,23 @@
 
             return true;
         }
+
+        // Auto-calculate business days
+        function calculateBusinessDays(startDate, endDate) {
+            if (!startDate || !endDate) return 0;
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            let businessDays = 0;
+            
+            for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday or Saturday
+                    businessDays++;
+                }
+            }
+            
+            return businessDays;
+        }
     </script>
-    
 </asp:Content>
