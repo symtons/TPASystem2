@@ -11,7 +11,9 @@ window.TPA = window.TPA || {};
 // ===============================================
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize Materialize components
-    M.AutoInit();
+    if (typeof M !== 'undefined') {
+        M.AutoInit();
+    }
 
     // Initialize TPA components
     TPA.init();
@@ -75,279 +77,198 @@ TPA.Forms = {
 
     validateEmail: function (input) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const isValid = emailRegex.test(input.value.trim());
+        const isValid = emailRegex.test(input.value);
 
-        if (input.value.trim() && !isValid) {
-            input.classList.add('invalid');
-            input.classList.remove('valid');
-            TPA.Forms.showFieldError(input, 'Please enter a valid email address');
-        } else if (input.value.trim()) {
-            input.classList.add('valid');
-            input.classList.remove('invalid');
-            TPA.Forms.hideFieldError(input);
+        if (!isValid && input.value.length > 0) {
+            this.showFieldError(input, 'Please enter a valid email address');
+            return false;
+        } else {
+            this.clearFieldError(input);
+            return true;
         }
-
-        return isValid;
     },
 
     validateRequired: function (input) {
-        const isValid = input.value.trim() !== '';
+        const isValid = input.value.trim().length > 0;
 
         if (!isValid) {
-            input.classList.add('invalid');
-            input.classList.remove('valid');
-            TPA.Forms.showFieldError(input, 'This field is required');
+            this.showFieldError(input, 'This field is required');
+            return false;
         } else {
-            input.classList.add('valid');
-            input.classList.remove('invalid');
-            TPA.Forms.hideFieldError(input);
+            this.clearFieldError(input);
+            return true;
         }
-
-        return isValid;
     },
 
     showFieldError: function (input, message) {
-        // Remove existing error
-        TPA.Forms.hideFieldError(input);
-
-        // Create error element
-        const errorElement = document.createElement('div');
-        errorElement.className = 'form-error';
-        errorElement.textContent = message;
-        errorElement.setAttribute('data-error-for', input.name || input.id);
-
-        // Insert after input
-        input.parentNode.insertBefore(errorElement, input.nextSibling);
+        input.classList.add('error');
+        this.showValidationMessage(input, message, 'error');
     },
 
-    hideFieldError: function (input) {
-        const errorElement = input.parentNode.querySelector(`[data-error-for="${input.name || input.id}"]`);
-        if (errorElement) {
-            errorElement.remove();
+    clearFieldError: function (input) {
+        input.classList.remove('error');
+        this.clearValidationMessage(input);
+    },
+
+    showValidationMessage: function (input, message, type) {
+        // Remove existing message
+        this.clearValidationMessage(input);
+
+        // Create new message
+        const messageElement = document.createElement('div');
+        messageElement.className = `validation-message validation-${type}`;
+        messageElement.textContent = message;
+
+        // Insert after input
+        input.parentNode.insertBefore(messageElement, input.nextSibling);
+    },
+
+    clearValidationMessage: function (input) {
+        const existingMessage = input.parentNode.querySelector('.validation-message');
+        if (existingMessage) {
+            existingMessage.remove();
         }
     },
 
     setupAutoSave: function (form) {
+        const formId = form.id || `form_${Date.now()}`;
         const inputs = form.querySelectorAll('input, textarea, select');
-        const formId = form.id || 'autosave-form';
 
-        // Load saved data
-        TPA.Forms.loadAutoSavedData(form, formId);
-
-        // Save on change
         inputs.forEach(input => {
-            input.addEventListener('change', function () {
-                TPA.Forms.autoSaveForm(form, formId);
+            input.addEventListener('input', function () {
+                const data = new FormData(form);
+                const formData = Object.fromEntries(data.entries());
+                localStorage.setItem(`autosave_${formId}`, JSON.stringify(formData));
             });
         });
+
+        // Restore data on page load
+        this.restoreAutoSaveData(form, formId);
     },
 
-    autoSaveForm: function (form, formId) {
-        const formData = new FormData(form);
-        const data = {};
-
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-
-        localStorage.setItem(`tpa-autosave-${formId}`, JSON.stringify(data));
-        console.log('📝 Form auto-saved:', formId);
-    },
-
-    loadAutoSavedData: function (form, formId) {
-        const savedData = localStorage.getItem(`tpa-autosave-${formId}`);
-        if (savedData) {
-            try {
+    restoreAutoSaveData: function (form, formId) {
+        try {
+            const savedData = localStorage.getItem(`autosave_${formId}`);
+            if (savedData) {
                 const data = JSON.parse(savedData);
-
-                Object.keys(data).forEach(key => {
-                    const input = form.querySelector(`[name="${key}"]`);
-                    if (input && input.type !== 'password') {
-                        input.value = data[key];
+                Object.entries(data).forEach(([name, value]) => {
+                    const input = form.querySelector(`[name="${name}"]`);
+                    if (input) {
+                        input.value = value;
                     }
                 });
-
-                console.log('💾 Auto-saved data loaded:', formId);
-            } catch (e) {
-                console.error('Error loading auto-saved data:', e);
             }
+        } catch (e) {
+            console.warn('Failed to restore auto-save data:', e);
         }
-    },
-
-    clearAutoSavedData: function (formId) {
-        localStorage.removeItem(`tpa-autosave-${formId}`);
     },
 
     submitAjaxForm: function (form) {
-        const formData = new FormData(form);
         const url = form.action || window.location.href;
         const method = form.method || 'POST';
+        const formData = new FormData(form);
 
         // Show loading state
         const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
-        const originalText = submitButton.textContent;
-        submitButton.textContent = 'Processing...';
-        submitButton.disabled = true;
+        if (submitButton) {
+            showLoading(submitButton);
+        }
 
         fetch(url, {
             method: method,
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    TPA.Notifications.show(data.message || 'Operation completed successfully', 'success');
-
-                    // Clear auto-saved data
-                    if (form.hasAttribute('data-autosave')) {
-                        TPA.Forms.clearAutoSavedData(form.id);
-                    }
-
-                    // Redirect if specified
+                    showNotification(data.message || 'Form submitted successfully', 'success');
                     if (data.redirect) {
-                        setTimeout(() => {
-                            window.location.href = data.redirect;
-                        }, 1500);
+                        window.location.href = data.redirect;
                     }
                 } else {
-                    TPA.Notifications.show(data.message || 'An error occurred', 'error');
+                    showNotification(data.message || 'Form submission failed', 'error');
                 }
             })
             .catch(error => {
                 console.error('Form submission error:', error);
-                TPA.Notifications.show('An error occurred while processing your request', 'error');
+                showNotification('An error occurred while submitting the form', 'error');
             })
             .finally(() => {
-                // Restore button state
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
+                if (submitButton) {
+                    hideLoading(submitButton);
+                }
             });
     }
 };
 
-
-
-
-
-
 // ===============================================
-// Notification System
+// Notifications
 // ===============================================
 TPA.Notifications = {
     init: function () {
-        // Auto-hide notifications after delay
-        this.setupAutoHide();
+        this.createContainer();
+    },
+
+    createContainer: function () {
+        if (!document.getElementById('tpa-notifications')) {
+            const container = document.createElement('div');
+            container.id = 'tpa-notifications';
+            container.className = 'notification-container';
+            document.body.appendChild(container);
+        }
     },
 
     show: function (message, type = 'info', duration = 5000) {
-        // Create notification element
         const notification = document.createElement('div');
-        notification.className = `global-notification ${type}`;
+        notification.className = `notification notification-${type}`;
         notification.innerHTML = `
             <div class="notification-content">
-                <i class="material-icons notification-icon">${this.getIcon(type)}</i>
-                <span class="notification-text">${message}</span>
-                <button type="button" class="notification-close" onclick="TPA.Notifications.hide(this.parentElement.parentElement)">
-                    <i class="material-icons">close</i>
-                </button>
+                <i class="notification-icon">${this.getIcon(type)}</i>
+                <span class="notification-message">${message}</span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
 
-        // Add to page
-        document.body.appendChild(notification);
+        const container = document.getElementById('tpa-notifications');
+        container.appendChild(notification);
 
-        // Show with animation
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 100);
-
-        // Auto-hide
+        // Auto-remove after duration
         if (duration > 0) {
             setTimeout(() => {
-                TPA.Notifications.hide(notification);
+                if (notification.parentElement) {
+                    notification.remove();
+                }
             }, duration);
         }
 
-        // Return notification element for manual control
         return notification;
-    },
-
-    hide: function (notification) {
-        if (notification && notification.parentElement) {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }
     },
 
     getIcon: function (type) {
         const icons = {
-            success: 'check_circle',
-            error: 'error',
-            warning: 'warning',
-            info: 'info'
+            success: '✓',
+            error: '✗',
+            warning: '⚠',
+            info: 'ℹ'
         };
         return icons[type] || icons.info;
-    },
-
-    setupAutoHide: function () {
-        // Auto-hide existing notifications with timeout
-        const existingNotifications = document.querySelectorAll('.global-notification');
-        existingNotifications.forEach(notification => {
-            setTimeout(() => {
-                TPA.Notifications.hide(notification);
-            }, 5000);
-        });
     }
 };
 
 // ===============================================
-// Utility Functions
+// Utilities
 // ===============================================
 TPA.Utils = {
     init: function () {
-        this.setupGlobalHandlers();
+        // Initialize utility functions
     },
 
-    setupGlobalHandlers: function () {
-        // Global click handlers
-        document.addEventListener('click', function (e) {
-            // Handle notification close buttons
-            if (e.target.closest('.notification-close')) {
-                const notification = e.target.closest('.global-notification');
-                TPA.Notifications.hide(notification);
-            }
-        });
-
-        // Global keyboard handlers
-        document.addEventListener('keydown', function (e) {
-            // ESC to close notifications
-            if (e.key === 'Escape') {
-                const notifications = document.querySelectorAll('.global-notification');
-                notifications.forEach(notification => {
-                    TPA.Notifications.hide(notification);
-                });
-            }
-        });
-    },
-
-    formatTimeAgo: function (date) {
-        const now = new Date();
-        const diffInSeconds = Math.floor((now - date) / 1000);
-
-        if (diffInSeconds < 60) {
-            return 'Just now';
-        } else if (diffInSeconds < 3600) {
-            const minutes = Math.floor(diffInSeconds / 60);
-            return `${minutes}m ago`;
-        } else if (diffInSeconds < 86400) {
-            const hours = Math.floor(diffInSeconds / 3600);
-            return `${hours}h ago`;
-        } else {
-            const days = Math.floor(diffInSeconds / 86400);
-            return `${days}d ago`;
-        }
+    formatNumber: function (number, decimals = 0) {
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        }).format(number);
     },
 
     formatCurrency: function (amount, currency = 'USD') {
@@ -357,11 +278,49 @@ TPA.Utils = {
         }).format(amount);
     },
 
-    formatNumber: function (number, decimals = 0) {
-        return new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
-        }).format(number);
+    formatDate: function (date, options = {}) {
+        const defaultOptions = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        };
+        return new Intl.DateTimeFormat('en-US', { ...defaultOptions, ...options }).format(new Date(date));
+    },
+
+    formatTimeAgo: function (date) {
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - new Date(date)) / 1000);
+
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    },
+
+    copyToClipboard: function (text) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard', 'success', 2000);
+            });
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showNotification('Copied to clipboard', 'success', 2000);
+        }
+    },
+
+    downloadFile: function (url, filename) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     },
 
     debounce: function (func, wait) {
@@ -378,120 +337,13 @@ TPA.Utils = {
 
     throttle: function (func, limit) {
         let inThrottle;
-        return function () {
-            const args = arguments;
-            const context = this;
+        return function (...args) {
             if (!inThrottle) {
-                func.apply(context, args);
+                func.apply(this, args);
                 inThrottle = true;
                 setTimeout(() => inThrottle = false, limit);
             }
         };
-    },
-
-    copyToClipboard: function (text) {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => {
-                TPA.Notifications.show('Copied to clipboard', 'success', 2000);
-            }).catch(() => {
-                TPA.Notifications.show('Failed to copy to clipboard', 'error');
-            });
-        } else {
-            // Fallback for older browsers
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-
-            try {
-                document.execCommand('copy');
-                TPA.Notifications.show('Copied to clipboard', 'success', 2000);
-            } catch (err) {
-                TPA.Notifications.show('Failed to copy to clipboard', 'error');
-            }
-
-            document.body.removeChild(textArea);
-        }
-    },
-
-    downloadFile: function (url, filename) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename || 'download';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    },
-
-    isValidEmail: function (email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    },
-
-    isValidPhone: function (phone) {
-        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-        return phoneRegex.test(phone.replace(/\s+/g, ''));
-    },
-
-    sanitizeHtml: function (html) {
-        const div = document.createElement('div');
-        div.textContent = html;
-        return div.innerHTML;
-    }
-};
-
-// ===============================================
-// API Helper
-// ===============================================
-TPA.API = {
-    baseUrl: '',
-
-    request: async function (endpoint, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
-        const defaultOptions = {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        };
-
-        const config = { ...defaultOptions, ...options };
-
-        try {
-            const response = await fetch(url, config);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || `HTTP error! status: ${response.status}`);
-            }
-
-            return data;
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    },
-
-    get: function (endpoint) {
-        return this.request(endpoint, { method: 'GET' });
-    },
-
-    post: function (endpoint, data) {
-        return this.request(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(data)
-        });
-    },
-
-    put: function (endpoint, data) {
-        return this.request(endpoint, {
-            method: 'PUT',
-            body: JSON.stringify(data)
-        });
-    },
-
-    delete: function (endpoint) {
-        return this.request(endpoint, { method: 'DELETE' });
     }
 };
 
@@ -499,20 +351,12 @@ TPA.API = {
 // Global Helper Functions
 // ===============================================
 
-// Global notification function for easy access
+// Show notification (backwards compatibility)
 function showNotification(message, type = 'info', duration = 5000) {
     return TPA.Notifications.show(message, type, duration);
 }
 
-// Global notification hide function
-function hideGlobalNotification() {
-    const notifications = document.querySelectorAll('.global-notification');
-    notifications.forEach(notification => {
-        TPA.Notifications.hide(notification);
-    });
-}
-
-// Confirm dialog wrapper
+// Confirm dialog with callback
 function confirmAction(message, callback) {
     if (confirm(message)) {
         callback();
@@ -596,7 +440,9 @@ function downloadFile(url, filename) {
     TPA.Utils.downloadFile(url, filename);
 }
 
-// Session management
+// ===============================================
+// Session Management - FIXED VERSION
+// ===============================================
 TPA.Session = {
     checkTimeout: function () {
         // Check if session is still valid
@@ -621,9 +467,19 @@ TPA.Session = {
     },
 
     handleSessionExpired: function () {
+        // Show notification and redirect to actual Login.aspx file
         showNotification('Your session has expired. Please log in again.', 'warning');
+
+        // Clear any local storage or session storage
+        if (typeof (Storage) !== "undefined") {
+            localStorage.clear();
+            sessionStorage.clear();
+        }
+
         setTimeout(() => {
-            window.location.href = '/login?expired=true';
+            // FIX: Redirect to the actual Login.aspx file instead of clean URL
+            // This prevents 404 errors when routing is not configured
+            window.location.href = window.location.origin + '/Login.aspx?expired=true';
         }, 2000);
     },
 
@@ -639,10 +495,44 @@ TPA.Session = {
     }
 };
 
-// Initialize session checking (every 5 minutes)
-setInterval(() => {
-    TPA.Session.checkTimeout();
-}, 5 * 60 * 1000);
+// Updated: Check session on every page load but with error handling
+document.addEventListener('DOMContentLoaded', function () {
+    // Only check session on pages that require authentication
+    const currentPage = window.location.pathname.toLowerCase();
+    const publicPages = ['/login.aspx', '/error.aspx', '/notfound.aspx', '/debug.aspx'];
+
+    // Don't check session on public pages
+    if (publicPages.some(page => currentPage.includes(page))) {
+        return;
+    }
+
+    // Check if user session exists in a simple way
+    // This avoids complex API calls that might not be available
+    const checkSessionSimple = function () {
+        // Make a simple request to check if we're still logged in
+        fetch(window.location.pathname, {
+            method: 'HEAD',
+            credentials: 'same-origin',
+            cache: 'no-cache'
+        })
+            .then(response => {
+                // If we get redirected to login page, session has expired
+                if (response.url && response.url.includes('Login.aspx')) {
+                    TPA.Session.handleSessionExpired();
+                }
+            })
+            .catch(error => {
+                // If there's a network error, don't force logout
+                console.log('Session check failed:', error);
+            });
+    };
+
+    // Initial session check
+    checkSessionSimple();
+
+    // Set up periodic session checking (every 5 minutes)
+    setInterval(checkSessionSimple, 5 * 60 * 1000);
+});
 
 // Extend session on user activity
 let sessionExtendTimer;
@@ -652,6 +542,64 @@ document.addEventListener('click', () => {
         TPA.Session.extend();
     }, 1000);
 });
+
+// Also extend session on keyboard activity
+document.addEventListener('keypress', () => {
+    clearTimeout(sessionExtendTimer);
+    sessionExtendTimer = setTimeout(() => {
+        TPA.Session.extend();
+    }, 1000);
+});
+
+// Handle page visibility changes (user switching tabs)
+document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) {
+        // Page became visible again, but don't auto-check session
+        // This prevents unnecessary requests
+        console.log('Page became visible');
+    }
+});
+
+// Fallback: If user tries to access a page and gets 404, redirect to login
+window.addEventListener('error', function (e) {
+    // Check if this might be a session-related error
+    if (e.message && e.message.includes('404')) {
+        console.log('Possible session timeout detected via 404 error');
+        // Redirect to login as a fallback
+        setTimeout(() => {
+            window.location.href = '/Login.aspx?expired=true';
+        }, 1000);
+    }
+});
+
+// Alternative method: Check for specific error patterns that indicate session timeout
+const originalFetch = window.fetch;
+window.fetch = function (...args) {
+    return originalFetch.apply(this, args)
+        .then(response => {
+            // If we get a 404 on a page that should exist, it might be session timeout
+            if (response.status === 404 && !isStaticResource(args[0])) {
+                console.log('404 detected on dynamic page, checking if session expired');
+                // Check if we're being redirected to login
+                if (response.url && response.url.includes('Login.aspx')) {
+                    TPA.Session.handleSessionExpired();
+                }
+            }
+            return response;
+        })
+        .catch(error => {
+            console.log('Fetch error:', error);
+            throw error;
+        });
+};
+
+// Helper function to determine if a URL is for a static resource
+function isStaticResource(url) {
+    if (typeof url !== 'string') return false;
+
+    const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2', '.ttf'];
+    return staticExtensions.some(ext => url.toLowerCase().includes(ext));
+}
 
 // ===============================================
 // Error Handling
@@ -758,210 +706,9 @@ TPA.Compatibility = {
 TPA.Compatibility.init();
 
 // ===============================================
-// Export for module systems (if needed)
+// Email Validation Helper
 // ===============================================
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = TPA;
-}
-
-console.log('✅ TPA Common JavaScript loaded successfully');
-
-/* ===============================================
-   ENHANCED SUCCESS MODAL JAVASCRIPT - ADD TO tpa-common.js
-   =============================================== */
-
-// Enhanced Success Modal with Company Email
-function showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, companyEmail) {
-    // Remove any existing modal
-    const existingModal = document.querySelector('.success-modal-overlay');
-    if (existingModal) {
-        existingModal.remove();
-    }
-
-    // Create modal HTML
-    const modalHTML = `
-        <div class="success-modal-overlay" onclick="closeSuccessModal(event)">
-            <div class="success-modal-dialog">
-                <div class="success-modal-content">
-                    <div class="success-modal-header">
-                        <div class="success-icon">
-                            <i class="material-icons">check_circle</i>
-                        </div>
-                        <h2 class="success-modal-title">Employee Created Successfully!</h2>
-                        <p class="success-modal-subtitle">Welcome to the Tennessee Personal Assistance team</p>
-                    </div>
-                    
-                    <div class="success-modal-body">
-                        <div class="employee-details">
-                            <div class="detail-row">
-                                <span class="detail-label">
-                                    <i class="material-icons">badge</i>
-                                    Employee Number
-                                </span>
-                                <span class="detail-value">${employeeNumber}</span>
-                            </div>
-                            
-                            <div class="detail-row">
-                                <span class="detail-label">
-                                    <i class="material-icons">person</i>
-                                    Full Name
-                                </span>
-                                <span class="detail-value">${employeeName}</span>
-                            </div>
-                            
-                            <div class="detail-row">
-                                <span class="detail-label">
-                                    <i class="material-icons">business</i>
-                                    Department
-                                </span>
-                                <span class="detail-value">${department}</span>
-                            </div>
-                            
-                            <div class="detail-row">
-                                <span class="detail-label">
-                                    <i class="material-icons">email</i>
-                                    Company Email
-                                </span>
-                                <span class="detail-value">
-                                    <span class="company-email-highlight">${companyEmail}</span>
-                                </span>
-                            </div>
-                            
-                            <div class="detail-row">
-                                <span class="detail-label">
-                                    <i class="material-icons">assignment</i>
-                                    Onboarding Tasks
-                                </span>
-                                <span class="detail-value">${taskCount} tasks assigned</span>
-                            </div>
-                        </div>
-                        
-                        <div class="next-steps">
-                            <h4>
-                                <i class="material-icons">info</i>
-                                What happens next?
-                            </h4>
-                            <ul>
-                                <li><strong>Welcome Email Sent:</strong> Login credentials sent to their personal email</li>
-                                <li><strong>Onboarding Process:</strong> ${taskCount} tasks automatically assigned</li>
-                                <li><strong>System Access:</strong> Employee can log in using their company email</li>
-                                <li><strong>HR Review:</strong> Monitor onboarding progress in the HR dashboard</li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="success-modal-footer">
-                        <div class="email-sent-notice">
-                            <i class="material-icons">mark_email_read</i>
-                            Welcome email sent to personal email
-                        </div>
-                        
-                        <div class="modal-actions">
-                            <button class="btn-modal btn-modal-secondary" onclick="closeSuccessModal()">
-                                Close
-                            </button>
-                            <a href="/HR/Employees.aspx" class="btn-modal btn-modal-primary">
-                                View All Employees
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Add modal to page
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    // Prevent body scroll
-    document.body.style.overflow = 'hidden';
-
-    // Auto-close after 30 seconds
-    setTimeout(() => {
-        closeSuccessModal();
-    }, 30000);
-}
-
-// Legacy success modal function (keep for compatibility)
-function showSuccessModal(employeeNumber, employeeName, department, taskCount) {
-    showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, 'Not specified');
-}
-
-// Close success modal
-function closeSuccessModal(event) {
-    // Only close if clicking overlay or close button
-    if (event && event.target.closest('.success-modal-content') && !event.target.closest('.btn-modal')) {
-        return;
-    }
-
-    const modal = document.querySelector('.success-modal-overlay');
-    if (modal) {
-        modal.style.opacity = '0';
-        modal.style.transform = 'scale(0.95)';
-
-        setTimeout(() => {
-            modal.remove();
-            document.body.style.overflow = '';
-        }, 200);
-    }
-}
-
-// Add keyboard support
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        closeSuccessModal();
-    }
-});
-
-/* ===============================================
-   EMAIL VALIDATION HELPER FUNCTIONS
-   =============================================== */
-
-// Generate company email preview
-function generateEmailPreview() {
-    const firstName = document.getElementById('txtFirstName')?.value || '';
-    const lastName = document.getElementById('txtLastName')?.value || '';
-
-    if (firstName && lastName) {
-        const cleanLastName = lastName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        const firstInitial = firstName.substring(0, 1).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-        return `${cleanLastName}${firstInitial}@tennesseepersonalassistance.org`;
-    }
-
-    return '';
-}
-
-// Show email preview in real-time
-function updateEmailPreview() {
-    const preview = generateEmailPreview();
-    const previewElement = document.getElementById('emailPreview');
-
-    if (previewElement && preview) {
-        previewElement.textContent = preview;
-        previewElement.style.display = 'block';
-    } else if (previewElement) {
-        previewElement.style.display = 'none';
-    }
-}
-
-// Add event listeners when page loads
-document.addEventListener('DOMContentLoaded', function () {
-    const firstNameField = document.getElementById('txtFirstName');
-    const lastNameField = document.getElementById('txtLastName');
-
-    if (firstNameField && lastNameField) {
-        firstNameField.addEventListener('input', updateEmailPreview);
-        lastNameField.addEventListener('input', updateEmailPreview);
-    }
-});
-
-/* ===============================================
-   FORM VALIDATION HELPERS
-   =============================================== */
-
-// Validate email format
-function validateEmailFormat(email) {
+function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
@@ -995,9 +742,9 @@ function clearValidationMessages() {
     messages.forEach(message => message.remove());
 }
 
-/* ===============================================
-   SIMPLE SUCCESS MODAL JAVASCRIPT - ADD TO tpa-common.js
-   =============================================== */
+// ===============================================
+// SUCCESS MODAL FUNCTIONALITY
+// ===============================================
 
 // Simple Success Modal with Company Email
 function showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, companyEmail) {
@@ -1013,53 +760,29 @@ function showSuccessModalWithEmail(employeeNumber, employeeName, department, tas
             <div class="success-modal-dialog">
                 <div class="success-modal-content">
                     <div class="success-modal-header">
-                        <div class="success-icon">
-                            <i class="material-icons">check_circle</i>
-                        </div>
-                        <h2 class="success-modal-title">Employee Created Successfully!</h2>
+                        <h2>🎉 Welcome to Tennessee Personal Assistance!</h2>
+                        <button type="button" class="success-modal-close" onclick="closeSuccessModal()">&times;</button>
                     </div>
-                    
                     <div class="success-modal-body">
-                        <div class="employee-summary">
-                            <div class="summary-item">
-                                <span class="label">Employee:</span>
-                                <span class="value">${employeeName} (${employeeNumber})</span>
-                            </div>
-                            
-                            <div class="summary-item">
-                                <span class="label">Department:</span>
-                                <span class="value">${department}</span>
-                            </div>
-                            
-                            <div class="summary-item">
-                                <span class="label">Company Email:</span>
-                                <span class="value highlight">${companyEmail}</span>
-                            </div>
-                            
-                            <div class="summary-item">
-                                <span class="label">Default Password:</span>
-                                <span class="value highlight">test123</span>
-                            </div>
-                            
-                            <div class="summary-item">
-                                <span class="label">Onboarding Tasks:</span>
-                                <span class="value">${taskCount} tasks assigned</span>
-                            </div>
+                        <div class="success-info">
+                            <p><strong>Employee #:</strong> ${employeeNumber}</p>
+                            <p><strong>Name:</strong> ${employeeName}</p>
+                            <p><strong>Department:</strong> ${department}</p>
+                            <p><strong>Onboarding Tasks:</strong> ${taskCount} tasks assigned</p>
                         </div>
-                        
-                        <div class="next-steps">
-                            <p><strong>✉️ Welcome email sent</strong> to their personal email with login credentials.</p>
-                            <p>The employee can now log in using their company email and the default password.</p>
+                        <div class="email-section">
+                            <h4>📧 Company Email Created</h4>
+                            <div class="email-display">
+                                <input type="text" value="${companyEmail}" readonly onclick="this.select()">
+                                <button onclick="copyToClipboard('${companyEmail}')">Copy</button>
+                            </div>
+                            <p class="email-note">
+                                Please save this email address. You will receive login instructions shortly.
+                            </p>
                         </div>
                     </div>
-                    
                     <div class="success-modal-footer">
-                        <button class="btn-modal btn-secondary" onclick="closeSuccessModal()">
-                            Close
-                        </button>
-                        <a href="/HR/Employees.aspx" class="btn-modal btn-primary">
-                            View All Employees
-                        </a>
+                        <button type="button" class="btn-primary" onclick="closeSuccessModal()">Continue</button>
                     </div>
                 </div>
             </div>
@@ -1069,86 +792,132 @@ function showSuccessModalWithEmail(employeeNumber, employeeName, department, tas
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // Prevent body scroll
-    document.body.style.overflow = 'hidden';
-
-    // Auto-close after 30 seconds
-    setTimeout(() => {
-        closeSuccessModal();
-    }, 30000);
-}
-
-// Legacy success modal function (keep for compatibility)
-function showSuccessModal(employeeNumber, employeeName, department, taskCount) {
-    showSuccessModalWithEmail(employeeNumber, employeeName, department, taskCount, 'Not specified');
+    // Add styles if not already present
+    if (!document.getElementById('success-modal-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'success-modal-styles';
+        styles.textContent = `
+            .success-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            }
+            .success-modal-dialog {
+                background: white;
+                border-radius: 10px;
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+            .success-modal-header {
+                background: #4CAF50;
+                color: white;
+                padding: 20px;
+                border-radius: 10px 10px 0 0;
+                position: relative;
+            }
+            .success-modal-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+            }
+            .success-modal-close {
+                position: absolute;
+                top: 15px;
+                right: 20px;
+                background: none;
+                border: none;
+                font-size: 2rem;
+                color: white;
+                cursor: pointer;
+            }
+            .success-modal-body {
+                padding: 20px;
+            }
+            .success-info p {
+                margin: 10px 0;
+                font-size: 1.1rem;
+            }
+            .email-section {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f0f8ff;
+                border-radius: 5px;
+            }
+            .email-section h4 {
+                margin: 0 0 10px 0;
+                color: #2196F3;
+            }
+            .email-display {
+                display: flex;
+                gap: 10px;
+                margin: 10px 0;
+            }
+            .email-display input {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-family: monospace;
+                background: white;
+            }
+            .email-display button {
+                padding: 10px 15px;
+                background: #2196F3;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            .email-note {
+                font-size: 0.9rem;
+                color: #666;
+                margin: 10px 0 0 0;
+            }
+            .success-modal-footer {
+                padding: 20px;
+                text-align: center;
+                border-top: 1px solid #eee;
+            }
+            .btn-primary {
+                background: #4CAF50;
+                color: white;
+                border: none;
+                padding: 12px 30px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 1rem;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
 }
 
 // Close success modal
 function closeSuccessModal(event) {
-    // Only close if clicking overlay or close button
-    if (event && event.target.closest('.success-modal-content') && !event.target.closest('.btn-modal')) {
-        return;
+    if (event && event.target !== event.currentTarget) {
+        return; // Don't close if clicking inside modal
     }
 
     const modal = document.querySelector('.success-modal-overlay');
     if (modal) {
-        modal.style.opacity = '0';
-        modal.style.transform = 'scale(0.95)';
-
-        setTimeout(() => {
-            modal.remove();
-            document.body.style.overflow = '';
-        }, 200);
+        modal.remove();
     }
 }
 
-// Add keyboard support
-document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape') {
-        closeSuccessModal();
-    }
-});
-
-/* ===============================================
-   EMAIL PREVIEW FUNCTIONS
-   =============================================== */
-
-// Generate company email preview
-function generateEmailPreview() {
-    const firstName = document.getElementById('txtFirstName')?.value || '';
-    const lastName = document.getElementById('txtLastName')?.value || '';
-
-    if (firstName && lastName) {
-        const cleanLastName = lastName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        const firstInitial = firstName.substring(0, 1).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-
-        return `${cleanLastName}${firstInitial}@tennesseepersonalassistance.org`;
-    }
-
-    return '';
+// ===============================================
+// Export for module systems (if needed)
+// ===============================================
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TPA;
 }
 
-// Show email preview in real-time
-function updateEmailPreview() {
-    const preview = generateEmailPreview();
-    const previewElement = document.getElementById('emailPreview');
-
-    if (previewElement && preview) {
-        previewElement.textContent = preview;
-        previewElement.style.display = 'block';
-    } else if (previewElement) {
-        previewElement.style.display = 'none';
-    }
-}
-
-// Add event listeners when page loads
-document.addEventListener('DOMContentLoaded', function () {
-    const firstNameField = document.getElementById('txtFirstName');
-    const lastNameField = document.getElementById('txtLastName');
-
-    if (firstNameField && lastNameField) {
-        firstNameField.addEventListener('input', updateEmailPreview);
-        lastNameField.addEventListener('input', updateEmailPreview);
-    }
-});
-
+console.log('✅ TPA Common JavaScript loaded successfully');

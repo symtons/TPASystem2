@@ -121,7 +121,7 @@ namespace TPASystem2.Helpers
         /// </summary>
         public static void RedirectToLogin()
         {
-            RedirectToCleanUrl("login");
+            RedirectToCleanUrl("login.aspx");
         }
 
         /// <summary>
