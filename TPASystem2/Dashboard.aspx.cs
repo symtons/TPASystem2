@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
+using System.Web;
 using System.Web.UI;
 using TPASystem2.Helpers;
 
@@ -20,14 +21,10 @@ namespace TPASystem2
             if (Session["UserId"] == null)
             {
                 Response.Redirect("~/Login.aspx");
+                return;
             }
 
-            if (!IsPostBack)
-            {
-                LoadDashboardData();
-            }
-
-            // Handle AJAX refresh requests
+            // Handle AJAX refresh requests FIRST
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 string eventArgument = Request.Form["__EVENTARGUMENT"];
@@ -41,6 +38,12 @@ namespace TPASystem2
                     RefreshActivitiesOnly();
                     return;
                 }
+            }
+
+            // Normal page load
+            if (!IsPostBack)
+            {
+                LoadDashboardData();
             }
         }
 
@@ -411,24 +414,37 @@ namespace TPASystem2
                 int userId = Convert.ToInt32(Session["UserId"]);
                 string userRole = Session["UserRole"]?.ToString() ?? "";
 
-                LoadRealTimeDashboardStats(userRole, userId);
+                // Get fresh stats
+                List<DashboardStat> stats = GetRealTimeStatsByRole(userRole, userId);
 
-                // Return only the stats HTML
                 Response.Clear();
                 Response.ContentType = "text/html";
+                Response.Cache.SetCacheability(HttpCacheability.NoCache);
 
-                var litDashboardStats = FindControlRecursive(Page, "litDashboardStats") as System.Web.UI.WebControls.Literal;
-                if (litDashboardStats != null)
+                // Generate HTML for stats
+                var statsHtml = new StringBuilder();
+                if (stats.Count == 4)
                 {
-                    Response.Write($"<div id=\"litDashboardStats\">{litDashboardStats.Text}</div>");
+                    foreach (var stat in stats)
+                    {
+                        statsHtml.AppendLine(CreateStatCard(stat.Name, stat.Value, stat.Icon, stat.Color, stat.Subtitle, stat.Key));
+                    }
+                }
+                else
+                {
+                    // Fallback if we don't get exactly 4 stats
+                    statsHtml.AppendLine(CreateFallbackStats(userRole));
                 }
 
+                // Wrap in container for easy replacement
+                Response.Write($"<div id=\"dashboard-stats-content\">{statsHtml.ToString()}</div>");
                 Response.End();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error refreshing stats: {ex.Message}");
                 Response.StatusCode = 500;
+                Response.Write("Error refreshing statistics");
                 Response.End();
             }
         }
@@ -441,24 +457,84 @@ namespace TPASystem2
             try
             {
                 int userId = Convert.ToInt32(Session["UserId"]);
-                LoadRecentActivities(userId);
+
+                // Get fresh activities HTML
+                var activitiesHtml = GetRecentActivitiesHtml();
 
                 Response.Clear();
                 Response.ContentType = "text/html";
+                Response.Cache.SetCacheability(HttpCacheability.NoCache);
 
-                var litRecentActivities = FindControlRecursive(Page, "litRecentActivities") as System.Web.UI.WebControls.Literal;
-                if (litRecentActivities != null)
-                {
-                    Response.Write($"<div id=\"litRecentActivities\">{litRecentActivities.Text}</div>");
-                }
-
+                Response.Write($"<div id=\"recent-activities-content\">{activitiesHtml}</div>");
                 Response.End();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error refreshing activities: {ex.Message}");
                 Response.StatusCode = 500;
+                Response.Write("Error refreshing activities");
                 Response.End();
+            }
+        }
+
+        /// <summary>
+        /// Get recent activities HTML
+        /// </summary>
+        private string GetRecentActivitiesHtml()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Get recent activities
+                    string query = @"
+                        SELECT TOP 10 
+                            ra.Action,
+                            ra.EntityType,
+                            ra.Details,
+                            ra.CreatedAt,
+                            u.Email,
+                            u.Role
+                        FROM RecentActivities ra
+                        INNER JOIN Users u ON ra.UserId = u.Id
+                        WHERE u.IsActive = 1
+                        ORDER BY ra.CreatedAt DESC";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            var activitiesHtml = new StringBuilder();
+
+                            while (reader.Read())
+                            {
+                                string action = reader["Action"].ToString();
+                                string entityType = reader["EntityType"].ToString();
+                                string details = reader["Details"].ToString();
+                                DateTime createdAt = Convert.ToDateTime(reader["CreatedAt"]);
+                                string userEmail = reader["Email"].ToString();
+                                string userRole = reader["Role"].ToString();
+
+                                activitiesHtml.AppendLine(CreateActivityItem(action, entityType, details, createdAt, userEmail, userRole));
+                            }
+
+                            // If no activities, show default message
+                            if (activitiesHtml.Length == 0)
+                            {
+                                activitiesHtml.AppendLine("<li class='activity-item'>No recent activities found.</li>");
+                            }
+
+                            return activitiesHtml.ToString();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting activities HTML: {ex.Message}");
+                return "<li class='activity-item'>Unable to load recent activities.</li>";
             }
         }
 
@@ -572,24 +648,59 @@ namespace TPASystem2
         }
 
         /// <summary>
-        /// Create a stat card with data-attributes for real-time updates
+        /// Create a beautiful stat card with enhanced styling and data-attributes for real-time updates
         /// </summary>
         private string CreateStatCard(string title, string value, string icon, string color, string subtitle, string statKey = "")
         {
             string colorClass = GetColorClass(color);
             string dataAttribute = !string.IsNullOrEmpty(statKey) ? $"data-stat-key=\"{statKey}\"" : "";
 
+            // Add number formatting for better display
+            string formattedValue = FormatStatValue(value);
+
+            // Determine if this is a trend value (contains % or trend indicators)
+            bool isTrend = value.Contains("%") || value.Contains("↑") || value.Contains("↓");
+            string trendClass = isTrend ? "trend-value" : "";
+
             return $@"
-                <div class='stat-card' {dataAttribute}>
+                <div class='stat-card {trendClass}' {dataAttribute}>
                     <div class='stat-icon {colorClass}'>
                         <i class='material-icons'>{icon}</i>
                     </div>
                     <div class='stat-content'>
-                        <div class='stat-value'>{value}</div>
+                        <div class='stat-value {(value == "Loading..." ? "loading-text" : "")}'>{formattedValue}</div>
                         <div class='stat-title'>{title}</div>
                         <div class='stat-subtitle'>{subtitle}</div>
                     </div>
+                    {(value != "Loading..." ? "<div class='stat-update-indicator'></div>" : "")}
                 </div>";
+        }
+
+        /// <summary>
+        /// Format stat values for better display
+        /// </summary>
+        private string FormatStatValue(string value)
+        {
+            // If it's loading, return as-is
+            if (value == "Loading..." || string.IsNullOrEmpty(value))
+                return value;
+
+            // If it contains non-numeric characters (like %), return as-is
+            if (value.Contains("%") || value.Contains("days") || !char.IsDigit(value[0]))
+                return value;
+
+            // Try to parse as number for formatting
+            if (int.TryParse(value, out int numValue))
+            {
+                if (numValue >= 1000000)
+                    return $"{(numValue / 1000000.0):F1}M";
+                else if (numValue >= 1000)
+                    return $"{(numValue / 1000.0):F1}K";
+                else
+                    return numValue.ToString();
+            }
+
+            return value;
         }
 
         #endregion

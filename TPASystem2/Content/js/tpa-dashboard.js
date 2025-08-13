@@ -376,27 +376,136 @@ TPA.Dashboard.refreshDashboardStats = function () {
 
 // Update stats from HTML response
 TPA.Dashboard.updateStatsFromHtml = function (html) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
+    try {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
 
-    const newStatsContainer = tempDiv.querySelector('#litDashboardStats, [data-dashboard-stats]');
-    const currentStatsContainer = document.querySelector('#litDashboardStats, [data-dashboard-stats]');
+        // Look for the dashboard stats content
+        const newStatsContainer = tempDiv.querySelector('#dashboard-stats-content');
+        const currentStatsContainer = document.querySelector('#litDashboardStats, [data-dashboard-stats]');
 
-    if (newStatsContainer && currentStatsContainer) {
-        const newStatCards = newStatsContainer.querySelectorAll('.stat-card');
+        if (newStatsContainer && currentStatsContainer) {
+            // Replace entire stats container content
+            currentStatsContainer.innerHTML = newStatsContainer.innerHTML;
 
-        newStatCards.forEach(newCard => {
-            const statKey = newCard.getAttribute('data-stat-key');
-            if (statKey) {
-                const currentCard = document.querySelector(`[data-stat-key="${statKey}"]`);
-                if (currentCard) {
-                    this.updateStatCard(currentCard, newCard);
+            // Re-initialize the new stat cards
+            this.initializeStatCards();
+
+            console.log('📊 Dashboard stats updated successfully');
+        } else {
+            // Fallback: try to update individual cards
+            const newStatCards = tempDiv.querySelectorAll('.stat-card');
+
+            newStatCards.forEach(newCard => {
+                const statKey = newCard.getAttribute('data-stat-key');
+                if (statKey) {
+                    const currentCard = document.querySelector(`[data-stat-key="${statKey}"]`);
+                    if (currentCard) {
+                        this.updateStatCard(currentCard, newCard);
+                    }
                 }
-            }
-        });
+            });
 
-        console.log(`📊 Updated ${newStatCards.length} stat cards`);
+            console.log(`📊 Updated ${newStatCards.length} stat cards`);
+        }
+    } catch (error) {
+        console.error('Error updating stats from HTML:', error);
+        this.showNotification('Failed to update dashboard stats', 'error', 3000);
     }
+};
+
+// Update activities from HTML response
+TPA.Dashboard.updateActivitiesFromHtml = function (html) {
+    try {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        const newActivitiesContainer = tempDiv.querySelector('#recent-activities-content');
+        const currentActivitiesContainer = document.querySelector('#litRecentActivities, [data-recent-activities]');
+
+        if (newActivitiesContainer && currentActivitiesContainer) {
+            const newContent = newActivitiesContainer.innerHTML;
+            const currentContent = currentActivitiesContainer.innerHTML;
+
+            if (newContent !== currentContent) {
+                // Fade out, update, fade in
+                currentActivitiesContainer.style.opacity = '0.5';
+                setTimeout(() => {
+                    currentActivitiesContainer.innerHTML = newContent;
+                    currentActivitiesContainer.style.opacity = '1';
+                }, 200);
+
+                console.log('📝 Updated recent activities');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating activities from HTML:', error);
+        this.showNotification('Failed to update activities', 'error', 3000);
+    }
+};
+
+// Improved refresh dashboard statistics with better error handling
+TPA.Dashboard.refreshDashboardStats = function () {
+    return new Promise((resolve, reject) => {
+        // Don't try to refresh if no form exists
+        const form = document.forms[0];
+        if (!form) {
+            console.warn('No form found for AJAX request, skipping stats refresh');
+            resolve();
+            return;
+        }
+
+        this.setStatsLoadingState(true);
+
+        // Create form data for the request
+        const formData = new FormData();
+        formData.append('__EVENTTARGET', form.id || 'form1');
+        formData.append('__EVENTARGUMENT', 'RefreshStats');
+
+        // Add any necessary viewstate data
+        const viewState = document.querySelector('input[name="__VIEWSTATE"]');
+        if (viewState) {
+            formData.append('__VIEWSTATE', viewState.value);
+        }
+
+        const viewStateGenerator = document.querySelector('input[name="__VIEWSTATEGENERATOR"]');
+        if (viewStateGenerator) {
+            formData.append('__VIEWSTATEGENERATOR', viewStateGenerator.value);
+        }
+
+        const eventValidation = document.querySelector('input[name="__EVENTVALIDATION"]');
+        if (eventValidation) {
+            formData.append('__EVENTVALIDATION', eventValidation.value);
+        }
+
+        fetch(window.location.pathname, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData,
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                this.updateStatsFromHtml(html);
+                this.setStatsLoadingState(false);
+                this.config.connectionRetries = 0;
+                this.hideConnectionError();
+                resolve();
+            })
+            .catch(error => {
+                console.error('Failed to refresh stats:', error);
+                this.setStatsLoadingState(false);
+                this.handleConnectionError();
+                reject(error);
+            });
+    });
 };
 
 // Update individual stat card with enhanced animation
