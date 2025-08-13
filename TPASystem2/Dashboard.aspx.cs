@@ -26,6 +26,22 @@ namespace TPASystem2
             {
                 LoadDashboardData();
             }
+
+            // Handle AJAX refresh requests
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                string eventArgument = Request.Form["__EVENTARGUMENT"];
+                if (eventArgument == "RefreshStats")
+                {
+                    RefreshDashboardStatsOnly();
+                    return;
+                }
+                else if (eventArgument == "RefreshActivities")
+                {
+                    RefreshActivitiesOnly();
+                    return;
+                }
+            }
         }
 
         private void LoadDashboardData()
@@ -38,12 +54,12 @@ namespace TPASystem2
                 string userRole = Session["UserRole"]?.ToString() ?? "";
                 string userName = Session["UserName"]?.ToString() ?? userEmail;
 
-                // Set user info in UI (these controls are in the master page)
+                // Set user info in UI
                 SetUserInformation(userName, userRole);
 
                 // Load dashboard components
                 LoadNavigationMenu(userRole);
-                LoadDashboardStats(userRole);
+                LoadRealTimeDashboardStats(userRole, userId);
                 LoadQuickActions(userRole);
                 LoadRecentActivities(userId);
 
@@ -57,317 +73,528 @@ namespace TPASystem2
             }
         }
 
-        private void SetUserInformation(string userName, string userRole)
-        {
-            // Try to find controls in master page first, then content page
-            var litUserName = FindControlRecursive(Page, "litUserName") as System.Web.UI.WebControls.Literal;
-            var litUserInitial = FindControlRecursive(Page, "litUserInitial") as System.Web.UI.WebControls.Literal;
-            var litHeaderUserInitial = FindControlRecursive(Page, "litHeaderUserInitial") as System.Web.UI.WebControls.Literal;
-            var litUserRole = FindControlRecursive(Page, "litUserRole") as System.Web.UI.WebControls.Literal;
+        #region Real-time Dashboard Stats with Inline Queries
 
-            // Set user name and initials
-            if (!string.IsNullOrEmpty(userName))
-            {
-                string initial = userName.Substring(0, 1).ToUpper();
-
-                if (litUserName != null) litUserName.Text = userName;
-                if (litUserInitial != null) litUserInitial.Text = initial;
-                if (litHeaderUserInitial != null) litHeaderUserInitial.Text = initial;
-            }
-            else
-            {
-                if (litUserName != null) litUserName.Text = "User";
-                if (litUserInitial != null) litUserInitial.Text = "U";
-                if (litHeaderUserInitial != null) litHeaderUserInitial.Text = "U";
-            }
-
-            // Set user role
-            if (litUserRole != null) litUserRole.Text = userRole;
-        }
-
-        private void LoadNavigationMenu(string userRole)
-        {
-            //try
-            //{
-                var litNavigation = FindControlRecursive(Page, "litNavigation") as System.Web.UI.WebControls.Literal;
-                if (litNavigation == null) return;
-
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    // Get menu items from database based on user role permissions
-                    string query = @"
-                        SELECT DISTINCT 
-                            mi.Id,
-                            mi.Name,
-                            mi.Route,
-                            mi.Icon,
-                            mi.ParentId,
-                            mi.SortOrder,
-                            mi.IsActive,
-                            rmp.CanView,
-                            rmp.CanEdit,
-                            rmp.CanDelete
-                        FROM MenuItems mi
-                        LEFT JOIN RoleMenuPermissions rmp ON mi.Id = rmp.MenuItemId AND rmp.Role = @UserRole
-                        WHERE mi.IsActive = 1 
-                        AND (rmp.CanView = 1 OR @UserRole IN ('SuperAdmin', 'Admin'))
-                        ORDER BY mi.ParentId, mi.SortOrder, mi.Name";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@UserRole", userRole);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            var menuItems = new List<MenuItem>();
-
-                            while (reader.Read())
-                            {
-                                menuItems.Add(new MenuItem
-                                {
-
-
-
-
-                                    Id = Convert.ToInt32(reader["Id"]),
-                                    Name = reader["Name"]?.ToString() ?? "",
-                                    Route = reader["Route"]?.ToString() ?? "",
-                                    Icon = reader["Icon"]?.ToString() ?? "",
-                                    ParentId = reader["ParentId"] == DBNull.Value ? (int?)null : Convert.ToInt32(reader["ParentId"]),
-                                    SortOrder = Convert.ToInt32(reader["SortOrder"]),
-                                    IsActive = Convert.ToBoolean(reader["IsActive"]),
-                                    CanView = reader["CanView"] == DBNull.Value ? true : Convert.ToBoolean(reader["CanView"]),
-                                    CanEdit = reader["CanEdit"] == DBNull.Value ? false : Convert.ToBoolean(reader["CanEdit"]),
-                                    CanDelete = reader["CanDelete"] == DBNull.Value ? false : Convert.ToBoolean(reader["CanDelete"])
-                                
-
-
-
-
-                        });
-                            }
-
-                            // Build hierarchical menu structure
-                            var menuHtml = BuildMenuHtml(menuItems, userRole);
-
-                            // If no menu from database, show default menu
-                            if (string.IsNullOrEmpty(menuHtml))
-                            {
-                                menuHtml = CreateDefaultMenu(userRole);
-                            }
-
-                            litNavigation.Text = menuHtml;
-                        }
-                    }
-                }
-            //}
-            //catch (Exception ex)
-            //{
-            //    System.Diagnostics.Debug.WriteLine($"Error loading navigation from database: {ex.Message}");
-
-            //    // Fallback to default navigation if database fails
-            //    var litNavigation = FindControlRecursive(Page, "litNavigation") as System.Web.UI.WebControls.Literal;
-            //    if (litNavigation != null)
-            //    {
-            //        litNavigation.Text = CreateDefaultMenu(userRole);
-            //    }
-            //}
-        }
-
-        private string BuildMenuHtml(List<MenuItem> menuItems, string userRole)
-        {
-            var menuHtml = new StringBuilder();
-
-            // Get root level menu items (no parent)
-            var rootItems = menuItems.Where(m => m.ParentId == null).OrderBy(m => m.SortOrder).ToList();
-
-            foreach (var rootItem in rootItems)
-            {
-                // Check if this is the current page
-                bool isActive = IsCurrentPage(rootItem.Route);
-
-                // Check if user has permission to view this menu
-                if (!rootItem.CanView && !HasAdminAccess(userRole))
-                    continue;
-
-                // Get child items
-                var childItems = menuItems.Where(m => m.ParentId == rootItem.Id).OrderBy(m => m.SortOrder).ToList();
-
-                if (childItems.Any())
-                {
-                    // Menu with submenu
-                    menuHtml.AppendLine(CreateMenuWithSubmenu(rootItem, childItems, userRole, isActive));
-                }
-                else
-                {
-                    // Simple menu item
-                    menuHtml.AppendLine(CreateNavItem(rootItem.Name, rootItem.Route, rootItem.Icon, isActive));
-                }
-            }
-
-            return menuHtml.ToString();
-        }
-
-        private string CreateMenuWithSubmenu(MenuItem parentItem, List<MenuItem> childItems, string userRole, bool isActive)
-        {
-            var submenuHtml = new StringBuilder();
-
-            submenuHtml.AppendLine($@"
-                <div class='nav-item nav-group{(isActive ? " active" : "")}'>
-                    <a href='#' class='nav-link nav-group-toggle' onclick='toggleSubmenu(this); return false;'>
-                        <i class='material-icons nav-icon'>{parentItem.Icon ?? "folder"}</i>
-                        <span class='nav-text'>{parentItem.Name}</span>
-                        <i class='material-icons nav-arrow'>expand_more</i>
-                    </a>
-                    <div class='nav-submenu' style='display: {(isActive ? "block" : "none")};'>");
-
-            foreach (var childItem in childItems)
-            {
-                // Check permissions for child items
-                if (!childItem.CanView && !HasAdminAccess(userRole))
-                    continue;
-
-                bool childIsActive = IsCurrentPage(childItem.Route);
-                submenuHtml.AppendLine($@"
-                    <div class='nav-subitem{(childIsActive ? " active" : "")}'>
-                        <a href='{childItem.Route}' class='nav-sublink'>
-                            <i class='material-icons nav-subicon'>{childItem.Icon ?? "circle"}</i>
-                            <span class='nav-subtext'>{childItem.Name}</span>
-                        </a>
-                    </div>");
-            }
-
-            submenuHtml.AppendLine(@"
-                    </div>
-                </div>");
-
-            return submenuHtml.ToString();
-        }
-
-        private string CreateDefaultMenu(string userRole)
-        {
-            var menuHtml = new StringBuilder();
-
-            // Dashboard (everyone)
-            menuHtml.AppendLine(CreateNavItem("Dashboard", "/dashboard", "dashboard", true));
-
-            // Time & Attendance (everyone)
-            menuHtml.AppendLine(CreateNavItem("Time & Attendance", "/time-attendance", "schedule"));
-
-            // Employees (Admin, HR, Manager only)
-            if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
-            {
-                menuHtml.AppendLine(CreateNavItem("Employees", "/employees", "people"));
-            }
-
-            // Leave Management (everyone)
-            menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave-management", "event_available"));
-
-            // Reports (Admin, HR, Manager only)
-            if (HasAccess(userRole, "Admin", "HR", "Manager", "SuperAdmin", "HRAdmin", "ProgramDirector"))
-            {
-                menuHtml.AppendLine(CreateNavItem("Reports", "/reports", "assessment"));
-            }
-
-            // Profile (everyone)
-            menuHtml.AppendLine(CreateNavItem("Profile", "/profile", "person"));
-
-            // Settings (Admin, HR only)
-            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin"))
-            {
-                menuHtml.AppendLine(CreateNavItem("Settings", "/settings", "settings"));
-            }
-
-            // Help (everyone)
-            menuHtml.AppendLine(CreateNavItem("Help", "/help", "help"));
-
-            return menuHtml.ToString();
-        }
-
-        private bool IsCurrentPage(string route)
-        {
-            if (string.IsNullOrEmpty(route)) return false;
-
-            try
-            {
-                string currentPath = Request.Url.AbsolutePath.ToLower();
-                string cleanRoute = route.TrimStart('/').ToLower();
-
-                return currentPath.Contains(cleanRoute) || currentPath.EndsWith($"/{cleanRoute}");
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private bool HasAdminAccess(string userRole)
-        {
-            return HasAccess(userRole, "SuperAdmin", "Admin", "HRAdmin");
-        }
-
-        private void LoadDashboardStats(string userRole)
+        /// <summary>
+        /// Load real-time dashboard statistics using inline queries based on user role
+        /// Each user gets exactly 4 stats relevant to their role
+        /// </summary>
+        private void LoadRealTimeDashboardStats(string userRole, int userId)
         {
             try
             {
                 var litDashboardStats = FindControlRecursive(Page, "litDashboardStats") as System.Web.UI.WebControls.Literal;
                 if (litDashboardStats == null) return;
 
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                List<DashboardStat> stats = GetRealTimeStatsByRole(userRole, userId);
+
+                // Ensure exactly 4 stats
+                if (stats.Count == 4)
                 {
-                    conn.Open();
-
-                    // Get stats from database based on user role
-                    string query = @"
-                        SELECT StatKey, StatName, StatValue, StatColor, IconName, Subtitle
-                        FROM DashboardStats 
-                        WHERE IsActive = 1 
-                        AND (ApplicableRoles IS NULL OR ApplicableRoles LIKE '%' + @UserRole + '%')
-                        ORDER BY SortOrder";
-
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    var statsHtml = new StringBuilder();
+                    foreach (var stat in stats)
                     {
-                        cmd.Parameters.AddWithValue("@UserRole", userRole);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            var statsHtml = new StringBuilder();
-
-                            while (reader.Read())
-                            {
-                                string statKey = reader["StatKey"].ToString();
-                                string statName = reader["StatName"].ToString();
-                                string statValue = reader["StatValue"].ToString();
-                                string statColor = reader["StatColor"].ToString();
-                                string iconName = reader["IconName"]?.ToString() ?? "analytics";
-                                string subtitle = reader["Subtitle"]?.ToString() ?? "";
-
-                                statsHtml.AppendLine(CreateStatCard(statName, statValue, iconName, statColor, subtitle));
-                            }
-
-                            // If no stats from database, show default stats
-                            if (statsHtml.Length == 0)
-                            {
-                                statsHtml.AppendLine(CreateDefaultStats(userRole));
-                            }
-
-                            litDashboardStats.Text = statsHtml.ToString();
-                        }
+                        statsHtml.AppendLine(CreateStatCard(stat.Name, stat.Value, stat.Icon, stat.Color, stat.Subtitle, stat.Key));
                     }
+                    litDashboardStats.Text = statsHtml.ToString();
+                }
+                else
+                {
+                    // Fallback if we don't get exactly 4 stats
+                    litDashboardStats.Text = CreateFallbackStats(userRole);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading dashboard stats: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error loading real-time dashboard stats: {ex.Message}");
                 var litDashboardStats = FindControlRecursive(Page, "litDashboardStats") as System.Web.UI.WebControls.Literal;
                 if (litDashboardStats != null)
                 {
-                    litDashboardStats.Text = CreateDefaultStats(userRole);
+                    litDashboardStats.Text = CreateFallbackStats(userRole);
                 }
             }
         }
+
+        /// <summary>
+        /// Get real-time statistics based on user role using inline database queries
+        /// </summary>
+        private List<DashboardStat> GetRealTimeStatsByRole(string userRole, int userId)
+        {
+            var stats = new List<DashboardStat>();
+
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+
+                switch (userRole.ToUpper())
+                {
+                    case "SUPERADMIN":
+                        stats = GetSuperAdminStats(conn);
+                        break;
+                    case "ADMIN":
+                        stats = GetAdminStats(conn);
+                        break;
+                    case "HRADMIN":
+                        stats = GetHRAdminStats(conn);
+                        break;
+                    case "PROGRAMDIRECTOR":
+                        stats = GetProgramDirectorStats(conn, userId);
+                        break;
+                    case "PROGRAMCOORDINATOR":
+                        stats = GetProgramCoordinatorStats(conn, userId);
+                        break;
+                    case "EMPLOYEE":
+                    default:
+                        stats = GetEmployeeStats(conn, userId);
+                        break;
+                }
+            }
+
+            return stats;
+        }
+
+        private List<DashboardStat> GetSuperAdminStats(SqlConnection conn)
+        {
+            var stats = new List<DashboardStat>();
+
+            // 1. Total Users
+            string totalUsersQuery = "SELECT COUNT(*) FROM Users WHERE IsActive = 1";
+            var totalUsers = ExecuteScalarQuery(conn, totalUsersQuery);
+            stats.Add(new DashboardStat("total_users", "Total Users", totalUsers.ToString(), "primary", "people", "Active system users"));
+
+            // 2. Active Sessions (last 24 hours)
+            string activeSessionsQuery = @"
+                SELECT COUNT(*) FROM UserSessions 
+                WHERE IsActive = 1 AND CreatedAt >= DATEADD(HOUR, -24, GETUTCDATE())";
+            var activeSessions = ExecuteScalarQuery(conn, activeSessionsQuery);
+            stats.Add(new DashboardStat("active_sessions", "Active Sessions", activeSessions.ToString(), "success", "schedule", "Last 24 hours"));
+
+            // 3. Total Departments
+            string totalDepartmentsQuery = "SELECT COUNT(*) FROM Departments WHERE IsActive = 1";
+            var totalDepartments = ExecuteScalarQuery(conn, totalDepartmentsQuery);
+            stats.Add(new DashboardStat("total_departments", "Total Departments", totalDepartments.ToString(), "info", "analytics", "Active departments"));
+
+            // 4. Logins Today
+            string loginsQuery = "SELECT COUNT(*) FROM Users WHERE CAST(LastLogin AS DATE) = CAST(GETDATE() AS DATE)";
+            var loginsToday = ExecuteScalarQuery(conn, loginsQuery);
+            stats.Add(new DashboardStat("recent_logins", "Logins Today", loginsToday.ToString(), "warning", "login", "User activity today"));
+
+            return stats;
+        }
+
+        private List<DashboardStat> GetAdminStats(SqlConnection conn)
+        {
+            var stats = new List<DashboardStat>();
+
+            // 1. Total Employees
+            string totalEmployeesQuery = @"
+                SELECT COUNT(*) FROM Employees e 
+                INNER JOIN Users u ON e.UserId = u.Id 
+                WHERE u.IsActive = 1";
+            var totalEmployees = ExecuteScalarQuery(conn, totalEmployeesQuery);
+            stats.Add(new DashboardStat("total_employees", "Total Employees", totalEmployees.ToString(), "primary", "people", "Active employees"));
+
+            // 2. Pending Approvals
+            string pendingApprovalsQuery = @"
+                SELECT 
+                (SELECT COUNT(*) FROM LeaveRequests WHERE Status = 'Pending') +
+                (SELECT COUNT(*) FROM WorkflowApprovals WHERE Status = 'PENDING')";
+            var pendingApprovals = ExecuteScalarQuery(conn, pendingApprovalsQuery);
+            stats.Add(new DashboardStat("pending_approvals", "Pending Approvals", pendingApprovals.ToString(), "warning", "assignment", "Needs attention"));
+
+            // 3. Active Shifts Today
+            string activeShiftsQuery = @"
+                SELECT COUNT(*) FROM TimeEntries 
+                WHERE Status = 'Active' AND CAST(CreatedAt AS DATE) = CAST(GETDATE() AS DATE)";
+            var activeShifts = ExecuteScalarQuery(conn, activeShiftsQuery);
+            stats.Add(new DashboardStat("active_shifts", "Active Shifts", activeShifts.ToString(), "info", "schedule", "Currently running"));
+
+            // 4. System Health
+            string systemHealthQuery = @"
+                SELECT COUNT(*) FROM ErrorLogs 
+                WHERE CreatedAt >= DATEADD(HOUR, -1, GETUTCDATE()) AND IsResolved = 0";
+            var errorCount = ExecuteScalarQuery(conn, systemHealthQuery);
+            string healthValue = errorCount == 0 ? "100%" : "98%";
+            string healthColor = errorCount == 0 ? "success" : "warning";
+            stats.Add(new DashboardStat("system_health", "System Health", healthValue, healthColor, "security", "System operational"));
+
+            return stats;
+        }
+
+        private List<DashboardStat> GetHRAdminStats(SqlConnection conn)
+        {
+            var stats = new List<DashboardStat>();
+
+            // 1. Total Employees
+            string totalEmployeesQuery = @"
+                SELECT COUNT(*) FROM Employees e 
+                INNER JOIN Users u ON e.UserId = u.Id 
+                WHERE u.IsActive = 1";
+            var totalEmployees = ExecuteScalarQuery(conn, totalEmployeesQuery);
+            stats.Add(new DashboardStat("hr_total_employees", "Total Employees", totalEmployees.ToString(), "primary", "people", "All departments"));
+
+            // 2. Pending Leave Requests
+            string pendingLeaveQuery = "SELECT COUNT(*) FROM LeaveRequests WHERE Status = 'Pending'";
+            var pendingLeave = ExecuteScalarQuery(conn, pendingLeaveQuery);
+            stats.Add(new DashboardStat("hr_pending_leave", "Pending Leave Requests", pendingLeave.ToString(), "warning", "warning", "Awaiting review"));
+
+            // 3. New Hires This Month
+            string newHiresQuery = @"
+                SELECT COUNT(*) FROM Employees e 
+                INNER JOIN Users u ON e.UserId = u.Id 
+                WHERE u.IsActive = 1 AND e.HireDate >= DATEADD(MONTH, -1, GETDATE())";
+            var newHires = ExecuteScalarQuery(conn, newHiresQuery);
+            stats.Add(new DashboardStat("hr_new_hires", "New Hires This Month", newHires.ToString(), "success", "trending_up", "Recent additions"));
+
+            // 4. Onboarding Tasks
+            string onboardingTasksQuery = @"
+                SELECT COUNT(*) FROM OnboardingTasks ot 
+                INNER JOIN OnboardingChecklists oc ON ot.ChecklistId = oc.Id 
+                WHERE ot.Status = 'PENDING' AND ot.IsMandatory = 1";
+            var onboardingTasks = ExecuteScalarQuery(conn, onboardingTasksQuery);
+            stats.Add(new DashboardStat("hr_onboarding_tasks", "Onboarding Tasks", onboardingTasks.ToString(), "info", "assignment", "Active checklist items"));
+
+            return stats;
+        }
+
+        private List<DashboardStat> GetProgramDirectorStats(SqlConnection conn, int userId)
+        {
+            var stats = new List<DashboardStat>();
+
+            // Get employee ID for the user
+            int employeeId = GetEmployeeIdByUserId(conn, userId);
+
+            // 1. Direct Reports
+            string directReportsQuery = @"
+                SELECT COUNT(*) FROM Employees e 
+                INNER JOIN Users u ON e.UserId = u.Id 
+                WHERE e.ManagerId = @EmployeeId AND u.IsActive = 1";
+            var directReports = ExecuteScalarQuery(conn, directReportsQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("mgr_direct_reports", "Direct Reports", directReports.ToString(), "primary", "people", "Team members"));
+
+            // 2. Team Leave Requests
+            string teamLeaveQuery = @"
+                SELECT COUNT(*) FROM LeaveRequests lr 
+                INNER JOIN Employees e ON lr.EmployeeId = e.Id 
+                WHERE e.ManagerId = @EmployeeId AND lr.Status = 'Pending'";
+            var teamLeave = ExecuteScalarQuery(conn, teamLeaveQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("mgr_team_leave_requests", "Team Leave Requests", teamLeave.ToString(), "warning", "warning", "Pending approval"));
+
+            // 3. Team Attendance Today
+            string attendanceQuery = @"
+                SELECT 
+                    CASE 
+                        WHEN COUNT(DISTINCT e.Id) = 0 THEN 100
+                        ELSE (COUNT(DISTINCT te.EmployeeId) * 100 / COUNT(DISTINCT e.Id))
+                    END
+                FROM Employees e 
+                INNER JOIN Users u ON e.UserId = u.Id 
+                LEFT JOIN TimeEntries te ON e.Id = te.EmployeeId AND CAST(te.CreatedAt AS DATE) = CAST(GETDATE() AS DATE)
+                WHERE e.ManagerId = @EmployeeId AND u.IsActive = 1";
+            var attendance = ExecuteScalarQuery(conn, attendanceQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("mgr_team_attendance", "Team Attendance", $"{attendance}%", "success", "check_circle", "Today"));
+
+            // 4. Completed Tasks (Last 30 days)
+            string completedTasksQuery = @"
+                SELECT COUNT(*) FROM OnboardingTasks ot 
+                INNER JOIN OnboardingChecklists oc ON ot.ChecklistId = oc.Id 
+                INNER JOIN Employees e ON oc.EmployeeId = e.Id 
+                WHERE e.ManagerId = @EmployeeId 
+                    AND ot.Status = 'COMPLETED' 
+                    AND ot.CompletedAt >= DATEADD(MONTH, -1, GETDATE())";
+            var completedTasks = ExecuteScalarQuery(conn, completedTasksQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("mgr_completed_tasks", "Completed Tasks", completedTasks.ToString(), "success", "check_circle", "Last 30 days"));
+
+            return stats;
+        }
+
+        private List<DashboardStat> GetProgramCoordinatorStats(SqlConnection conn, int userId)
+        {
+            var stats = new List<DashboardStat>();
+            int employeeId = GetEmployeeIdByUserId(conn, userId);
+
+            // 1. My Tasks
+            string myTasksQuery = @"
+                SELECT COUNT(*) FROM OnboardingTasks ot 
+                INNER JOIN OnboardingChecklists oc ON ot.ChecklistId = oc.Id 
+                WHERE ot.AssignedToId = @EmployeeId 
+                    AND ot.Status IN ('PENDING', 'IN_PROGRESS')";
+            var myTasks = ExecuteScalarQuery(conn, myTasksQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("coord_my_tasks", "My Tasks", myTasks.ToString(), "warning", "assignment", "Active assignments"));
+
+            // 2. Completed Today
+            string completedTodayQuery = @"
+                SELECT COUNT(*) FROM OnboardingTasks ot 
+                INNER JOIN OnboardingChecklists oc ON ot.ChecklistId = oc.Id 
+                WHERE ot.AssignedToId = @EmployeeId 
+                    AND ot.Status = 'COMPLETED' 
+                    AND CAST(ot.CompletedAt AS DATE) = CAST(GETDATE() AS DATE)";
+            var completedToday = ExecuteScalarQuery(conn, completedTodayQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("coord_completed_today", "Completed Today", completedToday.ToString(), "success", "check_circle", "Tasks finished"));
+
+            // 3. Overdue Tasks
+            string overdueTasksQuery = @"
+                SELECT COUNT(*) FROM OnboardingTasks ot 
+                INNER JOIN OnboardingChecklists oc ON ot.ChecklistId = oc.Id 
+                WHERE ot.AssignedToId = @EmployeeId 
+                    AND ot.Status IN ('PENDING', 'IN_PROGRESS') 
+                    AND ot.DueDate < CAST(GETDATE() AS DATE)";
+            var overdueTasks = ExecuteScalarQuery(conn, overdueTasksQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("coord_overdue_tasks", "Overdue Tasks", overdueTasks.ToString(), "danger", "warning", "Past due date"));
+
+            // 4. Hours This Month
+            string hoursQuery = @"
+                SELECT ISNULL(SUM(ISNULL(HoursWorked, 0)), 0) 
+                FROM TimeEntries 
+                WHERE EmployeeId = @EmployeeId 
+                    AND MONTH(CreatedAt) = MONTH(GETDATE()) 
+                    AND YEAR(CreatedAt) = YEAR(GETDATE())";
+            var hours = ExecuteScalarQuery(conn, hoursQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("coord_hours_month", "Hours This Month", hours.ToString(), "info", "access_time", "Total logged"));
+
+            return stats;
+        }
+
+        private List<DashboardStat> GetEmployeeStats(SqlConnection conn, int userId)
+        {
+            var stats = new List<DashboardStat>();
+            int employeeId = GetEmployeeIdByUserId(conn, userId);
+
+            // 1. PTO Balance
+            string ptoBalanceQuery = @"
+                SELECT ISNULL(SUM(AvailableDays), 0) 
+                FROM LeaveBalances 
+                WHERE EmployeeId = @EmployeeId";
+            var ptoBalance = ExecuteScalarQuery(conn, ptoBalanceQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("emp_pto_balance", "PTO Balance", $"{ptoBalance} days", "success", "schedule", "Available this year"));
+
+            // 2. Hours This Week
+            string hoursWeekQuery = @"
+                SELECT ISNULL(SUM(ISNULL(HoursWorked, 0)), 0) 
+                FROM TimeEntries 
+                WHERE EmployeeId = @EmployeeId 
+                    AND CreatedAt >= DATEADD(day, -(DATEPART(weekday, GETDATE()) - 1), CAST(GETDATE() AS DATE))";
+            var hoursWeek = ExecuteScalarQuery(conn, hoursWeekQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("emp_hours_week", "Hours This Week", hoursWeek.ToString(), "info", "access_time", "Current week total"));
+
+            // 3. My Pending Requests
+            string pendingRequestsQuery = @"
+                SELECT COUNT(*) FROM LeaveRequests 
+                WHERE EmployeeId = @EmployeeId AND Status = 'Pending'";
+            var pendingRequests = ExecuteScalarQuery(conn, pendingRequestsQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("emp_pending_requests", "My Pending Requests", pendingRequests.ToString(), "warning", "warning", "Awaiting approval"));
+
+            // 4. Completed Tasks (Last 30 days)
+            string completedTasksQuery = @"
+                SELECT COUNT(*) FROM OnboardingTasks ot 
+                INNER JOIN OnboardingChecklists oc ON ot.ChecklistId = oc.Id 
+                WHERE oc.EmployeeId = @EmployeeId 
+                    AND ot.Status = 'COMPLETED' 
+                    AND ot.CompletedAt >= DATEADD(MONTH, -1, GETDATE())";
+            var completedTasks = ExecuteScalarQuery(conn, completedTasksQuery, new SqlParameter("@EmployeeId", employeeId));
+            stats.Add(new DashboardStat("emp_completed_tasks", "Completed Tasks", completedTasks.ToString(), "primary", "check_circle", "Last 30 days"));
+
+            return stats;
+        }
+
+        #endregion
+
+        #region AJAX Refresh Methods
+
+        /// <summary>
+        /// Handle AJAX request to refresh only dashboard stats
+        /// </summary>
+        private void RefreshDashboardStatsOnly()
+        {
+            try
+            {
+                int userId = Convert.ToInt32(Session["UserId"]);
+                string userRole = Session["UserRole"]?.ToString() ?? "";
+
+                LoadRealTimeDashboardStats(userRole, userId);
+
+                // Return only the stats HTML
+                Response.Clear();
+                Response.ContentType = "text/html";
+
+                var litDashboardStats = FindControlRecursive(Page, "litDashboardStats") as System.Web.UI.WebControls.Literal;
+                if (litDashboardStats != null)
+                {
+                    Response.Write($"<div id=\"litDashboardStats\">{litDashboardStats.Text}</div>");
+                }
+
+                Response.End();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing stats: {ex.Message}");
+                Response.StatusCode = 500;
+                Response.End();
+            }
+        }
+
+        /// <summary>
+        /// Handle AJAX request to refresh only recent activities
+        /// </summary>
+        private void RefreshActivitiesOnly()
+        {
+            try
+            {
+                int userId = Convert.ToInt32(Session["UserId"]);
+                LoadRecentActivities(userId);
+
+                Response.Clear();
+                Response.ContentType = "text/html";
+
+                var litRecentActivities = FindControlRecursive(Page, "litRecentActivities") as System.Web.UI.WebControls.Literal;
+                if (litRecentActivities != null)
+                {
+                    Response.Write($"<div id=\"litRecentActivities\">{litRecentActivities.Text}</div>");
+                }
+
+                Response.End();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error refreshing activities: {ex.Message}");
+                Response.StatusCode = 500;
+                Response.End();
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Execute a scalar query and return the result as integer
+        /// </summary>
+        private int ExecuteScalarQuery(SqlConnection conn, string query, params SqlParameter[] parameters)
+        {
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                if (parameters != null)
+                {
+                    cmd.Parameters.AddRange(parameters);
+                }
+
+                object result = cmd.ExecuteScalar();
+                return result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
+            }
+        }
+
+        /// <summary>
+        /// Get employee ID for a user
+        /// </summary>
+        private int GetEmployeeIdByUserId(SqlConnection conn, int userId)
+        {
+            string query = "SELECT ISNULL(Id, 0) FROM Employees WHERE UserId = @UserId";
+            return ExecuteScalarQuery(conn, query, new SqlParameter("@UserId", userId));
+        }
+
+        /// <summary>
+        /// Dashboard stat data structure
+        /// </summary>
+        public class DashboardStat
+        {
+            public string Key { get; set; }
+            public string Name { get; set; }
+            public string Value { get; set; }
+            public string Color { get; set; }
+            public string Icon { get; set; }
+            public string Subtitle { get; set; }
+
+            public DashboardStat(string key, string name, string value, string color, string icon, string subtitle)
+            {
+                Key = key;
+                Name = name;
+                Value = value;
+                Color = color;
+                Icon = icon;
+                Subtitle = subtitle;
+            }
+        }
+
+        /// <summary>
+        /// Create fallback stats if database queries fail
+        /// </summary>
+        private string CreateFallbackStats(string userRole)
+        {
+            var stats = new StringBuilder();
+
+            switch (userRole.ToUpper())
+            {
+                case "SUPERADMIN":
+                    stats.AppendLine(CreateStatCard("Total Users", "Loading...", "people", "primary", "Active system users", "total_users"));
+                    stats.AppendLine(CreateStatCard("Active Sessions", "Loading...", "schedule", "success", "Last 24 hours", "active_sessions"));
+                    stats.AppendLine(CreateStatCard("Total Departments", "Loading...", "analytics", "info", "Active departments", "total_departments"));
+                    stats.AppendLine(CreateStatCard("Logins Today", "Loading...", "login", "warning", "User activity today", "recent_logins"));
+                    break;
+
+                case "ADMIN":
+                    stats.AppendLine(CreateStatCard("Total Employees", "Loading...", "people", "primary", "Active employees", "total_employees"));
+                    stats.AppendLine(CreateStatCard("Pending Approvals", "Loading...", "assignment", "warning", "Needs attention", "pending_approvals"));
+                    stats.AppendLine(CreateStatCard("Active Shifts", "Loading...", "schedule", "info", "Currently running", "active_shifts"));
+                    stats.AppendLine(CreateStatCard("System Health", "Loading...", "security", "success", "System operational", "system_health"));
+                    break;
+
+                case "HRADMIN":
+                    stats.AppendLine(CreateStatCard("Total Employees", "Loading...", "people", "primary", "All departments", "hr_total_employees"));
+                    stats.AppendLine(CreateStatCard("Pending Leave Requests", "Loading...", "warning", "warning", "Awaiting review", "hr_pending_leave"));
+                    stats.AppendLine(CreateStatCard("New Hires This Month", "Loading...", "trending_up", "success", "Recent additions", "hr_new_hires"));
+                    stats.AppendLine(CreateStatCard("Onboarding Tasks", "Loading...", "assignment", "info", "Active checklist items", "hr_onboarding_tasks"));
+                    break;
+
+                case "PROGRAMDIRECTOR":
+                    stats.AppendLine(CreateStatCard("Direct Reports", "Loading...", "people", "primary", "Team members", "mgr_direct_reports"));
+                    stats.AppendLine(CreateStatCard("Team Leave Requests", "Loading...", "warning", "warning", "Pending approval", "mgr_team_leave_requests"));
+                    stats.AppendLine(CreateStatCard("Team Attendance", "Loading...", "check_circle", "success", "Today", "mgr_team_attendance"));
+                    stats.AppendLine(CreateStatCard("Completed Tasks", "Loading...", "check_circle", "success", "Last 30 days", "mgr_completed_tasks"));
+                    break;
+
+                case "PROGRAMCOORDINATOR":
+                    stats.AppendLine(CreateStatCard("My Tasks", "Loading...", "assignment", "warning", "Active assignments", "coord_my_tasks"));
+                    stats.AppendLine(CreateStatCard("Completed Today", "Loading...", "check_circle", "success", "Tasks finished", "coord_completed_today"));
+                    stats.AppendLine(CreateStatCard("Overdue Tasks", "Loading...", "warning", "danger", "Past due date", "coord_overdue_tasks"));
+                    stats.AppendLine(CreateStatCard("Hours This Month", "Loading...", "access_time", "info", "Total logged", "coord_hours_month"));
+                    break;
+
+                case "EMPLOYEE":
+                default:
+                    stats.AppendLine(CreateStatCard("PTO Balance", "Loading...", "schedule", "success", "Available this year", "emp_pto_balance"));
+                    stats.AppendLine(CreateStatCard("Hours This Week", "Loading...", "access_time", "info", "Current week total", "emp_hours_week"));
+                    stats.AppendLine(CreateStatCard("My Pending Requests", "Loading...", "warning", "warning", "Awaiting approval", "emp_pending_requests"));
+                    stats.AppendLine(CreateStatCard("Completed Tasks", "Loading...", "check_circle", "primary", "Last 30 days", "emp_completed_tasks"));
+                    break;
+            }
+
+            return stats.ToString();
+        }
+
+        /// <summary>
+        /// Create a stat card with data-attributes for real-time updates
+        /// </summary>
+        private string CreateStatCard(string title, string value, string icon, string color, string subtitle, string statKey = "")
+        {
+            string colorClass = GetColorClass(color);
+            string dataAttribute = !string.IsNullOrEmpty(statKey) ? $"data-stat-key=\"{statKey}\"" : "";
+
+            return $@"
+                <div class='stat-card' {dataAttribute}>
+                    <div class='stat-icon {colorClass}'>
+                        <i class='material-icons'>{icon}</i>
+                    </div>
+                    <div class='stat-content'>
+                        <div class='stat-value'>{value}</div>
+                        <div class='stat-title'>{title}</div>
+                        <div class='stat-subtitle'>{subtitle}</div>
+                    </div>
+                </div>";
+        }
+
+        #endregion
+
+        #region Existing Methods (Quick Actions, Recent Activities, etc.)
 
         private void LoadQuickActions(string userRole)
         {
@@ -403,7 +630,7 @@ namespace TPASystem2
                                 string description = reader["Description"]?.ToString() ?? "";
                                 string iconName = reader["IconName"]?.ToString() ?? "touch_app";
                                 string route = reader["Route"]?.ToString() ?? "#";
-                                string color = reader["Color"]?.ToString() ?? "#ff9800";
+                                string color = reader["Color"]?.ToString() ?? "primary";
 
                                 actionsHtml.AppendLine(CreateQuickAction(title, description, iconName, route, actionKey));
                             }
@@ -448,13 +675,11 @@ namespace TPASystem2
                             ra.EntityType,
                             ra.Details,
                             ra.CreatedAt,
-                            u.Email as UserEmail,
-                            at.Name as ActivityTypeName,
-                            at.Color as ActivityColor,
-                            at.IconName as ActivityIcon
+                            u.Email,
+                            u.Role
                         FROM RecentActivities ra
-                        LEFT JOIN Users u ON ra.UserId = u.Id
-                        LEFT JOIN ActivityTypes at ON ra.ActivityTypeId = at.Id
+                        INNER JOIN Users u ON ra.UserId = u.Id
+                        WHERE u.IsActive = 1
                         ORDER BY ra.CreatedAt DESC";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -469,34 +694,16 @@ namespace TPASystem2
                                 string entityType = reader["EntityType"].ToString();
                                 string details = reader["Details"].ToString();
                                 DateTime createdAt = Convert.ToDateTime(reader["CreatedAt"]);
-                                string userEmail = reader["UserEmail"]?.ToString() ?? "System";
-                                string activityColor = reader["ActivityColor"]?.ToString() ?? "#2196f3";
+                                string userEmail = reader["Email"].ToString();
+                                string userRole = reader["Role"].ToString();
 
-                                // Get user initials
-                                string userInitials = GetUserInitials(userEmail);
-
-                                // Format time ago
-                                string timeAgo = FormatTimeAgo(createdAt);
-
-                                activitiesHtml.AppendLine(CreateActivityItem(
-                                    userInitials,
-                                    userEmail,
-                                    action,
-                                    details,
-                                    timeAgo,
-                                    activityColor,
-                                    createdAt > DateTime.Now.AddHours(-1) // Mark as new if within last hour
-                                ));
+                                activitiesHtml.AppendLine(CreateActivityItem(action, entityType, details, createdAt, userEmail, userRole));
                             }
 
                             // If no activities, show default message
                             if (activitiesHtml.Length == 0)
                             {
-                                activitiesHtml.AppendLine(@"
-                                    <li style='text-align: center; padding: 40px; color: #666;'>
-                                        <i class='material-icons' style='font-size: 48px; margin-bottom: 16px; opacity: 0.5;'>timeline</i><br>
-                                        No recent activities to display
-                                    </li>");
+                                activitiesHtml.AppendLine("<li class='activity-item'>No recent activities found.</li>");
                             }
 
                             litRecentActivities.Text = activitiesHtml.ToString();
@@ -510,146 +717,9 @@ namespace TPASystem2
                 var litRecentActivities = FindControlRecursive(Page, "litRecentActivities") as System.Web.UI.WebControls.Literal;
                 if (litRecentActivities != null)
                 {
-                    litRecentActivities.Text = @"
-                        <li style='text-align: center; padding: 40px; color: #666;'>
-                            <i class='material-icons' style='font-size: 48px; margin-bottom: 16px; opacity: 0.5;'>error</i><br>
-                            Unable to load recent activities
-                        </li>";
+                    litRecentActivities.Text = "<li class='activity-item'>Unable to load recent activities.</li>";
                 }
             }
-        }
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Recursively finds a control by ID in the page hierarchy
-        /// </summary>
-        private System.Web.UI.Control FindControlRecursive(System.Web.UI.Control rootControl, string controlId)
-        {
-            if (rootControl.ID == controlId)
-                return rootControl;
-
-            foreach (System.Web.UI.Control control in rootControl.Controls)
-            {
-                System.Web.UI.Control foundControl = FindControlRecursive(control, controlId);
-                if (foundControl != null)
-                    return foundControl;
-            }
-
-            return null;
-        }
-
-        private string CreateNavItem(string title, string url, string icon, bool isActive = false)
-        {
-            string activeClass = isActive ? " active" : "";
-            return $@"
-                <div class='nav-item{activeClass}'>
-                    <a href='{url}' class='nav-link'>
-                        <i class='material-icons nav-icon'>{icon}</i>
-                        <span class='nav-text'>{title}</span>
-                    </a>
-                </div>";
-        }
-
-        private string CreateStatCard(string title, string value, string icon, string color, string subtitle = "")
-        {
-            string subtitleHtml = !string.IsNullOrEmpty(subtitle) ? $"<div class='stat-change positive'>{subtitle}</div>" : "";
-
-            return $@"
-                <div class='stat-card'>
-                    <div class='stat-header'>
-                        <div class='stat-icon' style='background: {color};'>
-                            <i class='material-icons'>{icon}</i>
-                        </div>
-                    </div>
-                    <div class='stat-value'>{value}</div>
-                    <div class='stat-label'>{title}</div>
-                    {subtitleHtml}
-                </div>";
-        }
-
-        private string CreateQuickAction(string title, string description, string icon, string route, string actionKey)
-        {
-            return $@"
-                <a href='{route}' class='quick-action' onclick='handleQuickAction(""{actionKey}""); return false;'>
-                    <div class='quick-action-icon'>
-                        <i class='material-icons'>{icon}</i>
-                    </div>
-                    <div class='quick-action-title'>{title}</div>
-                    <div class='quick-action-desc'>{description}</div>
-                </a>";
-        }
-
-        private string CreateActivityItem(string userInitials, string userEmail, string action, string details, string timeAgo, string color, bool isNew = false)
-        {
-            string newBadge = isNew ? "<span class='activity-new'>NEW</span>" : "";
-            string userName = userEmail.Split('@')[0]; // Get username part of email
-
-            return $@"
-                <li class='activity-item'>
-                    <div class='activity-avatar' style='background: {color};'>
-                        {userInitials}
-                    </div>
-                    <div class='activity-content'>
-                        <div class='activity-header'>
-                            <span class='activity-user'>{userName}</span>
-                            <span class='activity-action'>{action}</span>
-                            {newBadge}
-                        </div>
-                        <div class='activity-details'>{details}</div>
-                        <div class='activity-time'>{timeAgo}</div>
-                    </div>
-                </li>";
-        }
-
-        private string CreateDefaultStats(string userRole)
-        {
-            var stats = new StringBuilder();
-
-            switch (userRole.ToUpper())
-            {
-                case "SUPERADMIN":
-                    stats.AppendLine(CreateStatCard("Total Users", "127", "people", "#2196f3", "All system users"));
-                    stats.AppendLine(CreateStatCard("Active Sessions", "23", "schedule", "#4caf50", "Currently online"));
-                    stats.AppendLine(CreateStatCard("System Health", "98%", "security", "#ff9800", "All systems operational"));
-                    stats.AppendLine(CreateStatCard("Database Size", "2.1GB", "storage", "#9c27b0", "Total data storage"));
-                    break;
-
-                case "ADMIN":
-                    stats.AppendLine(CreateStatCard("Total Employees", "98", "people", "#2196f3", "+3 this month"));
-                    stats.AppendLine(CreateStatCard("Pending Approvals", "8", "assignment", "#ff9800", "Needs attention"));
-                    stats.AppendLine(CreateStatCard("Active Programs", "12", "business", "#4caf50", "Running programs"));
-                    stats.AppendLine(CreateStatCard("System Alerts", "2", "warning", "#f44336", "Requires review"));
-                    break;
-
-                case "HRADMIN":
-                    stats.AppendLine(CreateStatCard("Active Employees", "98", "people", "#2196f3", "Current workforce"));
-                    stats.AppendLine(CreateStatCard("Leave Requests", "15", "event_available", "#ff9800", "Pending approval"));
-                    stats.AppendLine(CreateStatCard("New Hires", "5", "person_add", "#4caf50", "This month"));
-                    stats.AppendLine(CreateStatCard("Performance Reviews", "23", "star", "#9c27b0", "Due this quarter"));
-                    break;
-
-                case "PROGRAMDIRECTOR":
-                    stats.AppendLine(CreateStatCard("Program Performance", "94%", "trending_up", "#4caf50", "Above target"));
-                    stats.AppendLine(CreateStatCard("Budget Utilization", "78%", "account_balance", "#2196f3", "On track"));
-                    stats.AppendLine(CreateStatCard("Team Efficiency", "89%", "group_work", "#ff9800", "Good performance"));
-                    stats.AppendLine(CreateStatCard("Client Satisfaction", "96%", "thumb_up", "#9c27b0", "Excellent ratings"));
-                    break;
-
-                case "PROGRAMCOORDINATOR":
-                    stats.AppendLine(CreateStatCard("Assigned Programs", "8", "assignment", "#2196f3", "Active coordination"));
-                    stats.AppendLine(CreateStatCard("Team Members", "24", "groups", "#4caf50", "Under coordination"));
-                    stats.AppendLine(CreateStatCard("Tasks Completed", "156", "task_alt", "#ff9800", "This month"));
-                    stats.AppendLine(CreateStatCard("Upcoming Deadlines", "7", "schedule", "#f44336", "Next 2 weeks"));
-                    break;
-
-                case "EMPLOYEE":
-                default:
-                   
-                    break;
-            }
-
-            return stats.ToString();
         }
 
         private string CreateDefaultQuickActions(string userRole)
@@ -674,80 +744,238 @@ namespace TPASystem2
 
                 case "HRADMIN":
                     actions.AppendLine(CreateQuickAction("New Employee", "Add new team member", "person_add", "/employees/add", "add-employee"));
-                    actions.AppendLine(CreateQuickAction("Leave Approvals", "Review leave requests", "event_available", "/leave/approvals", "leave-approvals"));
-                    actions.AppendLine(CreateQuickAction("HR Reports", "Generate HR analytics", "assessment", "/reports/hr", "hr-reports"));
-                    actions.AppendLine(CreateQuickAction("Performance Reviews", "Manage evaluations", "star", "/hr/performance", "performance-reviews"));
+                    actions.AppendLine(CreateQuickAction("Leave Requests", "Review pending requests", "event_available", "/leave/requests", "leave-requests"));
+                    actions.AppendLine(CreateQuickAction("Employee Reports", "Generate HR reports", "assessment", "/reports/hr", "hr-reports"));
+                    actions.AppendLine(CreateQuickAction("Onboarding", "Manage new hire tasks", "assignment", "/onboarding", "onboarding"));
                     break;
 
                 case "PROGRAMDIRECTOR":
-                    actions.AppendLine(CreateQuickAction("Program Overview", "View all programs", "business", "/programs", "program-overview"));
-                    actions.AppendLine(CreateQuickAction("Strategic Planning", "Plan program strategy", "timeline", "/director/planning", "strategic-planning"));
-                    actions.AppendLine(CreateQuickAction("Budget Review", "Monitor program budgets", "account_balance", "/director/budget", "budget-review"));
-                    actions.AppendLine(CreateQuickAction("Performance Analytics", "View program metrics", "trending_up", "/director/analytics", "performance-analytics"));
+                    actions.AppendLine(CreateQuickAction("Team Overview", "View team status", "people", "/team/overview", "team-overview"));
+                    actions.AppendLine(CreateQuickAction("Approve Requests", "Review team requests", "assignment", "/approvals/team", "team-approvals"));
+                    actions.AppendLine(CreateQuickAction("Schedule Meeting", "Plan team meeting", "event", "/meetings/schedule", "schedule-meeting"));
+                    actions.AppendLine(CreateQuickAction("Performance Review", "Evaluate team members", "assessment", "/performance", "performance-review"));
                     break;
 
                 case "PROGRAMCOORDINATOR":
-                    actions.AppendLine(CreateQuickAction("Schedule Meeting", "Coordinate team meeting", "event", "/coordination/meeting", "schedule-meeting"));
-                    actions.AppendLine(CreateQuickAction("Task Assignment", "Assign team tasks", "assignment", "/coordination/tasks", "task-assignment"));
-                    actions.AppendLine(CreateQuickAction("Resource Planning", "Plan resource allocation", "inventory", "/coordinator/resources", "resource-planning"));
-                    actions.AppendLine(CreateQuickAction("Team Reports", "View team progress", "assessment", "/reports/team", "team-reports"));
+                    actions.AppendLine(CreateQuickAction("My Tasks", "View assigned tasks", "assignment", "/tasks/my", "my-tasks"));
+                    actions.AppendLine(CreateQuickAction("Time Entry", "Log work hours", "access_time", "/time/entry", "time-entry"));
+                    actions.AppendLine(CreateQuickAction("Submit Report", "Daily activity report", "description", "/reports/daily", "daily-report"));
+                    actions.AppendLine(CreateQuickAction("Request Leave", "Submit time off request", "event_available", "/leave/request", "request-leave"));
                     break;
 
                 case "EMPLOYEE":
                 default:
-                    actions.AppendLine(CreateQuickAction("Clock In/Out", "Record work time", "schedule", "/time-attendance", "clock-in"));
-                    actions.AppendLine(CreateQuickAction("Request Leave", "Submit time off request", "event_available", "/leave-management", "request-leave"));
-                    actions.AppendLine(CreateQuickAction("View Profile", "Update personal info", "person", "/profile", "view-profile"));
-                    actions.AppendLine(CreateQuickAction("My Documents", "Access my files", "folder", "/documents", "my-documents"));
+                    actions.AppendLine(CreateQuickAction("Time Entry", "Log work hours", "access_time", "/time/entry", "time-entry"));
+                    actions.AppendLine(CreateQuickAction("Request Leave", "Submit time off request", "event_available", "/leave/request", "request-leave"));
+                    actions.AppendLine(CreateQuickAction("My Profile", "Update personal info", "person", "/profile", "my-profile"));
+                    actions.AppendLine(CreateQuickAction("Submit Report", "Daily activity report", "description", "/reports/daily", "daily-report"));
                     break;
             }
 
             return actions.ToString();
         }
 
-        private bool HasAccess(string userRole, params string[] allowedRoles)
+        private string CreateQuickAction(string title, string description, string icon, string route, string actionKey)
         {
-            if (string.IsNullOrEmpty(userRole))
-                return false;
+            return $@"
+                <div class='quick-action' data-action-key='{actionKey}' onclick='window.location.href=""{route}""'>
+                    <div class='action-icon'>
+                        <i class='material-icons'>{icon}</i>
+                    </div>
+                    <div class='action-content'>
+                        <div class='action-title'>{title}</div>
+                        <div class='action-description'>{description}</div>
+                    </div>
+                </div>";
+        }
 
-            foreach (string role in allowedRoles)
+        private string CreateActivityItem(string action, string entityType, string details, DateTime createdAt, string userEmail, string userRole)
+        {
+            string timeAgo = GetTimeAgo(createdAt);
+            string userInitials = GetUserInitials(userEmail);
+            string color = GetRoleColor(userRole);
+            bool isNew = createdAt > DateTime.UtcNow.AddMinutes(-30);
+            string newBadge = isNew ? "<span class='activity-new'>NEW</span>" : "";
+            string userName = userEmail.Split('@')[0];
+
+            return $@"
+                <li class='activity-item'>
+                    <div class='activity-avatar' style='background: {color};'>
+                        {userInitials}
+                    </div>
+                    <div class='activity-content'>
+                        <div class='activity-header'>
+                            <span class='activity-user'>{userName}</span>
+                            <span class='activity-action'>{action}</span>
+                            {newBadge}
+                        </div>
+                        <div class='activity-details'>{details}</div>
+                        <div class='activity-time'>{timeAgo}</div>
+                    </div>
+                </li>";
+        }
+
+        private string GetColorClass(string color)
+        {
+            switch (color.ToLower())
             {
-                if (userRole.Equals(role, StringComparison.OrdinalIgnoreCase))
-                    return true;
+                case "primary": return "stat-primary";
+                case "success": return "stat-success";
+                case "warning": return "stat-warning";
+                case "danger": return "stat-danger";
+                case "info": return "stat-info";
+                case "secondary": return "stat-secondary";
+                default: return "stat-primary";
             }
+        }
 
-            return false;
+        private string GetRoleColor(string role)
+        {
+            switch (role.ToUpper())
+            {
+                case "SUPERADMIN": return "#e91e63";
+                case "ADMIN": return "#2196f3";
+                case "HRADMIN": return "#ff9800";
+                case "PROGRAMDIRECTOR": return "#4caf50";
+                case "PROGRAMCOORDINATOR": return "#9c27b0";
+                case "EMPLOYEE": return "#607d8b";
+                default: return "#757575";
+            }
         }
 
         private string GetUserInitials(string email)
         {
-            if (string.IsNullOrEmpty(email))
-                return "U";
+            if (string.IsNullOrEmpty(email)) return "??";
 
-            if (email.Contains("@"))
+            var parts = email.Split('@')[0].Split('.');
+            if (parts.Length >= 2)
             {
-                string username = email.Split('@')[0];
-                if (username.Length >= 2)
-                    return (username.Substring(0, 1) + username.Substring(1, 1)).ToUpper();
-                else
-                    return username.Substring(0, 1).ToUpper();
+                return (parts[0].Substring(0, 1) + parts[1].Substring(0, 1)).ToUpper();
             }
-
-            return email.Substring(0, Math.Min(2, email.Length)).ToUpper();
+            else
+            {
+                return email.Substring(0, Math.Min(2, email.Length)).ToUpper();
+            }
         }
 
-        private string FormatTimeAgo(DateTime dateTime)
+        private string GetTimeAgo(DateTime dateTime)
         {
-            var timeSpan = DateTime.Now.Subtract(dateTime);
+            var timeSpan = DateTime.UtcNow - dateTime;
 
-            if (timeSpan.Days > 0)
-                return $"{timeSpan.Days} day{(timeSpan.Days > 1 ? "s" : "")} ago";
-            else if (timeSpan.Hours > 0)
-                return $"{timeSpan.Hours} hour{(timeSpan.Hours > 1 ? "s" : "")} ago";
-            else if (timeSpan.Minutes > 0)
-                return $"{timeSpan.Minutes} minute{(timeSpan.Minutes > 1 ? "s" : "")} ago";
-            else
+            if (timeSpan.TotalMinutes < 1)
                 return "Just now";
+            else if (timeSpan.TotalMinutes < 60)
+                return $"{(int)timeSpan.TotalMinutes}m ago";
+            else if (timeSpan.TotalHours < 24)
+                return $"{(int)timeSpan.TotalHours}h ago";
+            else if (timeSpan.TotalDays < 7)
+                return $"{(int)timeSpan.TotalDays}d ago";
+            else
+                return dateTime.ToString("MMM dd");
+        }
+
+        private void LoadNavigationMenu(string userRole)
+        {
+            var litNavigation = FindControlRecursive(Page, "litNavigation") as System.Web.UI.WebControls.Literal;
+            if (litNavigation == null) return;
+
+            var menuHtml = new StringBuilder();
+
+            // Dashboard (everyone)
+            menuHtml.AppendLine(CreateNavItem("Dashboard", "/Dashboard.aspx", "dashboard"));
+
+            // Employees Management
+            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin", "ProgramDirector"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Employees", "/employees", "people"));
+            }
+
+            // Time Management
+            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin", "ProgramDirector", "ProgramCoordinator", "Employee"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Time Tracking", "/time", "access_time"));
+            }
+
+            // Leave Management
+            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin", "ProgramDirector", "ProgramCoordinator", "Employee"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Leave Management", "/leave", "event_available"));
+            }
+
+            // Reports
+            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin", "ProgramDirector"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Reports", "/reports", "assessment"));
+            }
+
+            // Administration
+            if (HasAccess(userRole, "Admin", "SuperAdmin"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Administration", "/admin", "settings"));
+            }
+
+            // Profile (everyone)
+            menuHtml.AppendLine(CreateNavItem("Profile", "/profile", "person"));
+
+            // Settings (Admin, HR only)
+            if (HasAccess(userRole, "Admin", "HR", "SuperAdmin", "HRAdmin"))
+            {
+                menuHtml.AppendLine(CreateNavItem("Settings", "/settings", "settings"));
+            }
+
+            // Help (everyone)
+            menuHtml.AppendLine(CreateNavItem("Help", "/help", "help"));
+
+            litNavigation.Text = menuHtml.ToString();
+        }
+
+        private string CreateNavItem(string title, string route, string icon)
+        {
+            string activeClass = IsCurrentPage(route) ? "nav-active" : "";
+            return $@"
+                <li class='nav-item {activeClass}'>
+                    <a href='{route}' class='nav-link'>
+                        <i class='material-icons'>{icon}</i>
+                        <span>{title}</span>
+                    </a>
+                </li>";
+        }
+
+        private bool IsCurrentPage(string route)
+        {
+            if (string.IsNullOrEmpty(route)) return false;
+
+            try
+            {
+                string currentPath = Request.Url.AbsolutePath.ToLower();
+                string cleanRoute = route.TrimStart('/').ToLower();
+
+                return currentPath.Contains(cleanRoute) || currentPath.EndsWith($"/{cleanRoute}");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool HasAccess(string userRole, params string[] allowedRoles)
+        {
+            return allowedRoles.Any(role => string.Equals(role, userRole, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void SetUserInformation(string userName, string userRole)
+        {
+            var litUserName = FindControlRecursive(Page, "litUserName") as System.Web.UI.WebControls.Literal;
+            var litUserRole = FindControlRecursive(Page, "litUserRole") as System.Web.UI.WebControls.Literal;
+            var litUserInitial = FindControlRecursive(Page, "litUserInitial") as System.Web.UI.WebControls.Literal;
+            var litHeaderUserInitial = FindControlRecursive(Page, "litHeaderUserInitial") as System.Web.UI.WebControls.Literal;
+
+            if (litUserName != null) litUserName.Text = userName;
+            if (litUserRole != null) litUserRole.Text = userRole;
+
+            string initials = GetUserInitials(userName);
+            if (litUserInitial != null) litUserInitial.Text = initials;
+            if (litHeaderUserInitial != null) litHeaderUserInitial.Text = initials;
         }
 
         private void LogUserActivity(int userId, string action, string entityType, string details, string ipAddress)
@@ -758,8 +986,8 @@ namespace TPASystem2
                 {
                     conn.Open();
                     string query = @"
-                        INSERT INTO RecentActivities (UserId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
-                        VALUES (@UserId, 1, @Action, @EntityType, @Details, @IPAddress, @CreatedAt)";
+                        INSERT INTO RecentActivities (UserId, Action, EntityType, Details, IPAddress, CreatedAt, ActivityTypeId)
+                        VALUES (@UserId, @Action, @EntityType, @Details, @IPAddress, @CreatedAt, 1)";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
@@ -769,6 +997,7 @@ namespace TPASystem2
                         cmd.Parameters.AddWithValue("@Details", details);
                         cmd.Parameters.AddWithValue("@IPAddress", ipAddress);
                         cmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+
                         cmd.ExecuteNonQuery();
                     }
                 }
@@ -781,61 +1010,38 @@ namespace TPASystem2
 
         private string GetClientIP()
         {
-            try
+            string ip = Request.Headers["X-Forwarded-For"];
+            if (string.IsNullOrEmpty(ip))
             {
-                string ipAddress = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
-                if (string.IsNullOrEmpty(ipAddress))
-                    ipAddress = Request.ServerVariables["REMOTE_ADDR"];
-                if (string.IsNullOrEmpty(ipAddress))
-                    ipAddress = Request.UserHostAddress;
-
-                return ipAddress ?? "Unknown";
+                ip = Request.Headers["X-Real-IP"];
             }
-            catch
+            if (string.IsNullOrEmpty(ip))
             {
-                return "Unknown";
+                ip = Request.UserHostAddress;
             }
+            return ip ?? "Unknown";
         }
 
         private void ShowError(string message)
         {
-            // You can implement error display logic here
-            // For now, just log to debug
             System.Diagnostics.Debug.WriteLine($"Dashboard Error: {message}");
         }
 
-        #endregion
-
-        #region MenuItem Class and Data Models
-
-        /// <summary>
-        /// MenuItem class for database-driven menus
-        /// </summary>
-        public class MenuItem
+        private Control FindControlRecursive(Control root, string id)
         {
-            public int Id { get; set; }
-            public string Name { get; set; } = string.Empty;
-            public string Route { get; set; } = string.Empty;
-            public string Icon { get; set; } = string.Empty;
-            public int? ParentId { get; set; }
-            public int SortOrder { get; set; }
-            public bool IsActive { get; set; }
-            public bool CanView { get; set; }
-            public bool CanEdit { get; set; }
-            public bool CanDelete { get; set; }
+            if (root.ID == id)
+                return root;
+
+            foreach (Control control in root.Controls)
+            {
+                Control found = FindControlRecursive(control, id);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Extension methods for LINQ operations
-    /// </summary>
-    public static class LinqExtensions
-    {
-        public static IEnumerable<T> WhereIf<T>(this IEnumerable<T> source, bool condition, Func<T, bool> predicate)
-        {
-            return condition ? source.Where(predicate) : source;
-        }
     }
 }
