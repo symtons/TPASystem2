@@ -11,53 +11,53 @@ namespace TPASystem2.LeaveManagement
 {
 
 
-    public partial class LeaveCalendar
+    public partial class EditLeaveBalance
     {
 
         /// <summary>
-        /// litCurrentUser control.
+        /// litEmployeeName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litCurrentUser;
+        protected global::System.Web.UI.WebControls.Literal litEmployeeName;
 
         /// <summary>
-        /// litViewPermission control.
+        /// litEmployeeNumber control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litViewPermission;
+        protected global::System.Web.UI.WebControls.Literal litEmployeeNumber;
 
         /// <summary>
-        /// litCurrentMonth control.
+        /// litDepartment control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litCurrentMonth;
+        protected global::System.Web.UI.WebControls.Literal litDepartment;
 
         /// <summary>
-        /// btnRequestLeave control.
+        /// litLeaveType control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnRequestLeave;
+        protected global::System.Web.UI.WebControls.Literal litLeaveType;
 
         /// <summary>
-        /// btnBackToManagement control.
+        /// btnBackToLeaveManagement control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnBackToManagement;
+        protected global::System.Web.UI.WebControls.Button btnBackToLeaveManagement;
 
         /// <summary>
         /// pnlMessage control.
@@ -78,174 +78,219 @@ namespace TPASystem2.LeaveManagement
         protected global::System.Web.UI.WebControls.Literal litMessage;
 
         /// <summary>
-        /// btnPrevMonth control.
+        /// litCurrentYear control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnPrevMonth;
+        protected global::System.Web.UI.WebControls.Literal litCurrentYear;
 
         /// <summary>
-        /// litMonthYear control.
+        /// litCurrentAllocated control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litMonthYear;
+        protected global::System.Web.UI.WebControls.Literal litCurrentAllocated;
 
         /// <summary>
-        /// btnNextMonth control.
+        /// litCurrentUsed control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnNextMonth;
+        protected global::System.Web.UI.WebControls.Literal litCurrentUsed;
 
         /// <summary>
-        /// btnToday control.
+        /// litCurrentRemaining control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnToday;
+        protected global::System.Web.UI.WebControls.Literal litCurrentRemaining;
 
         /// <summary>
-        /// ddlViewType control.
+        /// txtAllocatedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlViewType;
+        protected global::System.Web.UI.WebControls.TextBox txtAllocatedDays;
 
         /// <summary>
-        /// ddlDepartmentFilter control.
+        /// rfvAllocatedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlDepartmentFilter;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvAllocatedDays;
 
         /// <summary>
-        /// ddlLeaveTypeFilter control.
+        /// rvAllocatedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlLeaveTypeFilter;
+        protected global::System.Web.UI.WebControls.RangeValidator rvAllocatedDays;
 
         /// <summary>
-        /// calLeaveCalendar control.
+        /// txtUsedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Calendar calLeaveCalendar;
+        protected global::System.Web.UI.WebControls.TextBox txtUsedDays;
 
         /// <summary>
-        /// rptLegend control.
+        /// rfvUsedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptLegend;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvUsedDays;
 
         /// <summary>
-        /// pnlDayDetails control.
+        /// rvUsedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlDayDetails;
+        protected global::System.Web.UI.WebControls.RangeValidator rvUsedDays;
 
         /// <summary>
-        /// litSelectedDate control.
+        /// cvUsedDays control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litSelectedDate;
+        protected global::System.Web.UI.WebControls.CustomValidator cvUsedDays;
 
         /// <summary>
-        /// btnCloseDayDetails control.
+        /// txtEffectiveDate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.LinkButton btnCloseDayDetails;
+        protected global::System.Web.UI.WebControls.TextBox txtEffectiveDate;
 
         /// <summary>
-        /// gvDayLeaveDetails control.
+        /// rfvEffectiveDate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView gvDayLeaveDetails;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvEffectiveDate;
 
         /// <summary>
-        /// litTotalLeaves control.
+        /// txtExpiryDate control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litTotalLeaves;
+        protected global::System.Web.UI.WebControls.TextBox txtExpiryDate;
 
         /// <summary>
-        /// litUniqueEmployees control.
+        /// txtAdjustmentReason control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litUniqueEmployees;
+        protected global::System.Web.UI.WebControls.TextBox txtAdjustmentReason;
 
         /// <summary>
-        /// litTotalDays control.
+        /// rfvAdjustmentReason control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litTotalDays;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator rfvAdjustmentReason;
 
         /// <summary>
-        /// litBusiestDay control.
+        /// btnSaveChanges control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litBusiestDay;
+        protected global::System.Web.UI.WebControls.Button btnSaveChanges;
 
         /// <summary>
-        /// hfCurrentDate control.
+        /// btnResetToDefault control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfCurrentDate;
+        protected global::System.Web.UI.WebControls.Button btnResetToDefault;
 
         /// <summary>
-        /// hfSelectedDate control.
+        /// btnCancel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField hfSelectedDate;
+        protected global::System.Web.UI.WebControls.Button btnCancel;
+
+        /// <summary>
+        /// gvBalanceHistory control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.GridView gvBalanceHistory;
+
+        /// <summary>
+        /// hfEmployeeId control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfEmployeeId;
+
+        /// <summary>
+        /// hfLeaveType control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfLeaveType;
+
+        /// <summary>
+        /// hfOriginalAllocated control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfOriginalAllocated;
+
+        /// <summary>
+        /// hfOriginalUsed control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.HiddenField hfOriginalUsed;
     }
 }

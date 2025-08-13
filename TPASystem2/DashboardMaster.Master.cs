@@ -131,7 +131,7 @@ namespace TPASystem2
                         // HR Admin gets HR-focused functionality - DYNAMIC PATHS
                         menuHtml.AppendLine(CreateNavItem("Employees", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
                         menuHtml.AppendLine(CreateNavItem("Time Management", $"{appPath}/TimeManagement/TimeManagement.aspx", "schedule", currentPage == "time-management"));
-                        menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                        menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement/LeaveManagement.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("HR Reports", "/reports", "assessment", currentPage == "reports"));
                         menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 

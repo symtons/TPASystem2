@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace TPASystem2.LeaveManagement
@@ -12,56 +12,129 @@ namespace TPASystem2.LeaveManagement
     public partial class LeaveCalendar : System.Web.UI.Page
     {
         private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-        private DateTime currentDate;
+
+        private DateTime CurrentDate
+        {
+            get
+            {
+                if (DateTime.TryParse(hfCurrentDate.Value, out DateTime date))
+                    return date;
+                return DateTime.Today;
+            }
+            set
+            {
+                hfCurrentDate.Value = value.ToString("yyyy-MM-dd");
+            }
+        }
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
-                //if (Session["UserId"] == null)
-                //{
-                //    Response.Redirect("~/Login.aspx", false);
-                //    return;
-                //}
+                if (!IsAuthorizedUser())
+                {
+                    Response.Redirect("~/Dashboard.aspx");
+                    return;
+                }
 
                 InitializePage();
-                LoadDepartments();
-                SetViewTypeBasedOnRole();
-                LoadCalendar();
             }
         }
 
         #region Page Initialization
 
-        private void InitializePage()
+        private bool IsAuthorizedUser()
         {
-            // Get current date from ViewState or use today's date
-            if (ViewState["CurrentDate"] != null)
-            {
-                currentDate = (DateTime)ViewState["CurrentDate"];
-            }
-            else
-            {
-                currentDate = DateTime.Today;
-                ViewState["CurrentDate"] = currentDate;
-            }
-
-            // Set calendar date and display current month
-            calLeaveCalendar.VisibleDate = currentDate;
-            calLeaveCalendar.SelectedDate = currentDate;
-            litCurrentMonth.Text = currentDate.ToString("MMMM yyyy");
+            return Session["UserId"] != null;
         }
 
-        private void LoadDepartments()
+        private void InitializePage()
+        {
+            try
+            {
+                CurrentDate = DateTime.Today;
+                LoadUserInfo();
+                LoadFilterDropdowns();
+                SetupViewType();
+                LoadCalendar();
+                LoadLegend();
+                LoadMonthlyStatistics();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error loading calendar.", "error");
+            }
+        }
+
+        private void LoadUserInfo()
+        {
+            try
+            {
+                int userId = Convert.ToInt32(Session["UserId"]);
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = @"
+                        SELECT CONCAT(FirstName, ' ', LastName) as FullName
+                        FROM Employees 
+                        WHERE UserId = @UserId";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        object result = cmd.ExecuteScalar();
+
+                        if (result != null)
+                        {
+                            litCurrentUser.Text = result.ToString();
+                        }
+                        else
+                        {
+                            litCurrentUser.Text = "User";
+                        }
+                    }
+                }
+
+                // Set permission based on session role (fallback)
+                string userRole = Session["UserRole"]?.ToString() ?? "";
+                switch (userRole.ToUpper())
+                {
+                    case "HRADMIN":
+                    case "ADMIN":
+                        litViewPermission.Text = "Full Company Access";
+                        break;
+                    case "MANAGER":
+                    case "SUPERVISOR":
+                        litViewPermission.Text = "Team Management Access";
+                        break;
+                    default:
+                        litViewPermission.Text = "Personal View Access";
+                        break;
+                }
+
+                litCurrentMonth.Text = CurrentDate.ToString("MMMM yyyy");
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                litCurrentUser.Text = "User";
+                litViewPermission.Text = "Standard Access";
+            }
+        }
+
+        private void LoadFilterDropdowns()
         {
             try
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    string query = "SELECT Id, Name FROM Departments WHERE IsActive = 1 ORDER BY Name";
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    // Load Departments
+                    string deptQuery = "SELECT Id, Name FROM Departments ORDER BY Name";
+                    using (SqlCommand cmd = new SqlCommand(deptQuery, conn))
                     {
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -72,7 +145,54 @@ namespace TPASystem2.LeaveManagement
                             {
                                 ddlDepartmentFilter.Items.Add(new ListItem(
                                     reader["Name"].ToString(),
-                                    reader["Id"].ToString()));
+                                    reader["Id"].ToString()
+                                ));
+                            }
+                        }
+                    }
+
+                    // Load Leave Types - check if LeaveTypes table exists
+                    string checkLeaveTypesQuery = @"
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.TABLES 
+                        WHERE TABLE_NAME = 'LeaveTypes'";
+
+                    using (SqlCommand checkCmd = new SqlCommand(checkLeaveTypesQuery, conn))
+                    {
+                        int tableExists = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                        ddlLeaveTypeFilter.Items.Clear();
+                        ddlLeaveTypeFilter.Items.Add(new ListItem("All Leave Types", ""));
+
+                        if (tableExists > 0)
+                        {
+                            string leaveTypeQuery = "SELECT DISTINCT TypeName FROM LeaveTypes ORDER BY TypeName";
+                            using (SqlCommand cmd = new SqlCommand(leaveTypeQuery, conn))
+                            {
+                                using (SqlDataReader reader = cmd.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        string typeName = reader["TypeName"].ToString();
+                                        ddlLeaveTypeFilter.Items.Add(new ListItem(typeName, typeName));
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Fallback: get distinct leave types from LeaveRequests
+                            string fallbackQuery = "SELECT DISTINCT LeaveType FROM LeaveRequests WHERE LeaveType IS NOT NULL ORDER BY LeaveType";
+                            using (SqlCommand cmd = new SqlCommand(fallbackQuery, conn))
+                            {
+                                using (SqlDataReader reader = cmd.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        string typeName = reader["LeaveType"].ToString();
+                                        ddlLeaveTypeFilter.Items.Add(new ListItem(typeName, typeName));
+                                    }
+                                }
                             }
                         }
                     }
@@ -81,38 +201,101 @@ namespace TPASystem2.LeaveManagement
             catch (Exception ex)
             {
                 LogError(ex);
-                ShowMessage("Error loading departments.", "error");
             }
         }
 
-        private void SetViewTypeBasedOnRole()
+        private void SetupViewType()
         {
-            string userRole = Session["UserRole"]?.ToString() ?? "";
-
-            // Set default view based on user role
-            switch (userRole)
+            try
             {
-                case "SUPERADMIN":
-                case "HRADMIN":
-                    ddlViewType.SelectedValue = "all";
-                    break;
-                case "MANAGER":
-                    ddlViewType.SelectedValue = "team";
-                    break;
-                default:
-                    ddlViewType.SelectedValue = "my";
-                    break;
-            }
+                string userRole = Session["UserRole"]?.ToString() ?? "";
 
-            // Restrict view options based on role
-            if (userRole != "SUPERADMIN" && userRole != "HRADMIN")
-            {
-                // Remove "All Leaves" option for non-admin users
-                ListItem allLeavesItem = ddlViewType.Items.FindByValue("all");
-                if (allLeavesItem != null && userRole != "MANAGER")
+                ddlViewType.Items.Clear();
+                ddlViewType.Items.Add(new ListItem("My Leaves", "my"));
+
+                // Add options based on session role
+                switch (userRole.ToUpper())
                 {
-                    ddlViewType.Items.Remove(allLeavesItem);
+                    case "HRADMIN":
+                    case "ADMIN":
+                        ddlViewType.Items.Add(new ListItem("Team Leaves", "team"));
+                        ddlViewType.Items.Add(new ListItem("Department Leaves", "department"));
+                        ddlViewType.Items.Add(new ListItem("All Leaves", "all"));
+                        ddlViewType.SelectedValue = "all";
+                        break;
+                    case "MANAGER":
+                    case "SUPERVISOR":
+                        ddlViewType.Items.Add(new ListItem("Team Leaves", "team"));
+                        ddlViewType.Items.Add(new ListItem("Department Leaves", "department"));
+                        ddlViewType.SelectedValue = "team";
+                        break;
+                    default:
+                        ddlViewType.SelectedValue = "my";
+                        break;
                 }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ddlViewType.Items.Clear();
+                ddlViewType.Items.Add(new ListItem("My Leaves", "my"));
+                ddlViewType.SelectedValue = "my";
+            }
+        }
+
+        private void LoadLegend()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    // Check if LeaveTypes table exists
+                    string checkQuery = @"
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.TABLES 
+                        WHERE TABLE_NAME = 'LeaveTypes'";
+
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    {
+                        int tableExists = Convert.ToInt32(checkCmd.ExecuteScalar());
+
+                        if (tableExists > 0)
+                        {
+                            string query = "SELECT TypeName FROM LeaveTypes ORDER BY TypeName";
+                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            {
+                                using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                                {
+                                    DataTable dt = new DataTable();
+                                    adapter.Fill(dt);
+                                    rptLegend.DataSource = dt;
+                                    rptLegend.DataBind();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // Fallback: create legend from existing leave requests
+                            string fallbackQuery = "SELECT DISTINCT LeaveType as TypeName FROM LeaveRequests WHERE LeaveType IS NOT NULL ORDER BY LeaveType";
+                            using (SqlCommand cmd = new SqlCommand(fallbackQuery, conn))
+                            {
+                                using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                                {
+                                    DataTable dt = new DataTable();
+                                    adapter.Fill(dt);
+                                    rptLegend.DataSource = dt;
+                                    rptLegend.DataBind();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
             }
         }
 
@@ -124,13 +307,10 @@ namespace TPASystem2.LeaveManagement
         {
             try
             {
-                // Force calendar to refresh by setting visible date
-                calLeaveCalendar.VisibleDate = currentDate;
-
-                // Update month display
-                litCurrentMonth.Text = currentDate.ToString("MMMM yyyy");
-
-                // The actual leave data loading happens in DayRender event
+                calLeaveCalendar.VisibleDate = CurrentDate;
+                calLeaveCalendar.TodaysDate = DateTime.Today;
+                litMonthYear.Text = CurrentDate.ToString("MMMM yyyy");
+                litCurrentMonth.Text = CurrentDate.ToString("MMMM yyyy");
             }
             catch (Exception ex)
             {
@@ -144,14 +324,12 @@ namespace TPASystem2.LeaveManagement
             try
             {
                 DateTime date = e.Day.Date;
-
-                // Get leave requests for this date
                 var leaveRequests = GetLeaveRequestsForDate(date);
 
                 if (leaveRequests.Count > 0)
                 {
-                    // Add leave indicator based on leave types
-                    var leaveTypes = leaveRequests.Select(lr => lr.LeaveType.ToLower()).Distinct().ToList();
+                    // Add leave indicator
+                    var leaveTypes = leaveRequests.Select(lr => lr.LeaveType.ToLower().Replace(" ", "")).Distinct().ToList();
 
                     string indicatorClass = "leave-indicator ";
                     if (leaveTypes.Count > 1)
@@ -163,51 +341,51 @@ namespace TPASystem2.LeaveManagement
                         indicatorClass += leaveTypes.First();
                     }
 
-                    // Create indicator div
                     var indicator = new System.Web.UI.HtmlControls.HtmlGenericControl("div");
                     indicator.Attributes["class"] = indicatorClass;
-                    e.Cell.Controls.Add(indicator);
+                    indicator.Attributes["title"] = BuildTooltip(leaveRequests);
 
-                    // Add tooltip with leave details
-                    string tooltip = string.Join(", ", leaveRequests.Select(lr =>
-                        $"{lr.EmployeeName} ({lr.LeaveType})"));
-
-                    if (tooltip.Length > 50)
+                    // Apply color if available
+                    if (leaveRequests.Count == 1 && !string.IsNullOrEmpty(leaveRequests.First().ColorCode))
                     {
-                        tooltip = tooltip.Substring(0, 47) + "...";
+                        indicator.Style["background"] = leaveRequests.First().ColorCode;
                     }
 
-                    e.Cell.ToolTip = tooltip;
+                    e.Cell.Controls.Add(indicator);
 
-                    // Make the cell clickable for more details
-                    e.Cell.Attributes["onclick"] = $"showDayDetails('{date:yyyy-MM-dd}')";
-                    e.Cell.Style["cursor"] = "pointer";
-                }
-
-                // Highlight weekends
-                if (e.Day.IsWeekend)
-                {
-                    e.Cell.CssClass += " calendar-weekend";
+                    // Add count if multiple people
+                    if (leaveRequests.Count > 1)
+                    {
+                        var countLabel = new System.Web.UI.HtmlControls.HtmlGenericControl("span");
+                        countLabel.Attributes["class"] = "leave-count";
+                        countLabel.InnerText = leaveRequests.Count.ToString();
+                        e.Cell.Controls.Add(countLabel);
+                    }
                 }
 
                 // Highlight today
-                if (e.Day.Date == DateTime.Today)
+                if (date.Date == DateTime.Today)
                 {
-                    e.Cell.Style["font-weight"] = "bold";
-                    e.Cell.Style["border"] = "2px solid #007bff";
+                    e.Cell.CssClass += " today";
                 }
+
+                // Make cell clickable
+                e.Cell.Attributes["onclick"] = $"__doPostBack('{calLeaveCalendar.UniqueID}', 'SELECT${date:yyyy-MM-dd}');";
+                e.Cell.Style["cursor"] = "pointer";
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                // Don't show error to user during day render to avoid multiple messages
             }
         }
 
-        protected void calLeaveCalendar_SelectionChanged(object sender, EventArgs e)
+        private string BuildTooltip(List<LeaveRequestInfo> requests)
         {
-            DateTime selectedDate = calLeaveCalendar.SelectedDate;
-            ShowDayDetails(selectedDate);
+            if (requests.Count == 1)
+            {
+                return $"{requests.First().EmployeeName} - {requests.First().LeaveType}";
+            }
+            return $"{requests.Count} employee(s) on leave";
         }
 
         private List<LeaveRequestInfo> GetLeaveRequestsForDate(DateTime date)
@@ -219,12 +397,11 @@ namespace TPASystem2.LeaveManagement
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-
                     string query = BuildLeaveQuery();
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
-                        AddLeaveQueryParameters(cmd, date);
+                        AddQueryParameters(cmd, date);
 
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
@@ -233,9 +410,11 @@ namespace TPASystem2.LeaveManagement
                                 leaveRequests.Add(new LeaveRequestInfo
                                 {
                                     Id = Convert.ToInt32(reader["Id"]),
-                                    EmployeeName = reader["EmployeeName"].ToString(),
+                                    EmployeeName = reader["EmployeeName"]?.ToString() ?? "Unknown",
                                     Department = reader["Department"]?.ToString() ?? "Not Assigned",
                                     LeaveType = reader["LeaveType"].ToString(),
+                                    ColorCode = reader["ColorCode"].ToString(),
+                                    //ColorCode = reader.IsDBNull("ColorCode") ? "" : reader["ColorCode"].ToString(),
                                     StartDate = Convert.ToDateTime(reader["StartDate"]),
                                     EndDate = Convert.ToDateTime(reader["EndDate"]),
                                     DaysRequested = Convert.ToDecimal(reader["DaysRequested"]),
@@ -259,50 +438,102 @@ namespace TPASystem2.LeaveManagement
             string baseQuery = @"
                 SELECT 
                     lr.Id,
+                    CONCAT(e.FirstName, ' ', e.LastName) as EmployeeName,
+                    ISNULL(d.Name, 'Not Assigned') as Department,
                     lr.LeaveType,
                     lr.StartDate,
                     lr.EndDate,
                     lr.DaysRequested,
-                    lr.Status,
-                    CONCAT(e.FirstName, ' ', e.LastName) as EmployeeName,
-                    d.Name as Department
+                    lr.Status";
+
+            // Check if LeaveTypes table exists and has ColorCode column
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string checkQuery = @"
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.COLUMNS 
+                        WHERE TABLE_NAME = 'LeaveTypes' AND COLUMN_NAME = 'ColorCode'";
+
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    {
+                        int columnExists = Convert.ToInt32(checkCmd.ExecuteScalar());
+                        if (columnExists > 0)
+                        {
+                            baseQuery += ", ISNULL(lt.ColorCode, '#757575') as ColorCode";
+                        }
+                        else
+                        {
+                            baseQuery += ", '#757575' as ColorCode";
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                baseQuery += ", '#757575' as ColorCode";
+            }
+
+            baseQuery += @"
                 FROM LeaveRequests lr
                 INNER JOIN Employees e ON lr.EmployeeId = e.Id
-                LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                LEFT JOIN Departments d ON e.DepartmentId = d.Id";
+
+            // Add LeaveTypes join if table exists
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string checkQuery = @"
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.TABLES 
+                        WHERE TABLE_NAME = 'LeaveTypes'";
+
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                    {
+                        int tableExists = Convert.ToInt32(checkCmd.ExecuteScalar());
+                        if (tableExists > 0)
+                        {
+                            baseQuery += " LEFT JOIN LeaveTypes lt ON lr.LeaveType = lt.TypeName";
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Continue without join
+            }
+
+            baseQuery += @"
                 WHERE lr.Status = 'Approved'
                 AND @Date BETWEEN lr.StartDate AND lr.EndDate";
 
-            // Add view type filter
+            // Add view filters
             string viewType = ddlViewType.SelectedValue;
-            int currentUserId = Convert.ToInt32(Session["UserId"]);
-
             switch (viewType)
             {
                 case "my":
                     baseQuery += " AND e.UserId = @CurrentUserId";
                     break;
                 case "team":
-                    baseQuery += @" AND e.ManagerId IN (
-                        SELECT Id FROM Employees WHERE UserId = @CurrentUserId
-                    ) OR e.UserId = @CurrentUserId";
+                    baseQuery += @" AND (e.ManagerId = (SELECT Id FROM Employees WHERE UserId = @CurrentUserId) 
+                                   OR e.UserId = @CurrentUserId)";
                     break;
                 case "department":
-                    baseQuery += @" AND e.DepartmentId IN (
-                        SELECT DepartmentId FROM Employees WHERE UserId = @CurrentUserId
-                    )";
+                    baseQuery += @" AND e.DepartmentId = (SELECT DepartmentId FROM Employees WHERE UserId = @CurrentUserId)";
                     break;
-                case "all":
-                    // No additional filter for admin users
-                    break;
+                    // "all" case - no additional filter
             }
 
-            // Add department filter
+            // Add optional filters
             if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
             {
                 baseQuery += " AND e.DepartmentId = @DepartmentFilter";
             }
 
-            // Add leave type filter
             if (!string.IsNullOrEmpty(ddlLeaveTypeFilter.SelectedValue))
             {
                 baseQuery += " AND lr.LeaveType = @LeaveTypeFilter";
@@ -311,16 +542,14 @@ namespace TPASystem2.LeaveManagement
             return baseQuery;
         }
 
-        private void AddLeaveQueryParameters(SqlCommand cmd, DateTime date)
+        private void AddQueryParameters(SqlCommand cmd, DateTime date)
         {
             cmd.Parameters.AddWithValue("@Date", date);
 
             string viewType = ddlViewType.SelectedValue;
-            int currentUserId = Convert.ToInt32(Session["UserId"]);
-
-            if (viewType == "my" || viewType == "team" || viewType == "department")
+            if (viewType != "all")
             {
-                cmd.Parameters.AddWithValue("@CurrentUserId", currentUserId);
+                cmd.Parameters.AddWithValue("@CurrentUserId", Convert.ToInt32(Session["UserId"]));
             }
 
             if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
@@ -334,24 +563,84 @@ namespace TPASystem2.LeaveManagement
             }
         }
 
-        private void ShowDayDetails(DateTime selectedDate)
+        #endregion
+
+        #region Event Handlers
+
+        protected void btnPrevMonth_Click(object sender, EventArgs e)
+        {
+            CurrentDate = CurrentDate.AddMonths(-1);
+            LoadCalendar();
+            LoadMonthlyStatistics();
+        }
+
+        protected void btnNextMonth_Click(object sender, EventArgs e)
+        {
+            CurrentDate = CurrentDate.AddMonths(1);
+            LoadCalendar();
+            LoadMonthlyStatistics();
+        }
+
+        protected void btnToday_Click(object sender, EventArgs e)
+        {
+            CurrentDate = DateTime.Today;
+            LoadCalendar();
+            LoadMonthlyStatistics();
+        }
+
+        protected void btnRequestLeave_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/LeaveManagement/EmployeeRequestLeave.aspx");
+        }
+
+        protected void btnBackToManagement_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/LeaveManagement/EmployeeLeavePortal.aspx");
+        }
+
+        protected void ddlViewType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadCalendar();
+            LoadMonthlyStatistics();
+        }
+
+        protected void ddlDepartmentFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadCalendar();
+            LoadMonthlyStatistics();
+        }
+
+        protected void ddlLeaveTypeFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadCalendar();
+            LoadMonthlyStatistics();
+        }
+
+        protected void calLeaveCalendar_SelectionChanged(object sender, EventArgs e)
+        {
+            DateTime selectedDate = calLeaveCalendar.SelectedDate;
+            ShowDayDetails(selectedDate);
+        }
+
+        protected void btnCloseDayDetails_Click(object sender, EventArgs e)
+        {
+            pnlDayDetails.Visible = false;
+        }
+
+        #endregion
+
+        #region Day Details
+
+        private void ShowDayDetails(DateTime date)
         {
             try
             {
-                var leaveRequests = GetLeaveRequestsForDate(selectedDate);
+                hfSelectedDate.Value = date.ToString("yyyy-MM-dd");
+                litSelectedDate.Text = date.ToString("MMMM dd, yyyy");
 
-                litSelectedDate.Text = selectedDate.ToString("MMMM dd, yyyy");
-
-                if (leaveRequests.Count > 0)
-                {
-                    gvDayLeaves.DataSource = leaveRequests;
-                    gvDayLeaves.DataBind();
-                }
-                else
-                {
-                    gvDayLeaves.DataSource = null;
-                    gvDayLeaves.DataBind();
-                }
+                var leaveRequests = GetLeaveRequestsForDate(date);
+                gvDayLeaveDetails.DataSource = leaveRequests;
+                gvDayLeaveDetails.DataBind();
 
                 pnlDayDetails.Visible = true;
             }
@@ -362,52 +651,175 @@ namespace TPASystem2.LeaveManagement
             }
         }
 
+        protected string GetLeaveProgress(object startDate, object endDate)
+        {
+            try
+            {
+                DateTime start = Convert.ToDateTime(startDate);
+                DateTime end = Convert.ToDateTime(endDate);
+                DateTime today = DateTime.Today;
+
+                if (today < start)
+                {
+                    int daysUntil = (start - today).Days;
+                    return $"Starts in {daysUntil} day{(daysUntil != 1 ? "s" : "")}";
+                }
+                else if (today >= start && today <= end)
+                {
+                    int totalDays = (end - start).Days + 1;
+                    int daysPassed = (today - start).Days + 1;
+                    return $"Day {daysPassed} of {totalDays}";
+                }
+                else
+                {
+                    return "Completed";
+                }
+            }
+            catch
+            {
+                return "Unknown";
+            }
+        }
+
         #endregion
 
-        #region Event Handlers
+        #region Monthly Statistics
 
-        protected void btnRequestLeave_Click(object sender, EventArgs e)
+        private void LoadMonthlyStatistics()
         {
-            Response.Redirect("RequestLeave.aspx", false);
+            try
+            {
+                DateTime monthStart = new DateTime(CurrentDate.Year, CurrentDate.Month, 1);
+                DateTime monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string statsQuery = BuildStatisticsQuery();
+                    using (SqlCommand cmd = new SqlCommand(statsQuery, conn))
+                    {
+                        AddStatisticsParameters(cmd, monthStart, monthEnd);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                litTotalLeaves.Text = reader["TotalLeaves"]?.ToString() ?? "0";
+                                litUniqueEmployees.Text = reader["UniqueEmployees"]?.ToString() ?? "0";
+                                litTotalDays.Text = reader["TotalDays"]?.ToString() ?? "0";
+                            }
+                            else
+                            {
+                                litTotalLeaves.Text = "0";
+                                litUniqueEmployees.Text = "0";
+                                litTotalDays.Text = "0";
+                            }
+                        }
+                    }
+
+                    // Get busiest day (simplified)
+                    string busiestDayQuery = @"
+                        SELECT TOP 1 CAST(lr.StartDate AS DATE) as BusiestDate
+                        FROM LeaveRequests lr
+                        INNER JOIN Employees e ON lr.EmployeeId = e.Id
+                        WHERE lr.Status = 'Approved'
+                        AND lr.StartDate BETWEEN @MonthStart AND @MonthEnd
+                        GROUP BY CAST(lr.StartDate AS DATE)
+                        ORDER BY COUNT(*) DESC";
+
+                    using (SqlCommand cmd = new SqlCommand(busiestDayQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@MonthStart", monthStart);
+                        cmd.Parameters.AddWithValue("@MonthEnd", monthEnd);
+
+                        object result = cmd.ExecuteScalar();
+                        if (result != null && result != DBNull.Value)
+                        {
+                            DateTime busiestDay = Convert.ToDateTime(result);
+                            litBusiestDay.Text = busiestDay.ToString("MMM dd");
+                        }
+                        else
+                        {
+                            litBusiestDay.Text = "N/A";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                // Set defaults
+                litTotalLeaves.Text = "0";
+                litUniqueEmployees.Text = "0";
+                litTotalDays.Text = "0";
+                litBusiestDay.Text = "N/A";
+            }
         }
 
-        protected void btnBackToDashboard_Click(object sender, EventArgs e)
+        private string BuildStatisticsQuery()
         {
-            Response.Redirect("Default.aspx", false);
+            string baseQuery = @"
+                SELECT 
+                    COUNT(DISTINCT lr.Id) as TotalLeaves,
+                    COUNT(DISTINCT lr.EmployeeId) as UniqueEmployees,
+                    ISNULL(SUM(lr.DaysRequested), 0) as TotalDays
+                FROM LeaveRequests lr
+                INNER JOIN Employees e ON lr.EmployeeId = e.Id
+                LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                WHERE lr.Status = 'Approved'
+                AND (lr.StartDate <= @MonthEnd AND lr.EndDate >= @MonthStart)";
+
+            // Add view type filter
+            string viewType = ddlViewType.SelectedValue;
+            switch (viewType)
+            {
+                case "my":
+                    baseQuery += " AND e.UserId = @CurrentUserId";
+                    break;
+                case "team":
+                    baseQuery += @" AND (e.ManagerId = (SELECT Id FROM Employees WHERE UserId = @CurrentUserId) 
+                                   OR e.UserId = @CurrentUserId)";
+                    break;
+                case "department":
+                    baseQuery += @" AND e.DepartmentId = (SELECT DepartmentId FROM Employees WHERE UserId = @CurrentUserId)";
+                    break;
+            }
+
+            // Add filters
+            if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
+            {
+                baseQuery += " AND e.DepartmentId = @DepartmentFilter";
+            }
+
+            if (!string.IsNullOrEmpty(ddlLeaveTypeFilter.SelectedValue))
+            {
+                baseQuery += " AND lr.LeaveType = @LeaveTypeFilter";
+            }
+
+            return baseQuery;
         }
 
-        protected void btnPrevMonth_Click(object sender, EventArgs e)
+        private void AddStatisticsParameters(SqlCommand cmd, DateTime monthStart, DateTime monthEnd)
         {
-            currentDate = currentDate.AddMonths(-1);
-            ViewState["CurrentDate"] = currentDate;
-            LoadCalendar();
-            pnlDayDetails.Visible = false;
-        }
+            cmd.Parameters.AddWithValue("@MonthStart", monthStart);
+            cmd.Parameters.AddWithValue("@MonthEnd", monthEnd);
 
-        protected void btnNextMonth_Click(object sender, EventArgs e)
-        {
-            currentDate = currentDate.AddMonths(1);
-            ViewState["CurrentDate"] = currentDate;
-            LoadCalendar();
-            pnlDayDetails.Visible = false;
-        }
+            string viewType = ddlViewType.SelectedValue;
+            if (viewType != "all")
+            {
+                cmd.Parameters.AddWithValue("@CurrentUserId", Convert.ToInt32(Session["UserId"]));
+            }
 
-        protected void ddlViewType_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadCalendar();
-            pnlDayDetails.Visible = false;
-        }
+            if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
+            {
+                cmd.Parameters.AddWithValue("@DepartmentFilter", Convert.ToInt32(ddlDepartmentFilter.SelectedValue));
+            }
 
-        protected void ddlDepartmentFilter_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadCalendar();
-            pnlDayDetails.Visible = false;
-        }
-
-        protected void ddlLeaveTypeFilter_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadCalendar();
-            pnlDayDetails.Visible = false;
+            if (!string.IsNullOrEmpty(ddlLeaveTypeFilter.SelectedValue))
+            {
+                cmd.Parameters.AddWithValue("@LeaveTypeFilter", ddlLeaveTypeFilter.SelectedValue);
+            }
         }
 
         #endregion
@@ -416,37 +828,56 @@ namespace TPASystem2.LeaveManagement
 
         private void ShowMessage(string message, string type)
         {
-            pnlMessage.Visible = true;
-            pnlMessage.CssClass = $"alert-panel {type}";
-            litMessage.Text = message;
+            try
+            {
+                string cssClass = type == "error" ? "alert-danger" : "alert-success";
+                litMessage.Text = $"<div class='alert {cssClass}' role='alert'>" +
+                                 $"<i class='material-icons'>{(type == "error" ? "error" : "check_circle")}</i>" +
+                                 $"<span>{message}</span>" +
+                                 $"</div>";
+                pnlMessage.Visible = true;
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+            }
         }
 
         private void LogError(Exception ex)
         {
             try
             {
+                // Check if ErrorLogs table exists
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-                    string query = @"
-                        INSERT INTO ErrorLogs (ErrorId, ErrorMessage, StackTrace, Source, Timestamp, RequestUrl, UserAgent, IPAddress, UserId, Severity, CreatedAt)
-                        VALUES (@ErrorId, @ErrorMessage, @StackTrace, @Source, @Timestamp, @RequestUrl, @UserAgent, @IPAddress, @UserId, @Severity, @CreatedAt)";
+                    string checkQuery = @"
+                        SELECT COUNT(*) 
+                        FROM INFORMATION_SCHEMA.TABLES 
+                        WHERE TABLE_NAME = 'ErrorLogs'";
 
-                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
                     {
-                        cmd.Parameters.AddWithValue("@ErrorId", Guid.NewGuid().ToString());
-                        cmd.Parameters.AddWithValue("@ErrorMessage", ex.Message ?? "");
-                        cmd.Parameters.AddWithValue("@StackTrace", ex.StackTrace ?? "");
-                        cmd.Parameters.AddWithValue("@Source", ex.Source ?? "LeaveManagement.LeaveCalendar");
-                        cmd.Parameters.AddWithValue("@Timestamp", DateTime.Now);
-                        cmd.Parameters.AddWithValue("@RequestUrl", Request.Url?.ToString() ?? "");
-                        cmd.Parameters.AddWithValue("@UserAgent", Request.UserAgent ?? "");
-                        cmd.Parameters.AddWithValue("@IPAddress", GetClientIP());
-                        cmd.Parameters.AddWithValue("@UserId", Session["UserId"] ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Severity", "High");
-                        cmd.Parameters.AddWithValue("@CreatedAt", DateTime.Now);
+                        int tableExists = Convert.ToInt32(checkCmd.ExecuteScalar());
 
-                        cmd.ExecuteNonQuery();
+                        if (tableExists > 0)
+                        {
+                            string query = @"
+                                INSERT INTO ErrorLogs (ErrorMessage, Source, Timestamp, RequestUrl, IPAddress, UserId)
+                                VALUES (@ErrorMessage, @Source, @Timestamp, @RequestUrl, @IPAddress, @UserId)";
+
+                            using (SqlCommand cmd = new SqlCommand(query, conn))
+                            {
+                                cmd.Parameters.AddWithValue("@ErrorMessage", ex.Message ?? "");
+                                cmd.Parameters.AddWithValue("@Source", "LeaveManagement.LeaveCalendar");
+                                cmd.Parameters.AddWithValue("@Timestamp", DateTime.Now);
+                                cmd.Parameters.AddWithValue("@RequestUrl", Request.Url?.ToString() ?? "");
+                                cmd.Parameters.AddWithValue("@IPAddress", GetClientIP());
+                                cmd.Parameters.AddWithValue("@UserId", Session["UserId"] ?? (object)DBNull.Value);
+
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
                     }
                 }
             }
@@ -477,6 +908,7 @@ namespace TPASystem2.LeaveManagement
         public string EmployeeName { get; set; }
         public string Department { get; set; }
         public string LeaveType { get; set; }
+        public string ColorCode { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public decimal DaysRequested { get; set; }
