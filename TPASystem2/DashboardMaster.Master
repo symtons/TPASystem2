@@ -3,7 +3,6 @@
 <asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
     <link href="Content/css/tpa-dashboard.css" rel="stylesheet" />
 
-
 </asp:Content>
 
 <asp:Content ID="MainContent" ContentPlaceHolderID="MainContent" runat="server">

@@ -828,10 +828,29 @@ namespace TPASystem2
                 }
             }
         }
+        private string GetApplicationPath()
+        {
+            string appPath = Request.ApplicationPath;
 
+            // Debug output
+            System.Diagnostics.Debug.WriteLine($"Request.ApplicationPath: '{appPath}'");
+
+            // If application is in root, return empty string
+            if (appPath == "/")
+                return "";
+
+            // Remove trailing slash if present
+            if (appPath.EndsWith("/"))
+                appPath = appPath.TrimEnd('/');
+
+            return appPath;
+        }
         private string CreateDefaultQuickActions(string userRole)
         {
             var actions = new StringBuilder();
+            //menuHtml.AppendLine(CreateNavItem("Employee Management", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
+
+            string appPath = GetApplicationPath();
 
             switch (userRole.ToUpper())
             {
@@ -843,7 +862,7 @@ namespace TPASystem2
                     break;
 
                 case "ADMIN":
-                    actions.AppendLine(CreateQuickAction("Add Employee", "Register new employee", "person_add", "/employees/add", "add-employee"));
+                    actions.AppendLine(CreateQuickAction(" Employee Profile", "Register new employee", "person_add", $"{appPath}/Profile/ManageEmployeeProfiles.aspx", "add-employee"));
                     actions.AppendLine(CreateQuickAction("Generate Report", "Create system reports", "assessment", "/reports", "generate-report"));
                     actions.AppendLine(CreateQuickAction("Review Approvals", "Check pending requests", "assignment", "/approvals", "review-approvals"));
                     actions.AppendLine(CreateQuickAction("System Health", "View system status", "health_and_safety", "/admin/health", "system-health"));
