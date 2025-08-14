@@ -17,6 +17,8 @@ namespace TPASystem2
         {
             ValidationSettings.UnobtrusiveValidationMode = UnobtrusiveValidationMode.None;
 
+           
+
             RouteTable.Routes.MapPageRoute("LoginRoute", "login", "~/Login.aspx");
             //try
             //{

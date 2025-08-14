@@ -890,59 +890,7 @@ TPA.Dashboard.getNotificationIcon = function (type) {
     return icons[type] || 'notifications';
 };
 
-// =============================================================================
-// CONNECTION AND ERROR HANDLING
-// =============================================================================
 
-// Handle connection errors
-TPA.Dashboard.handleConnectionError = function () {
-    this.config.connectionRetries++;
-
-    if (this.config.connectionRetries >= this.config.maxRetries) {
-        this.showConnectionError();
-        this.stopAutoRefresh();
-        this.showNotification('Connection lost. Auto-refresh disabled.', 'error', 0);
-    } else {
-        console.warn(`⚠ Connection error (retry ${this.config.connectionRetries}/${this.config.maxRetries})`);
-
-        // Exponential backoff
-        const retryDelay = Math.pow(2, this.config.connectionRetries) * 1000;
-        setTimeout(() => {
-            if (this.config.isVisible) {
-                this.refreshDashboardData();
-            }
-        }, retryDelay);
-    }
-};
-
-// Show connection error
-TPA.Dashboard.showConnectionError = function () {
-    let indicator = document.querySelector('.connection-status');
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.className = 'connection-status disconnected';
-        indicator.innerHTML = `
-            <i class="material-icons">wifi_off</i>
-            <span>Connection lost</span>
-        `;
-        document.body.appendChild(indicator);
-    }
-
-    indicator.classList.add('show');
-};
-
-// Hide connection error
-TPA.Dashboard.hideConnectionError = function () {
-    const indicator = document.querySelector('.connection-status');
-    if (indicator) {
-        indicator.classList.remove('show');
-        setTimeout(() => {
-            if (indicator.parentNode) {
-                indicator.parentNode.removeChild(indicator);
-            }
-        }, 300);
-    }
-};
 
 // =============================================================================
 // UTILITY FUNCTIONS
@@ -1341,25 +1289,7 @@ TPA.Dashboard.handleResize = function () {
     }, 250);
 };
 
-// Handle network status changes
-TPA.Dashboard.handleNetworkChange = function () {
-    if (navigator.onLine) {
-        console.log('🌐 Network connection restored');
-        this.config.connectionRetries = 0;
-        this.hideConnectionError();
-        this.refreshDashboardData();
-        this.showNotification('Connection restored', 'success', 2000);
 
-        if (this.config.isAutoRefreshEnabled) {
-            this.startAutoRefresh();
-        }
-    } else {
-        console.log('📡 Network connection lost');
-        this.stopAutoRefresh();
-        this.showConnectionError();
-        this.showNotification('Network connection lost', 'error', 0);
-    }
-};
 
 // Setup event listeners
 TPA.Dashboard.setupEventListeners = function () {
