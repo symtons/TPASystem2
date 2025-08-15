@@ -24,22 +24,22 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Literal litManagerName;
 
         /// <summary>
-        /// litDepartment control.
+        /// litDepartmentName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litDepartment;
+        protected global::System.Web.UI.WebControls.Literal litDepartmentName;
 
         /// <summary>
-        /// litEmployeeCount control.
+        /// litUserRole control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litEmployeeCount;
+        protected global::System.Web.UI.WebControls.Literal litUserRole;
 
         /// <summary>
         /// btnAddEmployee control.
@@ -51,13 +51,13 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Button btnAddEmployee;
 
         /// <summary>
-        /// btnExportProfiles control.
+        /// btnExportEmployees control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnExportProfiles;
+        protected global::System.Web.UI.WebControls.Button btnExportEmployees;
 
         /// <summary>
         /// pnlMessage control.
@@ -87,13 +87,13 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Literal litTotalEmployees;
 
         /// <summary>
-        /// litActiveEmployees control.
+        /// litActiveOnboarding control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litActiveEmployees;
+        protected global::System.Web.UI.WebControls.Literal litActiveOnboarding;
 
         /// <summary>
         /// litNewHires control.
@@ -105,15 +105,6 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Literal litNewHires;
 
         /// <summary>
-        /// litCompletedProfiles control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litCompletedProfiles;
-
-        /// <summary>
         /// litDepartmentCount control.
         /// </summary>
         /// <remarks>
@@ -121,15 +112,6 @@ namespace TPASystem2.HR
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal litDepartmentCount;
-
-        /// <summary>
-        /// btnRefreshList control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnRefreshList;
 
         /// <summary>
         /// txtEmployeeSearch control.
@@ -150,6 +132,15 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.DropDownList ddlDepartmentFilter;
 
         /// <summary>
+        /// ddlEmployeeTypeFilter control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlEmployeeTypeFilter;
+
+        /// <summary>
         /// ddlStatusFilter control.
         /// </summary>
         /// <remarks>
@@ -159,22 +150,49 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.DropDownList ddlStatusFilter;
 
         /// <summary>
-        /// ddlEmployeeSelect control.
+        /// btnClearFilters control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList ddlEmployeeSelect;
+        protected global::System.Web.UI.WebControls.Button btnClearFilters;
 
         /// <summary>
-        /// pnlEmployeeProfile control.
+        /// btnRefresh control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlEmployeeProfile;
+        protected global::System.Web.UI.WebControls.Button btnRefresh;
+
+        /// <summary>
+        /// litEmployeeCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litEmployeeCount;
+
+        /// <summary>
+        /// gvEmployees control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.GridView gvEmployees;
+
+        /// <summary>
+        /// pnlEmployeeModal control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlEmployeeModal;
 
         /// <summary>
         /// litSelectedEmployee control.
@@ -186,67 +204,13 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Literal litSelectedEmployee;
 
         /// <summary>
-        /// btnSaveProfile control.
+        /// btnCloseModal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnSaveProfile;
-
-        /// <summary>
-        /// btnCancelEdit control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCancelEdit;
-
-        /// <summary>
-        /// btnDeleteEmployee control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnDeleteEmployee;
-
-        /// <summary>
-        /// btnTabPersonal control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabPersonal;
-
-        /// <summary>
-        /// btnTabEmployment control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabEmployment;
-
-        /// <summary>
-        /// btnTabContact control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabContact;
-
-        /// <summary>
-        /// btnTabSystemAccess control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnTabSystemAccess;
+        protected global::System.Web.UI.WebControls.LinkButton btnCloseModal;
 
         /// <summary>
         /// pnlPersonalInfo control.
@@ -483,39 +447,57 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.CheckBox chkMustChangePassword;
 
         /// <summary>
-        /// txtSystemNotes control.
+        /// btnSaveProfile control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtSystemNotes;
+        protected global::System.Web.UI.WebControls.Button btnSaveProfile;
 
         /// <summary>
-        /// pnlRecentActivity control.
+        /// btnCancelEdit control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlRecentActivity;
+        protected global::System.Web.UI.WebControls.Button btnCancelEdit;
 
         /// <summary>
-        /// rptRecentActivity control.
+        /// pnlActivityModal control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptRecentActivity;
+        protected global::System.Web.UI.WebControls.Panel pnlActivityModal;
 
         /// <summary>
-        /// pnlNoActivity control.
+        /// litActivityEmployee control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlNoActivity;
+        protected global::System.Web.UI.WebControls.Literal litActivityEmployee;
+
+        /// <summary>
+        /// btnCloseActivityModal control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.LinkButton btnCloseActivityModal;
+
+        /// <summary>
+        /// litRecentActivity control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litRecentActivity;
     }
 }

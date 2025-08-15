@@ -23,14 +23,7 @@ namespace TPASystem2.HR
                 LoadUserInformation();
                 LoadDashboardOverview();
                 LoadDropdownData();
-                LoadEmployeeList();
-                SetActiveTab("personal");
-
-                // Check for success message
-                if (Request.QueryString["message"] != null)
-                {
-                    ShowMessage(Request.QueryString["message"], "success");
-                }
+                LoadEmployeeGrid();
             }
         }
 
@@ -73,51 +66,22 @@ namespace TPASystem2.HR
             // Show/hide Add Employee button based on role
             btnAddEmployee.Visible = isAdmin || isProgramDirector;
 
-            // Configure field access based on role
-            if (isProgramDirector && !isAdmin)
-            {
-                // Program Directors cannot change departments or certain sensitive fields
-                ddlDepartment.Enabled = false;
-                txtSalary.Enabled = false;
-                ddlUserRole.Enabled = false;
-                btnDeleteEmployee.Visible = false;
-            }
+            // Set user role display
+            litUserRole.Text = CurrentUserRole;
         }
 
-        private bool IsAdmin()
+        public bool IsAdmin()
         {
-            string currentRole = CurrentUserRole;
-            bool isAdmin = currentRole == "ADMIN" || currentRole == "HRADMIN" || currentRole == "SUPERADMIN";
-
-            // Debug logging - you can remove this after testing
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    string debugQuery = @"
-                        INSERT INTO ErrorLogs (ErrorMessage, StackTrace, Source, Timestamp, UserId, Severity)
-                        VALUES (@ErrorMessage, @StackTrace, @Source, GETDATE(), @UserId, @Severity)";
-
-                    using (SqlCommand cmd = new SqlCommand(debugQuery, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@ErrorMessage", $"Role Check - CurrentRole: {currentRole}, IsAdmin: {isAdmin}");
-                        cmd.Parameters.AddWithValue("@StackTrace", "Role Debug");
-                        cmd.Parameters.AddWithValue("@Source", "ManageEmployeeProfiles-RoleCheck");
-                        cmd.Parameters.AddWithValue("@UserId", CurrentUserId);
-                        cmd.Parameters.AddWithValue("@Severity", "Info");
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch { } // Don't let debug logging break the app
-
-            return isAdmin;
+            string currentRole = CurrentUserRole?.ToUpper() ?? "";
+            return currentRole == "ADMIN" ||
+                   currentRole == "HRADMIN" ||
+                   currentRole == "SUPERADMIN" ||
+                   currentRole == "SYSTEMADMINISTRATOR";
         }
 
-        private bool IsProgramDirector()
+        public bool IsProgramDirector()
         {
-            return CurrentUserRole == "PROGRAMDIRECTOR";
+            return CurrentUserRole?.ToUpper() == "PROGRAMDIRECTOR";
         }
 
         private int GetUserDepartmentId()
@@ -133,7 +97,8 @@ namespace TPASystem2.HR
                     {
                         cmd.Parameters.AddWithValue("@UserId", CurrentUserId);
                         object result = cmd.ExecuteScalar();
-                        return result != null && result != DBNull.Value ? Convert.ToInt32(result) : 0;
+                        return result != null && result != DBNull.Value ?
+                            Convert.ToInt32(result) : 0;
                     }
                 }
             }
@@ -146,7 +111,6 @@ namespace TPASystem2.HR
 
         private bool CanAccessEmployee(int employeeId)
         {
-            // Debug: Log the role check
             try
             {
                 bool isAdmin = IsAdmin();
@@ -186,7 +150,6 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 LogError(ex);
-                // For safety, admins should still get access even if there's an error
                 return IsAdmin();
             }
         }
@@ -219,8 +182,8 @@ namespace TPASystem2.HR
                         {
                             if (reader.Read())
                             {
-                                litManagerName.Text = reader["FullName"]?.ToString() ?? "Manager";
-                                litDepartment.Text = reader["DepartmentName"]?.ToString() ?? "Department";
+                                litManagerName.Text = reader["FullName"]?.ToString() ?? "System Administrator";
+                                litDepartmentName.Text = reader["DepartmentName"]?.ToString() ?? "Administration";
                             }
                         }
                     }
@@ -229,6 +192,8 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 LogError(ex);
+                litManagerName.Text = "System Administrator";
+                litDepartmentName.Text = "Administration";
             }
         }
 
@@ -240,80 +205,90 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
 
-                    // Build department filter for Program Directors
-                    string departmentFilter = "";
+                    // Get total employees count
+                    string totalQuery = "SELECT COUNT(*) FROM Employees WHERE IsActive = 1";
                     if (IsProgramDirector() && !IsAdmin())
                     {
-                        departmentFilter = "AND DepartmentId = @UserDepartmentId";
+                        totalQuery = @"
+                            SELECT COUNT(*) 
+                            FROM Employees 
+                            WHERE IsActive = 1 AND DepartmentId = @UserDepartmentId";
                     }
 
-                    // Total Employees
-                    string totalQuery = $"SELECT COUNT(*) FROM Employees WHERE IsActive = 1 {departmentFilter}";
                     using (SqlCommand cmd = new SqlCommand(totalQuery, conn))
                     {
                         if (IsProgramDirector() && !IsAdmin())
+                        {
                             cmd.Parameters.AddWithValue("@UserDepartmentId", GetUserDepartmentId());
-                        litTotalEmployees.Text = cmd.ExecuteScalar().ToString();
+                        }
+
+                        int totalEmployees = Convert.ToInt32(cmd.ExecuteScalar());
+                        litTotalEmployees.Text = totalEmployees.ToString();
                     }
 
-                    // Active Employees
-                    string activeQuery = $"SELECT COUNT(*) FROM Employees WHERE IsActive = 1 AND Status = 'Active' {departmentFilter}";
-                    using (SqlCommand cmd = new SqlCommand(activeQuery, conn))
+                    // Get active onboarding count
+                    string onboardingQuery = @"
+                        SELECT COUNT(DISTINCT e.Id) 
+                        FROM Employees e 
+                        WHERE e.IsActive = 1 
+                        AND (e.OnboardingStatus IS NULL OR e.OnboardingStatus != 'COMPLETED')";
+
+                    if (IsProgramDirector() && !IsAdmin())
+                    {
+                        onboardingQuery += " AND e.DepartmentId = @UserDepartmentId";
+                    }
+
+                    using (SqlCommand cmd = new SqlCommand(onboardingQuery, conn))
                     {
                         if (IsProgramDirector() && !IsAdmin())
+                        {
                             cmd.Parameters.AddWithValue("@UserDepartmentId", GetUserDepartmentId());
-                        litActiveEmployees.Text = cmd.ExecuteScalar().ToString();
+                        }
+
+                        int activeOnboarding = Convert.ToInt32(cmd.ExecuteScalar());
+                        litActiveOnboarding.Text = activeOnboarding.ToString();
                     }
 
-                    // New Hires (30 days)
-                    string newHiresQuery = $@"
-                        SELECT COUNT(*) FROM Employees 
-                        WHERE IsActive = 1 AND HireDate >= DATEADD(day, -30, GETDATE()) {departmentFilter}";
+                    // Get new hires this month
+                    string newHiresQuery = @"
+                        SELECT COUNT(*) 
+                        FROM Employees 
+                        WHERE IsActive = 1 
+                        AND HireDate >= DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+                        AND HireDate < DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) + 1, 0)";
+
+                    if (IsProgramDirector() && !IsAdmin())
+                    {
+                        newHiresQuery += " AND DepartmentId = @UserDepartmentId";
+                    }
+
                     using (SqlCommand cmd = new SqlCommand(newHiresQuery, conn))
                     {
                         if (IsProgramDirector() && !IsAdmin())
-                            cmd.Parameters.AddWithValue("@UserDepartmentId", GetUserDepartmentId());
-                        litNewHires.Text = cmd.ExecuteScalar().ToString();
-                    }
-
-                    // Completed Profiles
-                    string completedQuery = $@"
-                        SELECT COUNT(*) FROM Employees 
-                        WHERE IsActive = 1 
-                        AND FirstName IS NOT NULL 
-                        AND LastName IS NOT NULL 
-                        AND Email IS NOT NULL 
-                        AND JobTitle IS NOT NULL 
-                        AND DepartmentId IS NOT NULL {departmentFilter}";
-                    using (SqlCommand cmd = new SqlCommand(completedQuery, conn))
-                    {
-                        if (IsProgramDirector() && !IsAdmin())
-                            cmd.Parameters.AddWithValue("@UserDepartmentId", GetUserDepartmentId());
-                        litCompletedProfiles.Text = cmd.ExecuteScalar().ToString();
-                    }
-
-                    // Department Count
-                    if (IsAdmin())
-                    {
-                        string deptQuery = "SELECT COUNT(*) FROM Departments WHERE IsActive = 1";
-                        using (SqlCommand cmd = new SqlCommand(deptQuery, conn))
                         {
-                            litDepartmentCount.Text = cmd.ExecuteScalar().ToString();
+                            cmd.Parameters.AddWithValue("@UserDepartmentId", GetUserDepartmentId());
                         }
-                    }
-                    else
-                    {
-                        litDepartmentCount.Text = "1"; // Program Director sees only their department
+
+                        int newHires = Convert.ToInt32(cmd.ExecuteScalar());
+                        litNewHires.Text = newHires.ToString();
                     }
 
-                    // Employee count for header
-                    litEmployeeCount.Text = litTotalEmployees.Text;
+                    // Get department count
+                    string deptQuery = "SELECT COUNT(*) FROM Departments WHERE IsActive = 1";
+                    using (SqlCommand cmd = new SqlCommand(deptQuery, conn))
+                    {
+                        int deptCount = Convert.ToInt32(cmd.ExecuteScalar());
+                        litDepartmentCount.Text = deptCount.ToString();
+                    }
                 }
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                ShowMessage("Error loading dashboard overview.", "error");
+                litTotalEmployees.Text = "0";
+                litActiveOnboarding.Text = "0";
+                litNewHires.Text = "0";
+                litDepartmentCount.Text = "0";
             }
         }
 
@@ -324,14 +299,8 @@ namespace TPASystem2.HR
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-
-                    // Load Departments
                     LoadDepartments(conn);
-
-                    // Load Managers
                     LoadManagers(conn);
-
-                    // Load Department Filter
                     LoadDepartmentFilter(conn);
                 }
             }
@@ -346,7 +315,6 @@ namespace TPASystem2.HR
         {
             string query = "SELECT Id, Name FROM Departments WHERE IsActive = 1 ORDER BY Name";
 
-            // Program Directors can only assign to their department
             if (IsProgramDirector() && !IsAdmin())
             {
                 query = @"
@@ -387,7 +355,6 @@ namespace TPASystem2.HR
                 AND (JobTitle LIKE '%Manager%' OR JobTitle LIKE '%Director%' OR JobTitle LIKE '%Supervisor%')
                 ORDER BY FullName";
 
-            // Program Directors see managers within their department
             if (IsProgramDirector() && !IsAdmin())
             {
                 query = @"
@@ -426,7 +393,6 @@ namespace TPASystem2.HR
         {
             string query = "SELECT Id, Name FROM Departments WHERE IsActive = 1 ORDER BY Name";
 
-            // Program Directors see only their department in filter
             if (IsProgramDirector() && !IsAdmin())
             {
                 query = @"
@@ -458,7 +424,7 @@ namespace TPASystem2.HR
             }
         }
 
-        private void LoadEmployeeList()
+        private void LoadEmployeeGrid()
         {
             try
             {
@@ -467,16 +433,22 @@ namespace TPASystem2.HR
                     conn.Open();
 
                     StringBuilder query = new StringBuilder(@"
-                        SELECT DISTINCT
+                        SELECT 
                             e.Id,
-                            e.FirstName + ' ' + e.LastName + ' (' + e.EmployeeNumber + ')' as DisplayName,
                             e.FirstName,
                             e.LastName,
                             e.EmployeeNumber,
                             e.Email,
-                            d.Name as DepartmentName
+                            e.JobTitle,
+                            e.EmployeeType,
+                            e.HireDate,
+                            e.Status,
+                            d.Name as DepartmentName,
+                            u.Role as UserRole,
+                            u.IsActive as UserIsActive
                         FROM Employees e
                         LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                        LEFT JOIN Users u ON e.UserId = u.Id
                         WHERE e.IsActive = 1");
 
                     // Apply role-based filtering
@@ -500,6 +472,12 @@ namespace TPASystem2.HR
                     if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
                     {
                         query.Append(" AND e.DepartmentId = @DepartmentFilter");
+                    }
+
+                    // Apply employee type filter
+                    if (!string.IsNullOrEmpty(ddlEmployeeTypeFilter.SelectedValue))
+                    {
+                        query.Append(" AND e.EmployeeType = @EmployeeTypeFilter");
                     }
 
                     // Apply status filter
@@ -528,23 +506,25 @@ namespace TPASystem2.HR
                             cmd.Parameters.AddWithValue("@DepartmentFilter", ddlDepartmentFilter.SelectedValue);
                         }
 
+                        if (!string.IsNullOrEmpty(ddlEmployeeTypeFilter.SelectedValue))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeTypeFilter", ddlEmployeeTypeFilter.SelectedValue);
+                        }
+
                         if (!string.IsNullOrEmpty(ddlStatusFilter.SelectedValue))
                         {
                             cmd.Parameters.AddWithValue("@StatusFilter", ddlStatusFilter.SelectedValue);
                         }
 
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                         {
-                            ddlEmployeeSelect.Items.Clear();
-                            ddlEmployeeSelect.Items.Add(new ListItem("Choose an employee...", ""));
+                            DataTable dt = new DataTable();
+                            da.Fill(dt);
 
-                            while (reader.Read())
-                            {
-                                ddlEmployeeSelect.Items.Add(new ListItem(
-                                    reader["DisplayName"].ToString(),
-                                    reader["Id"].ToString()
-                                ));
-                            }
+                            gvEmployees.DataSource = dt;
+                            gvEmployees.DataBind();
+
+                            litEmployeeCount.Text = dt.Rows.Count.ToString();
                         }
                     }
                 }
@@ -552,23 +532,65 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 LogError(ex);
-                ShowMessage("Error loading employee list.", "error");
+                ShowMessage("Error loading employee data.", "error");
             }
         }
 
+        #endregion
+
+        #region Grid Event Handlers
+
+        
+
+        
+
+    
+
+        #endregion
+
+        #region Filter Event Handlers
+
+        protected void txtEmployeeSearch_TextChanged(object sender, EventArgs e)
+        {
+            LoadEmployeeGrid();
+        }
+
+        protected void ddlDepartmentFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadEmployeeGrid();
+        }
+
+        protected void ddlEmployeeTypeFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadEmployeeGrid();
+        }
+
+        protected void ddlStatusFilter_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            LoadEmployeeGrid();
+        }
+
+        protected void btnClearFilters_Click(object sender, EventArgs e)
+        {
+            txtEmployeeSearch.Text = "";
+            ddlDepartmentFilter.SelectedIndex = 0;
+            ddlEmployeeTypeFilter.SelectedIndex = 0;
+            ddlStatusFilter.SelectedIndex = 0;
+            LoadEmployeeGrid();
+        }
+
+        protected void btnRefresh_Click(object sender, EventArgs e)
+        {
+            LoadEmployeeGrid();
+            LoadDashboardOverview();
+        }
+
+        #endregion
+
+        #region Employee Profile Management
+
         private void LoadEmployeeProfile(int employeeId)
         {
-            // Debug the access check
-            string debugInfo = $"LoadEmployeeProfile called - EmployeeId: {employeeId}, CurrentRole: {CurrentUserRole}, IsAdmin: {IsAdmin()}";
-
-            // Check access permissions
-            if (!CanAccessEmployee(employeeId))
-            {
-                // Enhanced error message with debug info
-                ShowMessage($"Access denied. You can only view employees in your department. Debug: {debugInfo}", "error");
-                return;
-            }
-
             try
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
@@ -597,6 +619,9 @@ namespace TPASystem2.HR
                         {
                             if (reader.Read())
                             {
+                                // Store employee ID in ViewState for saving
+                                ViewState["EditingEmployeeId"] = employeeId;
+
                                 // Header information
                                 litSelectedEmployee.Text = $"{reader["FirstName"]} {reader["LastName"]} - {reader["EmployeeNumber"]}";
 
@@ -634,19 +659,6 @@ namespace TPASystem2.HR
                                     Convert.ToBoolean(reader["UserIsActive"]) : false;
                                 chkMustChangePassword.Checked = reader["MustChangePassword"] != DBNull.Value ?
                                     Convert.ToBoolean(reader["MustChangePassword"]) : false;
-
-                                // Show profile panel
-                                pnlEmployeeProfile.Visible = true;
-                                pnlRecentActivity.Visible = true;
-
-                                // Load recent activity
-                                LoadRecentActivity(employeeId);
-
-                                ShowMessage($"Profile loaded successfully for {reader["FirstName"]} {reader["LastName"]}", "success");
-                            }
-                            else
-                            {
-                                ShowMessage("Employee not found or access denied.", "error");
                             }
                         }
                     }
@@ -655,11 +667,11 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 LogError(ex);
-                ShowMessage($"Error loading employee profile: {ex.Message}", "error");
+                ShowMessage("Error loading employee profile.", "error");
             }
         }
 
-        private void LoadRecentActivity(int employeeId)
+        private void LoadEmployeeActivity(int employeeId)
         {
             try
             {
@@ -667,37 +679,63 @@ namespace TPASystem2.HR
                 {
                     conn.Open();
 
+                    // Get employee name first
+                    string nameQuery = "SELECT FirstName + ' ' + LastName as FullName FROM Employees WHERE Id = @EmployeeId";
+                    using (SqlCommand nameCmd = new SqlCommand(nameQuery, conn))
+                    {
+                        nameCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                        object result = nameCmd.ExecuteScalar();
+                        litActivityEmployee.Text = result?.ToString() ?? "Unknown Employee";
+                    }
+
                     string query = @"
-                        SELECT TOP 10
-                            epa.FieldName,
-                            epa.OldValue,
-                            epa.NewValue,
-                            epa.ChangedDate,
-                            e.FirstName + ' ' + e.LastName as ChangedByName
-                        FROM EmployeeProfileAudit epa
-                        LEFT JOIN Employees e ON epa.ChangedBy = e.Id
-                        WHERE epa.EmployeeId = @EmployeeId
-                        ORDER BY epa.ChangedDate DESC";
+                        SELECT TOP 20
+                            ra.Action,
+                            ra.EntityType,
+                            ra.Details,
+                            ra.CreatedAt,
+                            u.Role
+                        FROM RecentActivities ra
+                        LEFT JOIN Users u ON ra.UserId = u.Id
+                        WHERE ra.EmployeeId = @EmployeeId OR ra.UserId = (
+                            SELECT UserId FROM Employees WHERE Id = @EmployeeId
+                        )
+                        ORDER BY ra.CreatedAt DESC";
 
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
 
-                        using (SqlDataAdapter adapter = new SqlDataAdapter(cmd))
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            DataTable dt = new DataTable();
-                            adapter.Fill(dt);
+                            StringBuilder activityHtml = new StringBuilder();
 
-                            if (dt.Rows.Count > 0)
+                            if (!reader.HasRows)
                             {
-                                rptRecentActivity.DataSource = dt;
-                                rptRecentActivity.DataBind();
-                                pnlNoActivity.Visible = false;
+                                activityHtml.Append("<p class='no-activity'>No recent activity found.</p>");
                             }
                             else
                             {
-                                pnlNoActivity.Visible = true;
+                                while (reader.Read())
+                                {
+                                    DateTime createdAt = Convert.ToDateTime(reader["CreatedAt"]);
+                                    string timeAgo = GetTimeAgo(createdAt);
+
+                                    activityHtml.AppendLine($@"
+                                        <div class='activity-item'>
+                                            <div class='activity-icon'>
+                                                <i class='material-icons'>history</i>
+                                            </div>
+                                            <div class='activity-content'>
+                                                <div class='activity-title'>{reader["Action"]}</div>
+                                                <div class='activity-details'>{reader["Details"]}</div>
+                                                <div class='activity-time'>{timeAgo}</div>
+                                            </div>
+                                        </div>");
+                                }
                             }
+
+                            litRecentActivity.Text = activityHtml.ToString();
                         }
                     }
                 }
@@ -705,160 +743,12 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 LogError(ex);
-                pnlNoActivity.Visible = true;
+                litRecentActivity.Text = "<p class='error'>Unable to load activity history.</p>";
             }
         }
 
-        #endregion
-
-        #region Event Handlers
-
-        protected void btnAddEmployee_Click(object sender, EventArgs e)
+        private void ToggleEmployeeStatus(int employeeId)
         {
-            Response.Redirect("~/HR/AddEmployee.aspx");
-        }
-
-        protected void btnExportProfiles_Click(object sender, EventArgs e)
-        {
-            // Export functionality can be implemented here
-            ShowMessage("Export functionality will be implemented.", "info");
-        }
-
-        protected void btnRefreshList_Click(object sender, EventArgs e)
-        {
-            LoadEmployeeList();
-            ShowMessage("Employee list refreshed.", "success");
-        }
-
-        protected void txtEmployeeSearch_TextChanged(object sender, EventArgs e)
-        {
-            LoadEmployeeList();
-        }
-
-        protected void ddlDepartmentFilter_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadEmployeeList();
-        }
-
-        protected void ddlStatusFilter_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            LoadEmployeeList();
-        }
-
-        protected void ddlEmployeeSelect_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(ddlEmployeeSelect.SelectedValue))
-            {
-                int employeeId = Convert.ToInt32(ddlEmployeeSelect.SelectedValue);
-                LoadEmployeeProfile(employeeId);
-            }
-            else
-            {
-                pnlEmployeeProfile.Visible = false;
-                pnlRecentActivity.Visible = false;
-            }
-        }
-
-        protected void btnSaveProfile_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(ddlEmployeeSelect.SelectedValue))
-            {
-                int employeeId = Convert.ToInt32(ddlEmployeeSelect.SelectedValue);
-                SaveEmployeeProfile(employeeId);
-            }
-        }
-
-        protected void btnCancelEdit_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(ddlEmployeeSelect.SelectedValue))
-            {
-                int employeeId = Convert.ToInt32(ddlEmployeeSelect.SelectedValue);
-                LoadEmployeeProfile(employeeId); // Reload original data
-                ShowMessage("Changes cancelled.", "info");
-            }
-        }
-
-        protected void btnDeleteEmployee_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrEmpty(ddlEmployeeSelect.SelectedValue))
-            {
-                int employeeId = Convert.ToInt32(ddlEmployeeSelect.SelectedValue);
-                DeactivateEmployee(employeeId);
-            }
-        }
-
-        #endregion
-
-        #region Tab Management
-
-        private void SetActiveTab(string tabName)
-        {
-            // Reset all tabs
-            btnTabPersonal.CssClass = "tab-button";
-            btnTabEmployment.CssClass = "tab-button";
-            btnTabContact.CssClass = "tab-button";
-            btnTabSystemAccess.CssClass = "tab-button";
-
-            // Hide all tab content
-            pnlPersonalInfo.CssClass = "tab-content";
-            pnlEmploymentInfo.CssClass = "tab-content";
-            pnlContactInfo.CssClass = "tab-content";
-            pnlSystemAccess.CssClass = "tab-content";
-
-            // Set active tab and show content
-            switch (tabName.ToLower())
-            {
-                case "personal":
-                    btnTabPersonal.CssClass = "tab-button active";
-                    pnlPersonalInfo.CssClass = "tab-content active";
-                    break;
-                case "employment":
-                    btnTabEmployment.CssClass = "tab-button active";
-                    pnlEmploymentInfo.CssClass = "tab-content active";
-                    break;
-                case "contact":
-                    btnTabContact.CssClass = "tab-button active";
-                    pnlContactInfo.CssClass = "tab-content active";
-                    break;
-                case "system":
-                    btnTabSystemAccess.CssClass = "tab-button active";
-                    pnlSystemAccess.CssClass = "tab-content active";
-                    break;
-            }
-        }
-
-        protected void btnTabPersonal_Click(object sender, EventArgs e)
-        {
-            SetActiveTab("personal");
-        }
-
-        protected void btnTabEmployment_Click(object sender, EventArgs e)
-        {
-            SetActiveTab("employment");
-        }
-
-        protected void btnTabContact_Click(object sender, EventArgs e)
-        {
-            SetActiveTab("contact");
-        }
-
-        protected void btnTabSystemAccess_Click(object sender, EventArgs e)
-        {
-            SetActiveTab("system");
-        }
-
-        #endregion
-
-        #region Database Operations
-
-        private void SaveEmployeeProfile(int employeeId)
-        {
-            if (!CanAccessEmployee(employeeId))
-            {
-                ShowMessage("Access denied. You can only edit employees in your department.", "error");
-                return;
-            }
-
             try
             {
                 using (SqlConnection conn = new SqlConnection(connectionString))
@@ -868,8 +758,241 @@ namespace TPASystem2.HR
                     {
                         try
                         {
-                            // Update employee record
+                            // Get current status
+                            string getCurrentStatusQuery = "SELECT Status, FirstName, LastName FROM Employees WHERE Id = @EmployeeId";
+                            string currentStatus = "";
+                            string employeeName = "";
+
+                            using (SqlCommand getCmd = new SqlCommand(getCurrentStatusQuery, conn, transaction))
+                            {
+                                getCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                using (SqlDataReader reader = getCmd.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        currentStatus = reader["Status"].ToString();
+                                        employeeName = $"{reader["FirstName"]} {reader["LastName"]}";
+                                    }
+                                }
+                            }
+
+                            // Toggle status
+                            string newStatus = currentStatus == "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
                             string updateQuery = @"
+                                UPDATE Employees 
+                                SET Status = @NewStatus, UpdatedAt = GETDATE()
+                                WHERE Id = @EmployeeId";
+
+                            using (SqlCommand cmd = new SqlCommand(updateQuery, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@NewStatus", newStatus);
+                                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            // Log the activity
+                            LogActivity("Employee Status Changed", "Employee",
+                                $"Changed status of {employeeName} from {currentStatus} to {newStatus}",
+                                employeeId, conn, transaction);
+
+                            transaction.Commit();
+                            ShowMessage($"Employee status changed to {newStatus} successfully!", "success");
+
+                            // Reload grid
+                            LoadEmployeeGrid();
+                            LoadDashboardOverview();
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error changing employee status.", "error");
+            }
+        }
+
+        private void DeleteEmployee(int employeeId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Get employee name for logging
+                            string getNameQuery = "SELECT FirstName, LastName FROM Employees WHERE Id = @EmployeeId";
+                            string employeeName = "";
+                            using (SqlCommand nameCmd = new SqlCommand(getNameQuery, conn, transaction))
+                            {
+                                nameCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                using (SqlDataReader reader = nameCmd.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        employeeName = $"{reader["FirstName"]} {reader["LastName"]}";
+                                    }
+                                }
+                            }
+
+                            // Soft delete - set IsActive to false instead of actual deletion
+                            string deleteQuery = @"
+                                UPDATE Employees 
+                                SET IsActive = 0, 
+                                    Status = 'TERMINATED',
+                                    TerminationDate = GETDATE(),
+                                    UpdatedAt = GETDATE()
+                                WHERE Id = @EmployeeId";
+
+                            using (SqlCommand cmd = new SqlCommand(deleteQuery, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                cmd.ExecuteNonQuery();
+                            }
+
+                            // Deactivate associated user account
+                            string deactivateUserQuery = @"
+                                UPDATE Users 
+                                SET IsActive = 0, UpdatedAt = GETDATE()
+                                WHERE Id = (SELECT UserId FROM Employees WHERE Id = @EmployeeId)";
+
+                            using (SqlCommand userCmd = new SqlCommand(deactivateUserQuery, conn, transaction))
+                            {
+                                userCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                userCmd.ExecuteNonQuery();
+                            }
+
+                            // Log the activity
+                            LogActivity("Employee Deleted", "Employee",
+                                $"Deleted employee: {employeeName} (ID: {employeeId})", employeeId, conn, transaction);
+
+                            transaction.Commit();
+                            ShowMessage($"Employee {employeeName} has been deleted successfully.", "success");
+
+                            // Reload grid and overview
+                            LoadEmployeeGrid();
+                            LoadDashboardOverview();
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error deleting employee. Please try again.", "error");
+            }
+        }
+
+        #endregion
+
+        #region Modal Event Handlers
+
+       
+        #endregion
+
+        #region Action Button Handlers
+
+        protected void btnAddEmployee_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/HR/AddEmployee.aspx");
+        }
+
+        protected void btnExportEmployees_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Create CSV export
+                StringBuilder csv = new StringBuilder();
+                csv.AppendLine("Employee Number,First Name,Last Name,Email,Department,Job Title,Employee Type,Hire Date,Status");
+
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+
+                    string query = @"
+                        SELECT 
+                            e.EmployeeNumber,
+                            e.FirstName,
+                            e.LastName,
+                            e.Email,
+                            d.Name as DepartmentName,
+                            e.JobTitle,
+                            e.EmployeeType,
+                            e.HireDate,
+                            e.Status
+                        FROM Employees e
+                        LEFT JOIN Departments d ON e.DepartmentId = d.Id
+                        WHERE e.IsActive = 1";
+
+                    if (IsProgramDirector() && !IsAdmin())
+                    {
+                        query += " AND e.DepartmentId = @UserDepartmentId";
+                    }
+
+                    query += " ORDER BY e.FirstName, e.LastName";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    {
+                        if (IsProgramDirector() && !IsAdmin())
+                        {
+                            cmd.Parameters.AddWithValue("@UserDepartmentId", GetUserDepartmentId());
+                        }
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                csv.AppendLine($"\"{reader["EmployeeNumber"]}\",\"{reader["FirstName"]}\",\"{reader["LastName"]}\",\"{reader["Email"]}\",\"{reader["DepartmentName"]}\",\"{reader["JobTitle"]}\",\"{reader["EmployeeType"]}\",\"{(reader["HireDate"] != DBNull.Value ? Convert.ToDateTime(reader["HireDate"]).ToString("yyyy-MM-dd") : "")}\",\"{reader["Status"]}\"");
+                            }
+                        }
+                    }
+                }
+
+                // Download CSV
+                Response.Clear();
+                Response.ContentType = "text/csv";
+                Response.AddHeader("content-disposition", $"attachment;filename=Employees_{DateTime.Now:yyyyMMdd}.csv");
+                Response.Write(csv.ToString());
+                Response.End();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+                ShowMessage("Error exporting employee data.", "error");
+            }
+        }
+
+        #endregion
+
+        #region Save Methods
+
+        private void SaveEmployeeProfile(int employeeId)
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    using (SqlTransaction transaction = conn.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Update Employee record
+                            string updateEmployeeQuery = @"
                                 UPDATE Employees SET
                                     FirstName = @FirstName,
                                     LastName = @LastName,
@@ -893,10 +1016,8 @@ namespace TPASystem2.HR
                                     UpdatedAt = GETDATE()
                                 WHERE Id = @EmployeeId";
 
-                            using (SqlCommand cmd = new SqlCommand(updateQuery, conn, transaction))
+                            using (SqlCommand cmd = new SqlCommand(updateEmployeeQuery, conn, transaction))
                             {
-                                // Add parameters
-                                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
                                 cmd.Parameters.AddWithValue("@FirstName", txtFirstName.Text.Trim());
                                 cmd.Parameters.AddWithValue("@LastName", txtLastName.Text.Trim());
                                 cmd.Parameters.AddWithValue("@EmployeeNumber", txtEmployeeNumber.Text.Trim());
@@ -906,47 +1027,73 @@ namespace TPASystem2.HR
                                     string.IsNullOrEmpty(ddlGender.SelectedValue) ? (object)DBNull.Value : ddlGender.SelectedValue);
                                 cmd.Parameters.AddWithValue("@JobTitle", txtJobTitle.Text.Trim());
                                 cmd.Parameters.AddWithValue("@DepartmentId",
-                                    string.IsNullOrEmpty(ddlDepartment.SelectedValue) ? (object)DBNull.Value : Convert.ToInt32(ddlDepartment.SelectedValue));
+                                    string.IsNullOrEmpty(ddlDepartment.SelectedValue) ? (object)DBNull.Value : int.Parse(ddlDepartment.SelectedValue));
                                 cmd.Parameters.AddWithValue("@EmployeeType",
                                     string.IsNullOrEmpty(ddlEmployeeType.SelectedValue) ? (object)DBNull.Value : ddlEmployeeType.SelectedValue);
                                 cmd.Parameters.AddWithValue("@HireDate",
                                     string.IsNullOrEmpty(txtHireDate.Text) ? (object)DBNull.Value : DateTime.Parse(txtHireDate.Text));
                                 cmd.Parameters.AddWithValue("@ManagerId",
-                                    string.IsNullOrEmpty(ddlManager.SelectedValue) ? (object)DBNull.Value : Convert.ToInt32(ddlManager.SelectedValue));
-                                cmd.Parameters.AddWithValue("@Status", ddlEmployeeStatus.SelectedValue);
+                                    string.IsNullOrEmpty(ddlManager.SelectedValue) ? (object)DBNull.Value : int.Parse(ddlManager.SelectedValue));
+                                cmd.Parameters.AddWithValue("@Status",
+                                    string.IsNullOrEmpty(ddlEmployeeStatus.SelectedValue) ? "ACTIVE" : ddlEmployeeStatus.SelectedValue);
                                 cmd.Parameters.AddWithValue("@Salary",
-                                    string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : Convert.ToDecimal(txtSalary.Text));
-                                cmd.Parameters.AddWithValue("@WorkLocation",
-                                    string.IsNullOrEmpty(txtWorkLocation.Text) ? (object)DBNull.Value : txtWorkLocation.Text.Trim());
+                                    string.IsNullOrEmpty(txtSalary.Text) ? (object)DBNull.Value : decimal.Parse(txtSalary.Text));
+                                cmd.Parameters.AddWithValue("@WorkLocation", txtWorkLocation.Text.Trim());
                                 cmd.Parameters.AddWithValue("@Email", txtEmail.Text.Trim());
-                                cmd.Parameters.AddWithValue("@PhoneNumber",
-                                    string.IsNullOrEmpty(txtPhoneNumber.Text) ? (object)DBNull.Value : txtPhoneNumber.Text.Trim());
-                                cmd.Parameters.AddWithValue("@Address",
-                                    string.IsNullOrEmpty(txtAddress.Text) ? (object)DBNull.Value : txtAddress.Text.Trim());
-                                cmd.Parameters.AddWithValue("@City",
-                                    string.IsNullOrEmpty(txtCity.Text) ? (object)DBNull.Value : txtCity.Text.Trim());
-                                cmd.Parameters.AddWithValue("@State",
-                                    string.IsNullOrEmpty(txtState.Text) ? (object)DBNull.Value : txtState.Text.Trim());
-                                cmd.Parameters.AddWithValue("@ZipCode",
-                                    string.IsNullOrEmpty(txtZipCode.Text) ? (object)DBNull.Value : txtZipCode.Text.Trim());
+                                cmd.Parameters.AddWithValue("@PhoneNumber", txtPhoneNumber.Text.Trim());
+                                cmd.Parameters.AddWithValue("@Address", txtAddress.Text.Trim());
+                                cmd.Parameters.AddWithValue("@City", txtCity.Text.Trim());
+                                cmd.Parameters.AddWithValue("@State", txtState.Text.Trim());
+                                cmd.Parameters.AddWithValue("@ZipCode", txtZipCode.Text.Trim());
+                                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
 
                                 cmd.ExecuteNonQuery();
                             }
 
-                            // Update user account if exists and user has permission
+                            // Update User record if exists and user has permission
                             if (IsAdmin() && !string.IsNullOrEmpty(ddlUserRole.SelectedValue))
                             {
-                                UpdateUserAccount(employeeId, conn, transaction);
+                                // Check if user record exists
+                                string checkUserQuery = "SELECT UserId FROM Employees WHERE Id = @EmployeeId";
+                                using (SqlCommand checkCmd = new SqlCommand(checkUserQuery, conn, transaction))
+                                {
+                                    checkCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                    object userId = checkCmd.ExecuteScalar();
+
+                                    if (userId != null && userId != DBNull.Value)
+                                    {
+                                        // Update existing user
+                                        string updateUserQuery = @"
+                                            UPDATE Users SET
+                                                Role = @Role,
+                                                IsActive = @IsActive,
+                                                MustChangePassword = @MustChangePassword,
+                                                UpdatedAt = GETDATE()
+                                            WHERE Id = @UserId";
+
+                                        using (SqlCommand userCmd = new SqlCommand(updateUserQuery, conn, transaction))
+                                        {
+                                            userCmd.Parameters.AddWithValue("@Role", ddlUserRole.SelectedValue);
+                                            userCmd.Parameters.AddWithValue("@IsActive", chkIsActive.Checked);
+                                            userCmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
+                                            userCmd.Parameters.AddWithValue("@UserId", userId);
+                                            userCmd.ExecuteNonQuery();
+                                        }
+                                    }
+                                }
                             }
 
-                            // Log the changes
-                            LogProfileChanges(employeeId, conn, transaction);
+                            // Log the activity
+                            LogActivity("Employee Profile Updated", "Employee",
+                                $"Updated profile for {txtFirstName.Text} {txtLastName.Text} (ID: {employeeId})", employeeId, conn, transaction);
 
                             transaction.Commit();
-                            ShowMessage("Employee profile updated successfully.", "success");
+                            ShowMessage("Employee profile updated successfully!", "success");
 
-                            // Refresh the display
-                            LoadEmployeeProfile(employeeId);
+                            // Close modal and reload grid
+                            pnlEmployeeModal.Visible = false;
+                            ViewState["EditingEmployeeId"] = null;
+                            LoadEmployeeGrid();
                             LoadDashboardOverview();
                         }
                         catch (Exception)
@@ -960,252 +1107,220 @@ namespace TPASystem2.HR
             catch (Exception ex)
             {
                 LogError(ex);
-                ShowMessage("Error saving employee profile. Please try again.", "error");
-            }
-        }
-
-        private void UpdateUserAccount(int employeeId, SqlConnection conn, SqlTransaction transaction)
-        {
-            try
-            {
-                // Check if user account exists
-                string checkUserQuery = "SELECT UserId FROM Employees WHERE Id = @EmployeeId";
-                int? userId = null;
-
-                using (SqlCommand cmd = new SqlCommand(checkUserQuery, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                    object result = cmd.ExecuteScalar();
-                    if (result != null && result != DBNull.Value)
-                    {
-                        userId = Convert.ToInt32(result);
-                    }
-                }
-
-                if (userId.HasValue)
-                {
-                    // Update existing user
-                    string updateUserQuery = @"
-                        UPDATE Users SET
-                            Role = @Role,
-                            IsActive = @IsActive,
-                            MustChangePassword = @MustChangePassword,
-                            UpdatedAt = GETDATE()
-                        WHERE Id = @UserId";
-
-                    using (SqlCommand cmd = new SqlCommand(updateUserQuery, conn, transaction))
-                    {
-                        cmd.Parameters.AddWithValue("@UserId", userId.Value);
-                        cmd.Parameters.AddWithValue("@Role", ddlUserRole.SelectedValue);
-                        cmd.Parameters.AddWithValue("@IsActive", chkIsActive.Checked);
-                        cmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-                else if (!string.IsNullOrEmpty(ddlUserRole.SelectedValue))
-                {
-                    // Create new user account
-                    CreateUserAccount(employeeId, conn, transaction);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                throw;
-            }
-        }
-
-        private void CreateUserAccount(int employeeId, SqlConnection conn, SqlTransaction transaction)
-        {
-            try
-            {
-                // Get employee email for user account
-                string getEmailQuery = "SELECT Email FROM Employees WHERE Id = @EmployeeId";
-                string employeeEmail = "";
-
-                using (SqlCommand cmd = new SqlCommand(getEmailQuery, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                    employeeEmail = cmd.ExecuteScalar()?.ToString() ?? "";
-                }
-
-                if (!string.IsNullOrEmpty(employeeEmail))
-                {
-                    // Generate default password (should be changed on first login)
-                    string defaultPassword = "TempPass123!";
-                    string salt = Guid.NewGuid().ToString();
-                    string hashedPassword = HashPassword(defaultPassword, salt);
-
-                    // Create user account
-                    string createUserQuery = @"
-                        INSERT INTO Users (Email, PasswordHash, Salt, Role, IsActive, MustChangePassword, CreatedAt, UpdatedAt)
-                        VALUES (@Email, @PasswordHash, @Salt, @Role, @IsActive, 1, GETDATE(), GETDATE());
-                        SELECT SCOPE_IDENTITY();";
-
-                    int newUserId = 0;
-                    using (SqlCommand cmd = new SqlCommand(createUserQuery, conn, transaction))
-                    {
-                        cmd.Parameters.AddWithValue("@Email", employeeEmail);
-                        cmd.Parameters.AddWithValue("@PasswordHash", hashedPassword);
-                        cmd.Parameters.AddWithValue("@Salt", salt);
-                        cmd.Parameters.AddWithValue("@Role", ddlUserRole.SelectedValue);
-                        cmd.Parameters.AddWithValue("@IsActive", chkIsActive.Checked);
-
-                        newUserId = Convert.ToInt32(cmd.ExecuteScalar());
-                    }
-
-                    // Update employee record with new UserId
-                    string updateEmployeeQuery = "UPDATE Employees SET UserId = @UserId WHERE Id = @EmployeeId";
-                    using (SqlCommand cmd = new SqlCommand(updateEmployeeQuery, conn, transaction))
-                    {
-                        cmd.Parameters.AddWithValue("@UserId", newUserId);
-                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    ShowMessage($"User account created successfully. Default password: {defaultPassword} (must be changed on first login)", "info");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                throw;
-            }
-        }
-
-        private string HashPassword(string password, string salt)
-        {
-            // Simple password hashing - in production, use stronger hashing like bcrypt
-            using (var sha256 = System.Security.Cryptography.SHA256.Create())
-            {
-                byte[] hashedBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password + salt));
-                return Convert.ToBase64String(hashedBytes);
-            }
-        }
-
-        private void LogProfileChanges(int employeeId, SqlConnection conn, SqlTransaction transaction)
-        {
-            try
-            {
-                // For now, we'll log a general "Profile Updated" entry
-                // In a full implementation, you would compare old vs new values for each field
-                string insertAuditQuery = @"
-                    INSERT INTO EmployeeProfileAudit (EmployeeId, FieldName, OldValue, NewValue, ChangedBy, ChangedDate)
-                    VALUES (@EmployeeId, @FieldName, @OldValue, @NewValue, @ChangedBy, GETDATE())";
-
-                using (SqlCommand cmd = new SqlCommand(insertAuditQuery, conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                    cmd.Parameters.AddWithValue("@FieldName", "Profile");
-                    cmd.Parameters.AddWithValue("@OldValue", "Previous Values");
-                    cmd.Parameters.AddWithValue("@NewValue", "Updated Values");
-                    cmd.Parameters.AddWithValue("@ChangedBy", CurrentEmployeeId);
-                    cmd.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                // Don't throw - audit logging failure shouldn't stop the main operation
-            }
-        }
-
-        private void DeactivateEmployee(int employeeId)
-        {
-            if (!CanAccessEmployee(employeeId))
-            {
-                ShowMessage("Access denied. You can only deactivate employees in your department.", "error");
-                return;
-            }
-
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-
-                    string updateQuery = @"
-                        UPDATE Employees SET
-                            Status = 'Inactive',
-                            IsActive = 0,
-                            UpdatedAt = GETDATE()
-                        WHERE Id = @EmployeeId";
-
-                    using (SqlCommand cmd = new SqlCommand(updateQuery, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                        int rowsAffected = cmd.ExecuteNonQuery();
-
-                        if (rowsAffected > 0)
-                        {
-                            ShowMessage("Employee has been deactivated.", "success");
-
-                            // Reset the form
-                            pnlEmployeeProfile.Visible = false;
-                            pnlRecentActivity.Visible = false;
-                            ddlEmployeeSelect.SelectedIndex = 0;
-
-                            // Refresh the employee list and dashboard
-                            LoadEmployeeList();
-                            LoadDashboardOverview();
-                        }
-                        else
-                        {
-                            ShowMessage("Error deactivating employee. Please try again.", "error");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                ShowMessage("Error deactivating employee. Please try again.", "error");
+                ShowMessage("Error saving employee profile. Please check all fields and try again.", "error");
             }
         }
 
         #endregion
+        // Add these methods to your ManageEmployeeProfiles.aspx.cs file:
 
-        #region Utility Methods
+        #region Modal Event Handlers
 
-        private void ShowMessage(string message, string messageType)
+        protected void btnSaveProfile_Click(object sender, EventArgs e)
         {
-            string cssClass = "";
-            string icon = "";
-
-            switch (messageType.ToLower())
+            if (ViewState["EditingEmployeeId"] != null)
             {
-                case "success":
-                    cssClass = "message-success";
-                    icon = "check_circle";
+                int employeeId = Convert.ToInt32(ViewState["EditingEmployeeId"]);
+
+                if (!CanAccessEmployee(employeeId))
+                {
+                    ShowMessage("Access denied. You cannot modify this employee.", "error");
+                    return;
+                }
+
+                SaveEmployeeProfile(employeeId);
+            }
+        }
+
+        protected void btnCancelEdit_Click(object sender, EventArgs e)
+        {
+            pnlEmployeeModal.Visible = false;
+            ViewState["EditingEmployeeId"] = null;
+            ClearModalFields();
+        }
+
+        protected void btnCloseModal_Click(object sender, EventArgs e)
+        {
+            pnlEmployeeModal.Visible = false;
+            ViewState["EditingEmployeeId"] = null;
+            ClearModalFields();
+        }
+
+        protected void btnCloseActivityModal_Click(object sender, EventArgs e)
+        {
+            pnlActivityModal.Visible = false;
+        }
+
+        private void ClearModalFields()
+        {
+            // Clear all form fields
+            txtFirstName.Text = "";
+            txtLastName.Text = "";
+            txtEmployeeNumber.Text = "";
+            txtDateOfBirth.Text = "";
+            ddlGender.SelectedIndex = 0;
+            txtJobTitle.Text = "";
+            ddlDepartment.SelectedIndex = 0;
+            ddlEmployeeType.SelectedIndex = 0;
+            txtHireDate.Text = "";
+            ddlManager.SelectedIndex = 0;
+            ddlEmployeeStatus.SelectedIndex = 0;
+            txtSalary.Text = "";
+            txtWorkLocation.Text = "";
+            txtEmail.Text = "";
+            txtPhoneNumber.Text = "";
+            txtAddress.Text = "";
+            txtCity.Text = "";
+            txtState.Text = "";
+            txtZipCode.Text = "";
+            ddlUserRole.SelectedIndex = 0;
+            chkIsActive.Checked = false;
+            chkMustChangePassword.Checked = false;
+        }
+
+        #endregion
+
+        #region Grid Event Handlers
+
+        protected void gvEmployees_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            int employeeId = Convert.ToInt32(e.CommandArgument);
+
+            switch (e.CommandName)
+            {
+                case "ViewProfile":
+                    if (CanAccessEmployee(employeeId))
+                    {
+                        LoadEmployeeProfile(employeeId);
+                        pnlEmployeeModal.Visible = true;
+
+                        // Set the first tab as active using client script
+                        ScriptManager.RegisterStartupScript(this, GetType(), "showFirstTab",
+                            "setTimeout(function() { showTab('personal'); }, 100);", true);
+                    }
+                    else
+                    {
+                        ShowMessage("Access denied. You can only view employees in your department.", "error");
+                    }
                     break;
-                case "error":
-                    cssClass = "message-error";
-                    icon = "error";
+
+                case "ViewActivity":
+                    if (CanAccessEmployee(employeeId))
+                    {
+                        LoadEmployeeActivity(employeeId);
+                        pnlActivityModal.Visible = true;
+                    }
+                    else
+                    {
+                        ShowMessage("Access denied.", "error");
+                    }
                     break;
-                case "warning":
-                    cssClass = "message-warning";
-                    icon = "warning";
+
+                case "ToggleStatus":
+                    if (CanAccessEmployee(employeeId))
+                    {
+                        ToggleEmployeeStatus(employeeId);
+                    }
+                    else
+                    {
+                        ShowMessage("Access denied.", "error");
+                    }
                     break;
-                case "info":
-                default:
-                    cssClass = "message-info";
-                    icon = "info";
+
+                case "DeleteEmployee":
+                    if (IsAdmin() && CanAccessEmployee(employeeId))
+                    {
+                        DeleteEmployee(employeeId);
+                    }
+                    else
+                    {
+                        ShowMessage("Access denied. Only administrators can delete employees.", "error");
+                    }
                     break;
             }
+        }
 
-            litMessage.Text = $@"
-                <div class='{cssClass}'>
-                    <i class='material-icons'>{icon}</i>
-                    <span>{message}</span>
-                </div>";
+        protected void gvEmployees_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                // Hide delete button for non-admins
+                LinkButton btnDelete = e.Row.FindControl("btnDeleteEmployee") as LinkButton;
+                if (btnDelete != null)
+                {
+                    btnDelete.Visible = IsAdmin();
+                }
+            }
+        }
 
+        protected void gvEmployees_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gvEmployees.PageIndex = e.NewPageIndex;
+            LoadEmployeeGrid();
+        }
+
+        #endregion
+        #region Helper Methods
+
+        //protected string GetEmployeeInitials(object firstName, object lastName)
+        //{
+        //    string first = firstName?.ToString() ?? "";
+        //    string last = lastName?.ToString() ?? "";
+
+        //    string firstInitial = !string.IsNullOrEmpty(first) ? first.Substring(0, 1).ToUpper() : "";
+        //    string lastInitial = !string.IsNullOrEmpty(last) ? last.Substring(0, 1).ToUpper() : "";
+
+        //    return firstInitial + lastInitial;
+        //}
+
+        //protected string GetStatusClass(object status)
+        //{
+        //    string statusValue = status?.ToString().ToUpper() ?? "";
+
+        //    switch (statusValue)
+        //    {
+        //        case "ACTIVE":
+        //            return "active";
+        //        case "INACTIVE":
+        //            return "inactive";
+        //        case "TERMINATED":
+        //            return "terminated";
+        //        case "ON_LEAVE":
+        //            return "on-leave";
+        //        default:
+        //            return "unknown";
+        //    }
+        //}
+
+
+
+        private string GetTimeAgo(DateTime dateTime)
+        {
+            TimeSpan timeDifference = DateTime.Now - dateTime;
+
+            if (timeDifference.TotalMinutes < 1)
+                return "Just now";
+            else if (timeDifference.TotalMinutes < 60)
+                return $"{(int)timeDifference.TotalMinutes} minute{((int)timeDifference.TotalMinutes != 1 ? "s" : "")} ago";
+            else if (timeDifference.TotalHours < 24)
+                return $"{(int)timeDifference.TotalHours} hour{((int)timeDifference.TotalHours != 1 ? "s" : "")} ago";
+            else if (timeDifference.TotalDays < 30)
+                return $"{(int)timeDifference.TotalDays} day{((int)timeDifference.TotalDays != 1 ? "s" : "")} ago";
+            else
+                return dateTime.ToString("MMM dd, yyyy");
+        }
+
+        private void ShowMessage(string message, string type)
+        {
             pnlMessage.Visible = true;
+            pnlMessage.CssClass = $"alert alert-{type}";
+            litMessage.Text = message;
 
             // Auto-hide success messages after 5 seconds
-            if (messageType.ToLower() == "success")
+            if (type == "success")
             {
-                ClientScript.RegisterStartupScript(this.GetType(), "hideMessage",
-                    "setTimeout(function() { document.querySelector('.message-panel').style.display = 'none'; }, 5000);", true);
+                ScriptManager.RegisterStartupScript(this, GetType(), "hideMessage",
+                    "setTimeout(function() { var alert = document.querySelector('.alert'); if(alert) alert.style.display = 'none'; }, 5000);", true);
             }
         }
 
@@ -1216,30 +1331,86 @@ namespace TPASystem2.HR
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-
-                    string insertQuery = @"
+                    string query = @"
                         INSERT INTO ErrorLogs (ErrorMessage, StackTrace, Source, Timestamp, UserId, Severity)
                         VALUES (@ErrorMessage, @StackTrace, @Source, GETDATE(), @UserId, @Severity)";
 
-                    using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@ErrorMessage", ex.Message);
                         cmd.Parameters.AddWithValue("@StackTrace", ex.StackTrace ?? "");
-                        cmd.Parameters.AddWithValue("@Source", ex.Source ?? "ManageEmployeeProfiles");
+                        cmd.Parameters.AddWithValue("@Source", "ManageEmployeeProfiles");
                         cmd.Parameters.AddWithValue("@UserId", CurrentUserId);
-                        cmd.Parameters.AddWithValue("@Severity", "High");
-
+                        cmd.Parameters.AddWithValue("@Severity", "Error");
                         cmd.ExecuteNonQuery();
                     }
                 }
             }
             catch
             {
-                // If logging fails, we don't want to throw another exception
-                // In production, you might want to log to a file or other system
+                // If logging fails, don't throw another exception
             }
         }
 
+        private void LogActivity(string action, string entityType, string details, int? employeeId, SqlConnection conn, SqlTransaction transaction)
+        {
+            try
+            {
+                string query = @"
+                    INSERT INTO RecentActivities (UserId, EmployeeId, ActivityTypeId, Action, EntityType, Details, IPAddress, CreatedAt)
+                    VALUES (@UserId, @EmployeeId, 1, @Action, @EntityType, @Details, @IPAddress, GETDATE())";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@UserId", CurrentUserId);
+                    cmd.Parameters.AddWithValue("@EmployeeId", employeeId.HasValue ? (object)employeeId.Value : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Action", action);
+                    cmd.Parameters.AddWithValue("@EntityType", entityType);
+                    cmd.Parameters.AddWithValue("@Details", details);
+                    cmd.Parameters.AddWithValue("@IPAddress", Request.UserHostAddress ?? "Unknown");
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            catch
+            {
+                // If activity logging fails, don't break the main operation
+            }
+        }
+        protected string GetEmployeeInitials(object firstName, object lastName)
+        {
+            string first = firstName?.ToString() ?? "";
+            string last = lastName?.ToString() ?? "";
+
+            string firstInitial = !string.IsNullOrEmpty(first) ? first.Substring(0, 1).ToUpper() : "";
+            string lastInitial = !string.IsNullOrEmpty(last) ? last.Substring(0, 1).ToUpper() : "";
+
+            return firstInitial + lastInitial;
+        }
+
+        protected string GetStatusClass(object status)
+        {
+            string statusValue = status?.ToString().ToUpper() ?? "";
+
+            switch (statusValue)
+            {
+                case "ACTIVE":
+                    return "active";
+                case "INACTIVE":
+                    return "inactive";
+                case "TERMINATED":
+                    return "terminated";
+                case "ON_LEAVE":
+                    return "on-leave";
+                default:
+                    return "unknown";
+            }
+        }
+
+        protected string GetAccessStatusClass(object isActive)
+        {
+            bool active = Convert.ToBoolean(isActive ?? false);
+            return active ? "access-active" : "access-inactive";
+        }
         #endregion
     }
 }
