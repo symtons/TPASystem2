@@ -213,15 +213,6 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.LinkButton btnCloseModal;
 
         /// <summary>
-        /// pnlPersonalInfo control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlPersonalInfo;
-
-        /// <summary>
         /// txtFirstName control.
         /// </summary>
         /// <remarks>
@@ -265,15 +256,6 @@ namespace TPASystem2.HR
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList ddlGender;
-
-        /// <summary>
-        /// pnlEmploymentInfo control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlEmploymentInfo;
 
         /// <summary>
         /// txtJobTitle control.
@@ -348,15 +330,6 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.TextBox txtWorkLocation;
 
         /// <summary>
-        /// pnlContactInfo control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlContactInfo;
-
-        /// <summary>
         /// txtEmail control.
         /// </summary>
         /// <remarks>
@@ -409,15 +382,6 @@ namespace TPASystem2.HR
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtZipCode;
-
-        /// <summary>
-        /// pnlSystemAccess control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlSystemAccess;
 
         /// <summary>
         /// ddlUserRole control.

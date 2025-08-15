@@ -1064,457 +1064,621 @@
     </div>
 
     <!-- Employee Profile Modal Panel -->
-    <asp:Panel ID="pnlEmployeeModal" runat="server" CssClass="modal-overlay" Visible="false">
-        <div class="modal-content large-modal">
-            <div class="modal-header">
-                <h4 class="modal-title">
-                    <i class="material-icons">person</i>
-                    Employee Profile: <asp:Literal ID="litSelectedEmployee" runat="server"></asp:Literal>
-                </h4>
-                <asp:LinkButton ID="btnCloseModal" runat="server" CssClass="modal-close" OnClick="btnCloseModal_Click">
-                    <i class="material-icons">close</i>
-                </asp:LinkButton>
-            </div>
-            
-            <div class="modal-body">
-                <!-- Profile Tabs -->
-                <div class="profile-tabs-container">
-                    <div class="profile-tabs">
-                        <button type="button" class="tab-button active" onclick="showTab('personal')">
-                            <i class="material-icons">person</i>
-                            Personal Info
-                        </button>
-                        <button type="button" class="tab-button" onclick="showTab('employment')">
-                            <i class="material-icons">work</i>
-                            Employment
-                        </button>
-                        <button type="button" class="tab-button" onclick="showTab('contact')">
-                            <i class="material-icons">contact_mail</i>
-                            Contact
-                        </button>
-                        <button type="button" class="tab-button" onclick="showTab('system')">
-                            <i class="material-icons">security</i>
-                            System Access
-                        </button>
+    <!-- REPLACE the modal panels in your ASPX with these corrected versions that match the existing system: -->
+
+<!-- Employee Profile Modal Panel - Fixed to match existing pattern -->
+<asp:Panel ID="pnlEmployeeModal" runat="server" CssClass="modal-overlay" Visible="false" style="display: none;">
+    <div class="modal-content large-modal">
+        <div class="modal-header">
+            <h4 class="modal-title">
+                <i class="material-icons">person</i>
+                Employee Profile: <asp:Literal ID="litSelectedEmployee" runat="server"></asp:Literal>
+            </h4>
+            <asp:LinkButton ID="btnCloseModal" runat="server" CssClass="modal-close" OnClick="btnCloseModal_Click">
+                <i class="material-icons">close</i>
+            </asp:LinkButton>
+        </div>
+        
+        <div class="modal-body">
+            <!-- Profile Tabs -->
+            <div class="profile-tabs-container">
+                <div class="profile-tabs">
+                    <button type="button" class="tab-button active" onclick="showTab('personal'); return false;">
+                        <i class="material-icons">person</i>
+                        Personal Info
+                    </button>
+                    <button type="button" class="tab-button" onclick="showTab('employment'); return false;">
+                        <i class="material-icons">work</i>
+                        Employment
+                    </button>
+                    <button type="button" class="tab-button" onclick="showTab('contact'); return false;">
+                        <i class="material-icons">contact_mail</i>
+                        Contact
+                    </button>
+                    <button type="button" class="tab-button" onclick="showTab('system'); return false;">
+                        <i class="material-icons">security</i>
+                        System Access
+                    </button>
+                </div>
+
+                <!-- Personal Information Tab -->
+                <div id="personalTab" class="tab-content active">
+                    <div class="profile-section">
+                        <h3><i class="material-icons">person</i>Personal Information</h3>
+                        <div class="profile-grid">
+                            <div class="form-group">
+                                <label for="txtFirstName">First Name <span class="required">*</span></label>
+                                <asp:TextBox ID="txtFirstName" runat="server" CssClass="form-control" 
+                                    placeholder="Enter first name" required></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtLastName">Last Name <span class="required">*</span></label>
+                                <asp:TextBox ID="txtLastName" runat="server" CssClass="form-control" 
+                                    placeholder="Enter last name" required></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtEmployeeNumber">Employee Number <span class="required">*</span></label>
+                                <asp:TextBox ID="txtEmployeeNumber" runat="server" CssClass="form-control" 
+                                    placeholder="Enter employee number" required></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtDateOfBirth">Date of Birth</label>
+                                <asp:TextBox ID="txtDateOfBirth" runat="server" CssClass="form-control" 
+                                    TextMode="Date"></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ddlGender">Gender</label>
+                                <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-control">
+                                    <asp:ListItem Value="" Text="Select Gender"></asp:ListItem>
+                                    <asp:ListItem Value="Male" Text="Male"></asp:ListItem>
+                                    <asp:ListItem Value="Female" Text="Female"></asp:ListItem>
+                                    <asp:ListItem Value="Other" Text="Other"></asp:ListItem>
+                                    <asp:ListItem Value="Prefer not to say" Text="Prefer not to say"></asp:ListItem>
+                                </asp:DropDownList>
+                            </div>
+                        </div>
                     </div>
-
-                    <!-- Personal Information Tab -->
-                    <asp:Panel ID="pnlPersonalInfo" runat="server" CssClass="tab-content active">
-                        <div class="profile-section">
-                            <h3><i class="material-icons">person</i>Personal Information</h3>
-                            <div class="profile-grid">
-                                <div class="form-group">
-                                    <label for="txtFirstName">First Name <span class="required">*</span></label>
-                                    <asp:TextBox ID="txtFirstName" runat="server" CssClass="form-control" 
-                                        placeholder="Enter first name" required></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtLastName">Last Name <span class="required">*</span></label>
-                                    <asp:TextBox ID="txtLastName" runat="server" CssClass="form-control" 
-                                        placeholder="Enter last name" required></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtEmployeeNumber">Employee Number <span class="required">*</span></label>
-                                    <asp:TextBox ID="txtEmployeeNumber" runat="server" CssClass="form-control" 
-                                        placeholder="Enter employee number" required></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtDateOfBirth">Date of Birth</label>
-                                    <asp:TextBox ID="txtDateOfBirth" runat="server" CssClass="form-control" 
-                                        TextMode="Date"></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="ddlGender">Gender</label>
-                                    <asp:DropDownList ID="ddlGender" runat="server" CssClass="form-control form-select">
-                                        <asp:ListItem Value="" Text="Select Gender"></asp:ListItem>
-                                        <asp:ListItem Value="Male" Text="Male"></asp:ListItem>
-                                        <asp:ListItem Value="Female" Text="Female"></asp:ListItem>
-                                        <asp:ListItem Value="Other" Text="Other"></asp:ListItem>
-                                        <asp:ListItem Value="Prefer not to say" Text="Prefer not to say"></asp:ListItem>
-                                    </asp:DropDownList>
-                                </div>
-                            </div>
-                        </div>
-                    </asp:Panel>
-
-                    <!-- Employment Information Tab -->
-                    <asp:Panel ID="pnlEmploymentInfo" runat="server" CssClass="tab-content">
-                        <div class="profile-section">
-                            <h3><i class="material-icons">work</i>Employment Information</h3>
-                            <div class="profile-grid">
-                                <div class="form-group">
-                                    <label for="txtJobTitle">Job Title <span class="required">*</span></label>
-                                    <asp:TextBox ID="txtJobTitle" runat="server" CssClass="form-control" 
-                                        placeholder="Enter job title" required></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="ddlDepartment">Department <span class="required">*</span></label>
-                                    <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-control form-select" required>
-                                    </asp:DropDownList>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="ddlEmployeeType">Employee Type</label>
-                                    <asp:DropDownList ID="ddlEmployeeType" runat="server" CssClass="form-control form-select">
-                                        <asp:ListItem Value="" Text="Select Type"></asp:ListItem>
-                                        <asp:ListItem Value="Full-Time" Text="Full-Time"></asp:ListItem>
-                                        <asp:ListItem Value="Part-Time" Text="Part-Time"></asp:ListItem>
-                                        <asp:ListItem Value="Contract" Text="Contract"></asp:ListItem>
-                                        <asp:ListItem Value="Temporary" Text="Temporary"></asp:ListItem>
-                                    </asp:DropDownList>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtHireDate">Hire Date <span class="required">*</span></label>
-                                    <asp:TextBox ID="txtHireDate" runat="server" CssClass="form-control" 
-                                        TextMode="Date" required></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="ddlManager">Manager</label>
-                                    <asp:DropDownList ID="ddlManager" runat="server" CssClass="form-control form-select">
-                                    </asp:DropDownList>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="ddlEmployeeStatus">Employment Status</label>
-                                    <asp:DropDownList ID="ddlEmployeeStatus" runat="server" CssClass="form-control form-select">
-                                        <asp:ListItem Value="ACTIVE" Text="Active"></asp:ListItem>
-                                        <asp:ListItem Value="INACTIVE" Text="Inactive"></asp:ListItem>
-                                        <asp:ListItem Value="TERMINATED" Text="Terminated"></asp:ListItem>
-                                        <asp:ListItem Value="ON_LEAVE" Text="On Leave"></asp:ListItem>
-                                    </asp:DropDownList>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtSalary">Salary</label>
-                                    <asp:TextBox ID="txtSalary" runat="server" CssClass="form-control" 
-                                        placeholder="Enter salary" TextMode="Number"></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtWorkLocation">Work Location</label>
-                                    <asp:TextBox ID="txtWorkLocation" runat="server" CssClass="form-control" 
-                                        placeholder="Enter work location"></asp:TextBox>
-                                </div>
-                            </div>
-                        </div>
-                    </asp:Panel>
-
-                    <!-- Contact Information Tab -->
-                    <asp:Panel ID="pnlContactInfo" runat="server" CssClass="tab-content">
-                        <div class="profile-section">
-                            <h3><i class="material-icons">contact_mail</i>Contact Information</h3>
-                            <div class="profile-grid">
-                                <div class="form-group">
-                                    <label for="txtEmail">Email Address <span class="required">*</span></label>
-                                    <asp:TextBox ID="txtEmail" runat="server" CssClass="form-control" 
-                                        placeholder="Enter email address" TextMode="Email" required></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtPhoneNumber">Phone Number</label>
-                                    <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-control" 
-                                        placeholder="Enter phone number"></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group full-width">
-                                    <label for="txtAddress">Address</label>
-                                    <asp:TextBox ID="txtAddress" runat="server" CssClass="form-control" 
-                                        placeholder="Enter address"></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtCity">City</label>
-                                    <asp:TextBox ID="txtCity" runat="server" CssClass="form-control" 
-                                        placeholder="Enter city"></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtState">State</label>
-                                    <asp:TextBox ID="txtState" runat="server" CssClass="form-control" 
-                                        placeholder="Enter state"></asp:TextBox>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="txtZipCode">ZIP Code</label>
-                                    <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-control" 
-                                        placeholder="Enter ZIP code"></asp:TextBox>
-                                </div>
-                            </div>
-                        </div>
-                    </asp:Panel>
-
-                    <!-- System Access Tab -->
-                    <asp:Panel ID="pnlSystemAccess" runat="server" CssClass="tab-content">
-                        <div class="profile-section">
-                            <h3><i class="material-icons">security</i>System Access</h3>
-                            <div class="profile-grid">
-                                <div class="form-group">
-                                    <label for="ddlUserRole">User Role</label>
-                                    <asp:DropDownList ID="ddlUserRole" runat="server" CssClass="form-control form-select">
-                                        <asp:ListItem Value="" Text="No System Access"></asp:ListItem>
-                                        <asp:ListItem Value="EMPLOYEE" Text="Employee"></asp:ListItem>
-                                        <asp:ListItem Value="SUPERVISOR" Text="Supervisor"></asp:ListItem>
-                                        <asp:ListItem Value="PROGRAMDIRECTOR" Text="Program Director"></asp:ListItem>
-                                        <asp:ListItem Value="HRADMIN" Text="HR Admin"></asp:ListItem>
-                                        <asp:ListItem Value="ADMIN" Text="Admin"></asp:ListItem>
-                                        <asp:ListItem Value="SUPERADMIN" Text="Super Admin"></asp:ListItem>
-                                    </asp:DropDownList>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="chkIsActive">System Access Active</label>
-                                    <div class="checkbox-wrapper">
-                                        <asp:CheckBox ID="chkIsActive" runat="server" Text="Allow system access" />
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label for="chkMustChangePassword">Force Password Change</label>
-                                    <div class="checkbox-wrapper">
-                                        <asp:CheckBox ID="chkMustChangePassword" runat="server" Text="User must change password on next login" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </asp:Panel>
                 </div>
-            </div>
-            
-            <div class="modal-footer">
-                <div class="modal-actions">
-                    <asp:Button ID="btnSaveProfile" runat="server" Text="Save Changes" 
-                        CssClass="btn-profile-save" OnClick="btnSaveProfile_Click" />
-                    <asp:Button ID="btnCancelEdit" runat="server" Text="Cancel" 
-                        CssClass="btn-secondary" OnClick="btnCancelEdit_Click" />
+
+                <!-- Employment Information Tab -->
+                <div id="employmentTab" class="tab-content">
+                    <div class="profile-section">
+                        <h3><i class="material-icons">work</i>Employment Information</h3>
+                        <div class="profile-grid">
+                            <div class="form-group">
+                                <label for="txtJobTitle">Job Title <span class="required">*</span></label>
+                                <asp:TextBox ID="txtJobTitle" runat="server" CssClass="form-control" 
+                                    placeholder="Enter job title" required></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ddlDepartment">Department <span class="required">*</span></label>
+                                <asp:DropDownList ID="ddlDepartment" runat="server" CssClass="form-control" required>
+                                </asp:DropDownList>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ddlEmployeeType">Employee Type</label>
+                                <asp:DropDownList ID="ddlEmployeeType" runat="server" CssClass="form-control">
+                                    <asp:ListItem Value="" Text="Select Type"></asp:ListItem>
+                                    <asp:ListItem Value="Full-Time" Text="Full-Time"></asp:ListItem>
+                                    <asp:ListItem Value="Part-Time" Text="Part-Time"></asp:ListItem>
+                                    <asp:ListItem Value="Contract" Text="Contract"></asp:ListItem>
+                                    <asp:ListItem Value="Temporary" Text="Temporary"></asp:ListItem>
+                                </asp:DropDownList>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtHireDate">Hire Date <span class="required">*</span></label>
+                                <asp:TextBox ID="txtHireDate" runat="server" CssClass="form-control" 
+                                    TextMode="Date" required></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ddlManager">Manager</label>
+                                <asp:DropDownList ID="ddlManager" runat="server" CssClass="form-control">
+                                </asp:DropDownList>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ddlEmployeeStatus">Employment Status</label>
+                                <asp:DropDownList ID="ddlEmployeeStatus" runat="server" CssClass="form-control">
+                                    <asp:ListItem Value="ACTIVE" Text="Active"></asp:ListItem>
+                                    <asp:ListItem Value="INACTIVE" Text="Inactive"></asp:ListItem>
+                                    <asp:ListItem Value="TERMINATED" Text="Terminated"></asp:ListItem>
+                                    <asp:ListItem Value="ON_LEAVE" Text="On Leave"></asp:ListItem>
+                                </asp:DropDownList>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtSalary">Salary</label>
+                                <asp:TextBox ID="txtSalary" runat="server" CssClass="form-control" 
+                                    placeholder="Enter salary" TextMode="Number"></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtWorkLocation">Work Location</label>
+                                <asp:TextBox ID="txtWorkLocation" runat="server" CssClass="form-control" 
+                                    placeholder="Enter work location"></asp:TextBox>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information Tab -->
+                <div id="contactTab" class="tab-content">
+                    <div class="profile-section">
+                        <h3><i class="material-icons">contact_mail</i>Contact Information</h3>
+                        <div class="profile-grid">
+                            <div class="form-group">
+                                <label for="txtEmail">Email Address <span class="required">*</span></label>
+                                <asp:TextBox ID="txtEmail" runat="server" CssClass="form-control" 
+                                    placeholder="Enter email address" TextMode="Email" required></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtPhoneNumber">Phone Number</label>
+                                <asp:TextBox ID="txtPhoneNumber" runat="server" CssClass="form-control" 
+                                    placeholder="Enter phone number"></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group full-width">
+                                <label for="txtAddress">Address</label>
+                                <asp:TextBox ID="txtAddress" runat="server" CssClass="form-control" 
+                                    placeholder="Enter address"></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtCity">City</label>
+                                <asp:TextBox ID="txtCity" runat="server" CssClass="form-control" 
+                                    placeholder="Enter city"></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtState">State</label>
+                                <asp:TextBox ID="txtState" runat="server" CssClass="form-control" 
+                                    placeholder="Enter state"></asp:TextBox>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="txtZipCode">ZIP Code</label>
+                                <asp:TextBox ID="txtZipCode" runat="server" CssClass="form-control" 
+                                    placeholder="Enter ZIP code"></asp:TextBox>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Access Tab -->
+                <div id="systemTab" class="tab-content">
+                    <div class="profile-section">
+                        <h3><i class="material-icons">security</i>System Access</h3>
+                        <div class="profile-grid">
+                            <div class="form-group">
+                                <label for="ddlUserRole">User Role</label>
+                                <asp:DropDownList ID="ddlUserRole" runat="server" CssClass="form-control">
+                                    <asp:ListItem Value="" Text="No System Access"></asp:ListItem>
+                                    <asp:ListItem Value="EMPLOYEE" Text="Employee"></asp:ListItem>
+                                    <asp:ListItem Value="SUPERVISOR" Text="Supervisor"></asp:ListItem>
+                                    <asp:ListItem Value="PROGRAMDIRECTOR" Text="Program Director"></asp:ListItem>
+                                    <asp:ListItem Value="HRADMIN" Text="HR Admin"></asp:ListItem>
+                                    <asp:ListItem Value="ADMIN" Text="Admin"></asp:ListItem>
+                                    <asp:ListItem Value="SUPERADMIN" Text="Super Admin"></asp:ListItem>
+                                </asp:DropDownList>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="chkIsActive">System Access Active</label>
+                                <div class="checkbox-wrapper">
+                                    <asp:CheckBox ID="chkIsActive" runat="server" Text="Allow system access" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="chkMustChangePassword">Force Password Change</label>
+                                <div class="checkbox-wrapper">
+                                    <asp:CheckBox ID="chkMustChangePassword" runat="server" Text="User must change password on next login" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </asp:Panel>
+        
+        <div class="modal-footer">
+            <asp:Button ID="btnSaveProfile" runat="server" Text="Save Changes" 
+                CssClass="btn btn-primary" OnClick="btnSaveProfile_Click" />
+            <asp:Button ID="btnCancelEdit" runat="server" Text="Cancel" 
+                CssClass="btn btn-outline" OnClick="btnCancelEdit_Click" />
+        </div>
+    </div>
+</asp:Panel>
 
-    <!-- Activity Modal Panel -->
-    <asp:Panel ID="pnlActivityModal" runat="server" CssClass="modal-overlay" Visible="false">
-        <div class="modal-content medium-modal">
-            <div class="modal-header">
-                <h4 class="modal-title">
-                    <i class="material-icons">history</i>
-                    Recent Activity: <asp:Literal ID="litActivityEmployee" runat="server"></asp:Literal>
-                </h4>
-                <asp:LinkButton ID="btnCloseActivityModal" runat="server" CssClass="modal-close" OnClick="btnCloseActivityModal_Click">
-                    <i class="material-icons">close</i>
-                </asp:LinkButton>
-            </div>
-            
-            <div class="modal-body">
-                <div class="activity-list">
-                    <asp:Literal ID="litRecentActivity" runat="server"></asp:Literal>
-                </div>
+<!-- Activity Modal Panel - Fixed -->
+<asp:Panel ID="pnlActivityModal" runat="server" CssClass="modal-overlay" Visible="false" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4 class="modal-title">
+                <i class="material-icons">history</i>
+                Recent Activity: <asp:Literal ID="litActivityEmployee" runat="server"></asp:Literal>
+            </h4>
+            <asp:LinkButton ID="btnCloseActivityModal" runat="server" CssClass="modal-close" OnClick="btnCloseActivityModal_Click">
+                <i class="material-icons">close</i>
+            </asp:LinkButton>
+        </div>
+        
+        <div class="modal-body">
+            <div class="activity-list">
+                <asp:Literal ID="litRecentActivity" runat="server"></asp:Literal>
             </div>
         </div>
-    </asp:Panel>
+    </div>
+</asp:Panel>
 
-    <!-- JavaScript for Tab Switching -->
-    <script type="text/javascript">
-        function showTab(tabName) {
-            // Hide all tab contents
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(function(content) {
-                content.classList.remove('active');
-            });
-            
-            // Remove active class from all tab buttons
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(function(button) {
-                button.classList.remove('active');
-            });
-            
-            // Show selected tab content
-            const selectedTab = document.getElementById('<%=pnlPersonalInfo.ClientID %>').parentNode.querySelector('[id$="' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Info"]');
-            if (selectedTab) {
-                selectedTab.classList.add('active');
+  <script type="text/javascript">
+      // Tab switching functionality
+      function showTab(tabName) {
+          // Hide all tab contents
+          var tabContents = document.querySelectorAll('.tab-content');
+          tabContents.forEach(function (content) {
+              content.classList.remove('active');
+          });
+
+          // Remove active class from all tab buttons
+          var tabButtons = document.querySelectorAll('.tab-button');
+          tabButtons.forEach(function (button) {
+              button.classList.remove('active');
+          });
+
+          // Show selected tab content using static IDs
+          var targetTab = document.getElementById(tabName + 'Tab');
+          if (targetTab) {
+              targetTab.classList.add('active');
+          }
+
+          // Add active class to clicked button
+          if (event && event.target) {
+              var clickedButton = event.target.closest('.tab-button');
+              if (clickedButton) {
+                  clickedButton.classList.add('active');
+              }
+          }
+
+          return false; // Prevent form submission
+      }
+
+      // Modal display functions
+      function showModal() {
+          var modal = document.getElementById('<%= pnlEmployeeModal.ClientID %>');
+          if (modal) {
+              modal.style.display = 'flex';
+              showTab('personal');
+          }
+      }
+
+      function hideModal() {
+          var modal = document.getElementById('<%= pnlEmployeeModal.ClientID %>');
+          if (modal) {
+              modal.style.display = 'none';
+          }
+      }
+
+      function showActivityModal() {
+          var modal = document.getElementById('<%= pnlActivityModal.ClientID %>');
+          if (modal) {
+              modal.style.display = 'flex';
+          }
+      }
+
+      function hideActivityModal() {
+          var modal = document.getElementById('<%= pnlActivityModal.ClientID %>');
+          if (modal) {
+              modal.style.display = 'none';
+          }
+      }
+
+      // Close modal functions
+      function closeModal() {
+          hideModal();
+      }
+
+      function closeActivityModal() {
+          hideActivityModal();
+      }
+
+      // Form validation
+      function validateProfileForm() {
+          var isValid = true;
+          var errorMessage = '';
+
+          // Required fields validation
+          var firstName = document.getElementById('<%= txtFirstName.ClientID %>');
+            var lastName = document.getElementById('<%= txtLastName.ClientID %>');
+            var employeeNumber = document.getElementById('<%= txtEmployeeNumber.ClientID %>');
+            var email = document.getElementById('<%= txtEmail.ClientID %>');
+
+          if (firstName && !firstName.value.trim()) {
+              errorMessage += 'First Name is required.\n';
+              isValid = false;
+          }
+
+          if (lastName && !lastName.value.trim()) {
+              errorMessage += 'Last Name is required.\n';
+              isValid = false;
+          }
+
+          if (employeeNumber && !employeeNumber.value.trim()) {
+              errorMessage += 'Employee Number is required.\n';
+              isValid = false;
+          }
+
+          if (email && !email.value.trim()) {
+              errorMessage += 'Email is required.\n';
+              isValid = false;
+          } else if (email && email.value.trim() && !isValidEmail(email.value.trim())) {
+              errorMessage += 'Please enter a valid email address.\n';
+              isValid = false;
+          }
+
+          if (!isValid) {
+              alert('Please correct the following errors:\n\n' + errorMessage);
+          }
+
+          return isValid;
+      }
+
+      function isValidEmail(email) {
+          var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          return emailRegex.test(email);
+      }
+
+      // Grid functionality
+      function confirmDelete(employeeName) {
+          return confirm('Are you sure you want to delete ' + employeeName + '? This action cannot be undone.');
+      }
+
+      function confirmStatusChange(employeeName, currentStatus) {
+          var newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+          return confirm('Are you sure you want to change ' + employeeName + '\'s status to ' + newStatus + '?');
+      }
+
+      // Search enhancement
+      function highlightSearchTerm() {
+          var searchInput = document.getElementById('<%= txtEmployeeSearch.ClientID %>');
+            if (searchInput) {
+                var searchTerm = searchInput.value.toLowerCase();
+                if (searchTerm.length > 0) {
+                    var gridId = '<%= gvEmployees.ClientID %>';
+                  var grid = document.getElementById(gridId);
+                  if (grid) {
+                      var rows = grid.querySelectorAll('tr');
+                      rows.forEach(function (row) {
+                          var cells = row.querySelectorAll('td');
+                          cells.forEach(function (cell) {
+                              var text = cell.textContent.toLowerCase();
+                              if (text.includes(searchTerm)) {
+                                  cell.style.backgroundColor = '#fff3cd';
+                              }
+                          });
+                      });
+                  }
+              }
+          }
+      }
+
+      // Auto-save form data to prevent loss
+      function autoSaveFormData() {
+          if (typeof (Storage) !== "undefined") {
+              var formData = {
+                  firstName: document.getElementById('<%= txtFirstName.ClientID %>') ? document.getElementById('<%= txtFirstName.ClientID %>').value : '',
+                    lastName: document.getElementById('<%= txtLastName.ClientID %>') ? document.getElementById('<%= txtLastName.ClientID %>').value : '',
+                    email: document.getElementById('<%= txtEmail.ClientID %>') ? document.getElementById('<%= txtEmail.ClientID %>').value : ''
+                };
+                localStorage.setItem('employeeFormData', JSON.stringify(formData));
             }
-            
-            // Add active class to clicked button
-            event.target.closest('.tab-button').classList.add('active');
         }
 
-        // Auto-hide success messages
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert-success');
-            alerts.forEach(function(alert) {
-                alert.style.display = 'none';
-            });
-        }, 5000);
-
-
-
-    // Tab switching functionality
-    function showTab(tabName) {
-        // Hide all tab contents
-        var tabContents = document.querySelectorAll('.tab-content');
-        tabContents.forEach(function(content) {
-            content.classList.remove('active');
-        });
-        
-        // Remove active class from all tab buttons
-        var tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(function(button) {
-            button.classList.remove('active');
-        });
-        
-        // Show selected tab content
-        var targetTab = null;
-        switch(tabName) {
-            case 'personal':
-                targetTab = document.getElementById('<%= pnlPersonalInfo.ClientID %>');
-                break;
-            case 'employment':
-                targetTab = document.getElementById('<%= pnlEmploymentInfo.ClientID %>');
-                break;
-            case 'contact':
-                targetTab = document.getElementById('<%= pnlContactInfo.ClientID %>');
-                break;
-            case 'system':
-                targetTab = document.getElementById('<%= pnlSystemAccess.ClientID %>');
-                break;
-        }
-        
-        if (targetTab) {
-            targetTab.classList.add('active');
-        }
-        
-        // Add active class to clicked button
-        event.target.closest('.tab-button').classList.add('active');
-    }
-
-    // Modal functions
-    function closeModal() {
-        var modal = document.getElementById('<%= pnlEmployeeModal.ClientID %>');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    function closeActivityModal() {
-        var modal = document.getElementById('<%= pnlActivityModal.ClientID %>');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
-    // Auto-hide success messages
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            var successAlerts = document.querySelectorAll('.alert-success');
-            successAlerts.forEach(function(alert) {
-                if (alert) {
-                    alert.style.display = 'none';
+        function restoreFormData() {
+            if (typeof(Storage) !== "undefined") {
+                var savedData = localStorage.getItem('employeeFormData');
+                if (savedData) {
+                    var formData = JSON.parse(savedData);
+                    var firstNameField = document.getElementById('<%= txtFirstName.ClientID %>');
+                    var lastNameField = document.getElementById('<%= txtLastName.ClientID %>');
+                    var emailField = document.getElementById('<%= txtEmail.ClientID %>');
+                    
+                    if (firstNameField && !firstNameField.value) firstNameField.value = formData.firstName || '';
+                    if (lastNameField && !lastNameField.value) lastNameField.value = formData.lastName || '';
+                    if (emailField && !emailField.value) emailField.value = formData.email || '';
                 }
-            });
-        }, 5000);
-
-        // Close modal when clicking outside
-        var modals = document.querySelectorAll('.modal-overlay');
-        modals.forEach(function(modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
-        });
-
-        // Prevent modal content clicks from closing modal
-        var modalContents = document.querySelectorAll('.modal-content');
-        modalContents.forEach(function(content) {
-            content.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        });
-    });
-
-    // Form validation
-    function validateProfileForm() {
-        var isValid = true;
-        var errorMessage = '';
-
-        // Required fields validation
-        var firstName = document.getElementById('<%= txtFirstName.ClientID %>').value.trim();
-        var lastName = document.getElementById('<%= txtLastName.ClientID %>').value.trim();
-        var employeeNumber = document.getElementById('<%= txtEmployeeNumber.ClientID %>').value.trim();
-        var email = document.getElementById('<%= txtEmail.ClientID %>').value.trim();
-
-        if (!firstName) {
-            errorMessage += 'First Name is required.\n';
-            isValid = false;
+            }
         }
 
-        if (!lastName) {
-            errorMessage += 'Last Name is required.\n';
-            isValid = false;
+        function clearAutoSavedData() {
+            if (typeof(Storage) !== "undefined") {
+                localStorage.removeItem('employeeFormData');
+            }
         }
 
-        if (!employeeNumber) {
-            errorMessage += 'Employee Number is required.\n';
-            isValid = false;
-        }
+        // Initialize page functionality
+        function initializePage() {
+            // Auto-hide success messages
+            setTimeout(function() {
+                var successAlerts = document.querySelectorAll('.alert-success');
+                successAlerts.forEach(function(alert) {
+                    if (alert) {
+                        alert.style.display = 'none';
+                    }
+                });
+            }, 5000);
 
-        if (!email) {
-            errorMessage += 'Email is required.\n';
-            isValid = false;
-        } else if (!isValidEmail(email)) {
-            errorMessage += 'Please enter a valid email address.\n';
-            isValid = false;
-        }
-
-        if (!isValid) {
-            alert('Please correct the following errors:\n\n' + errorMessage);
-        }
-
-        return isValid;
-    }
-
-    function isValidEmail(email) {
-        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    // Enhanced grid functionality
-    function confirmDelete(employeeName) {
-        return confirm('Are you sure you want to delete ' + employeeName + '? This action cannot be undone.');
-    }
-
-    function confirmStatusChange(employeeName, currentStatus) {
-        var newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-        return confirm('Are you sure you want to change ' + employeeName + '\'s status to ' + newStatus + '?');
-    }
-
-    // Search enhancement
-    function highlightSearchTerm() {
-        var searchTerm = document.getElementById('<%= txtEmployeeSearch.ClientID %>').value.toLowerCase();
-        if (searchTerm.length > 0) {
-            var rows = document.querySelectorAll('#<%= gvEmployees.ClientID %> tr');
-                rows.forEach(function(row) {
-                var cells = row.querySelectorAll('td');
-                cells.forEach(function(cell) {
-                    var text = cell.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    cell.style.backgroundColor = '#fff3cd';
+            // Close modal when clicking outside
+            var modals = document.querySelectorAll('.modal-overlay');
+            modals.forEach(function(modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                        clearAutoSavedData();
                     }
                 });
             });
-        }
-    }
 
-                // Call search highlighting after grid updates
-                function Sys$WebForms$PageRequestManager$_endRequest(sender, args) {
-                    highlightSearchTerm();
-    }
+            // Prevent modal content clicks from closing modal
+            var modalContents = document.querySelectorAll('.modal-content');
+            modalContents.forEach(function(content) {
+                content.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+
+            // Initialize first tab as active
+            var firstTab = document.getElementById('personalTab');
+            if (firstTab) {
+                firstTab.classList.add('active');
+            }
+            
+            var firstButton = document.querySelector('.tab-button');
+            if (firstButton) {
+                firstButton.classList.add('active');
+            }
+
+            // Add form change listeners for auto-save
+            var formFields = document.querySelectorAll('input, select, textarea');
+            formFields.forEach(function(field) {
+                field.addEventListener('change', autoSaveFormData);
+                field.addEventListener('input', autoSaveFormData);
+            });
+
+            // Restore any auto-saved data
+            restoreFormData();
+
+            // Initialize search highlighting
+            var searchBox = document.getElementById('<%= txtEmployeeSearch.ClientID %>');
+            if (searchBox) {
+                searchBox.addEventListener('input', function() {
+                    setTimeout(highlightSearchTerm, 100);
+                });
+            }
+
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // ESC key closes modals
+                if (e.key === 'Escape') {
+                    var visibleModals = document.querySelectorAll('.modal-overlay[style*="flex"]');
+                    visibleModals.forEach(function(modal) {
+                        modal.style.display = 'none';
+                    });
+                }
+                
+                // Ctrl+S saves form (prevent default save)
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    var saveButton = document.getElementById('<%= btnSaveProfile.ClientID %>');
+                    if (saveButton && saveButton.style.display !== 'none') {
+                        if (validateProfileForm()) {
+                            saveButton.click();
+                        }
+                    }
+                }
+            });
+        }
+
+        // Document ready
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Handle postback events for UpdatePanel compatibility
+        if (typeof Sys !== 'undefined' && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+            var prm = Sys.WebForms.PageRequestManager.getInstance();
+            if (prm) {
+                prm.add_endRequest(function (sender, e) {
+                    // Re-initialize functionality after postback
+                    initializePage();
+                    
+                    // Check if we need to show a modal after postback
+                    var modalToShow = '<%= Session["ShowModal"] %>';
+                    if (modalToShow === 'Employee') {
+                        showModal();
+                        '<% Session["ShowModal"] = null; %>';
+                    } else if (modalToShow === 'Activity') {
+                        showActivityModal();
+                        '<% Session["ShowModal"] = null; %>';
+                    }
+                    
+                    // Re-apply search highlighting
+                    setTimeout(highlightSearchTerm, 200);
+                });
+                
+                prm.add_beginRequest(function(sender, e) {
+                    // Show loading indicator
+                    var grid = document.getElementById('<%= gvEmployees.ClientID %>');
+                    if (grid) {
+                        grid.style.opacity = '0.7';
+                        grid.style.pointerEvents = 'none';
+                    }
+                });
+          }
+      }
+
+      // Global error handler
+      window.addEventListener('error', function (e) {
+          console.error('JavaScript Error:', e.error);
+          // Don't show errors to users in production, just log them
+      });
+
+      // Performance monitoring
+      window.addEventListener('load', function () {
+          // Log page load time for performance monitoring
+          if (window.performance && window.performance.timing) {
+              var loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+              console.log('Page load time:', loadTime + 'ms');
+          }
+      });
+
+      // Accessibility enhancements
+      function enhanceAccessibility() {
+          // Add ARIA labels to action buttons
+          var actionButtons = document.querySelectorAll('.btn-action');
+          actionButtons.forEach(function (button) {
+              var icon = button.querySelector('.material-icons');
+              if (icon) {
+                  var action = '';
+                  switch (icon.textContent.trim()) {
+                      case 'edit': action = 'Edit employee profile'; break;
+                      case 'history': action = 'View employee activity'; break;
+                      case 'pause': action = 'Deactivate employee'; break;
+                      case 'play_arrow': action = 'Activate employee'; break;
+                      case 'delete': action = 'Delete employee'; break;
+                  }
+                  if (action) {
+                      button.setAttribute('aria-label', action);
+                  }
+              }
+          });
+
+          // Enhance modal accessibility
+          var modals = document.querySelectorAll('.modal-overlay');
+          modals.forEach(function (modal) {
+              modal.setAttribute('role', 'dialog');
+              modal.setAttribute('aria-modal', 'true');
+
+              var title = modal.querySelector('.modal-title');
+              if (title) {
+                  var titleId = 'modal-title-' + Math.random().toString(36).substr(2, 9);
+                  title.id = titleId;
+                  modal.setAttribute('aria-labelledby', titleId);
+              }
+          });
+      }
+
+      // Call accessibility enhancements after page load
+      document.addEventListener('DOMContentLoaded', function () {
+          setTimeout(enhanceAccessibility, 100);
+      });
 
     </script>
 </asp:Content>
