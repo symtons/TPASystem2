@@ -821,7 +821,7 @@
                <!-- Fixed Add Employee Button -->
 <asp:Button ID="btnAddEmployee" runat="server" Text="Add Employee" 
     CssClass="btn-tpa" OnClick="btnAddEmployee_Click" />
-
+      <asp:Button ID="Button1" runat="server" Text="Add Employee" OnClick="Button1_Click" />
 <!-- Fixed Export Button -->
 <asp:Button ID="btnExportEmployees" runat="server" Text="Export" 
     CssClass="btn-secondary" OnClick="btnExportEmployees_Click" />

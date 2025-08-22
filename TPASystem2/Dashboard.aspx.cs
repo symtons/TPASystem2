@@ -870,13 +870,13 @@ namespace TPASystem2
 
                 case "HRADMIN":
                     actions.AppendLine(CreateQuickAction("New Employee", "Add new team member", "person_add", "/employees/add", "add-employee"));
-                    actions.AppendLine(CreateQuickAction("Leave Requests", "Review pending requests", "event_available", "/leave/requests", "leave-requests"));
+                    actions.AppendLine(CreateQuickAction("New Applications", "Review pending Applications", "assignment", $"{appPath}/HR/Application.aspx",  "leave-requests"));
                     actions.AppendLine(CreateQuickAction("Employee Reports", "Generate HR reports", "assessment", "/reports/hr", "hr-reports"));
                     actions.AppendLine(CreateQuickAction("Onboarding", "Manage new hire tasks", "assignment", "/onboarding", "onboarding"));
                     break;
 
                 case "PROGRAMDIRECTOR":
-                    actions.AppendLine(CreateQuickAction("Team Overview", "View team status", "people", "/team/overview", "team-overview"));
+                    actions.AppendLine(CreateQuickAction(" Employee Profile", "Register new employee", "person_add", $"{appPath}/Profile/ManageEmployeeProfiles.aspx", "add-employee"));
                     actions.AppendLine(CreateQuickAction("Approve Requests", "Review team requests", "assignment", "/approvals/team", "team-approvals"));
                     actions.AppendLine(CreateQuickAction("Schedule Meeting", "Plan team meeting", "event", "/meetings/schedule", "schedule-meeting"));
                     actions.AppendLine(CreateQuickAction("Performance Review", "Evaluate team members", "assessment", "/performance", "performance-review"));

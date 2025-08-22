@@ -218,17 +218,7 @@ namespace TPASystem2.HR
             Response.Redirect("~/HR/AddEmployee.aspx");
         }
 
-        protected void btnExportEmployees_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                ExportEmployeesToCSV();
-            }
-            catch (Exception ex)
-            {
-                ShowMessage($"Error exporting employees: {ex.Message}", "error");
-            }
-        }
+       
 
         protected void txtSearch_TextChanged(object sender, EventArgs e)
         {
@@ -477,5 +467,10 @@ namespace TPASystem2.HR
         }
 
         #endregion
+
+        protected void btnApplications_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/HR/Applications.aspx");
+        }
     }
 }

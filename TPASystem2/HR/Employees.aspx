@@ -16,8 +16,8 @@
         <div class="page-header-actions">
             <asp:Button ID="btnAddEmployee" runat="server" Text="Add New Employee" 
                         CssClass="btn btn-primary" OnClick="btnAddEmployee_Click" />
-            <asp:Button ID="btnExportEmployees" runat="server" Text="Export CSV" 
-                        CssClass="btn btn-secondary" OnClick="btnExportEmployees_Click" />
+            <asp:Button ID="btnApplications" runat="server" Text="Applications" 
+                        CssClass="btn btn-secondary" OnClick="btnApplications_Click" />
         </div>
     </div>
 

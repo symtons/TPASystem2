@@ -80,6 +80,7 @@
     <Content Include="Global.asax" />
     <Content Include="HR\AddBenefitsPlan.aspx" />
     <Content Include="HR\AddEmployee.aspx" />
+    <Content Include="HR\Application.aspx" />
     <Content Include="HR\BenefitsManagement.aspx" />
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
@@ -88,6 +89,7 @@
     <Content Include="LeaveManagement\EmployeeLeavePortal.aspx" />
     <Content Include="LeaveManagement\EmployeeRequestLeave.aspx" />
     <Content Include="LeaveManagement\LeaveManagement.aspx" />
+    <Content Include="Profile\AddEmployees.aspx" />
     <Content Include="Profile\ManageEmployeeProfiles.aspx" />
     <Content Include="TimeManagement\EditTimesheet.aspx" />
     <Content Include="TimeManagement\EmployeeTimesheets.aspx" />
@@ -148,6 +150,13 @@
     <Compile Include="HR\AddEmployee.aspx.designer.cs">
       <DependentUpon>AddEmployee.aspx</DependentUpon>
     </Compile>
+    <Compile Include="HR\Application.aspx.cs">
+      <DependentUpon>Application.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\Application.aspx.designer.cs">
+      <DependentUpon>Application.aspx</DependentUpon>
+    </Compile>
     <Compile Include="HR\BenefitsManagement.aspx.cs">
       <DependentUpon>BenefitsManagement.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -196,6 +205,13 @@
     </Compile>
     <Compile Include="LeaveManagement\LeaveManagement.aspx.designer.cs">
       <DependentUpon>LeaveManagement.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Profile\AddEmployees.aspx.cs">
+      <DependentUpon>AddEmployees.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Profile\AddEmployees.aspx.designer.cs">
+      <DependentUpon>AddEmployees.aspx</DependentUpon>
     </Compile>
     <Compile Include="Profile\ManageEmployeeProfiles.aspx.cs">
       <DependentUpon>ManageEmployeeProfiles.aspx</DependentUpon>

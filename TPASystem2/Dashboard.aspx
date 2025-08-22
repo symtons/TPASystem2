@@ -5,9 +5,7 @@
 
     <style>
 
-        /* =============================================================================
-   Real-time Dashboard Styles - Add to tpa-common.css
-   ============================================================================= */
+      
 
 /* Dashboard Container */
 .dashboard-container {

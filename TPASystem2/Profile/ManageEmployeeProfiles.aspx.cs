@@ -897,7 +897,7 @@ namespace TPASystem2.HR
 
         protected void btnAddEmployee_Click(object sender, EventArgs e)
         {
-            Response.Redirect("~/HR/AddEmployee.aspx");
+            Response.Redirect("~/Profile/AddEmployee.aspx");
         }
 
         protected void btnExportEmployees_Click(object sender, EventArgs e)
@@ -1524,5 +1524,10 @@ namespace TPASystem2.HR
         }
 
         #endregion
+
+        protected void Button1_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Profile/AddEmployees.aspx");
+        }
     }
 }

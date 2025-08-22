@@ -24,13 +24,13 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Button btnAddEmployee;
 
         /// <summary>
-        /// btnExportEmployees control.
+        /// btnApplications control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnExportEmployees;
+        protected global::System.Web.UI.WebControls.Button btnApplications;
 
         /// <summary>
         /// txtSearch control.

@@ -8,10 +8,7 @@
 
 
     <style>
-        /* ===================================
-   NEW HIRE PAPERWORK ENHANCED STYLES
-   Add these styles to tpa-common.css
-   =================================== */
+   
 
 /* Application Header */
 .application-header {
