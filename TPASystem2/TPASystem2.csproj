@@ -77,6 +77,7 @@
     <Content Include="Content\logo.png" />
     <Content Include="Dashboard.aspx" />
     <Content Include="Debug.aspx" />
+    <Content Include="Files\asus.jpg" />
     <Content Include="Global.asax" />
     <Content Include="HR\AddBenefitsPlan.aspx" />
     <Content Include="HR\AddEmployee.aspx" />
@@ -84,6 +85,8 @@
     <Content Include="HR\BenefitsManagement.aspx" />
     <Content Include="HR\employee-management.css" />
     <Content Include="HR\Employees.aspx" />
+    <Content Include="HR\HRActionApproval.aspx" />
+    <Content Include="HR\HRActionForm.aspx" />
     <Content Include="HR\ManageEmployeeOnboarding.aspx" />
     <Content Include="LeaveManagement\EditLeaveBalance.aspx" />
     <Content Include="LeaveManagement\EmployeeLeavePortal.aspx" />
@@ -91,6 +94,7 @@
     <Content Include="LeaveManagement\LeaveManagement.aspx" />
     <Content Include="Profile\AddEmployees.aspx" />
     <Content Include="Profile\ManageEmployeeProfiles.aspx" />
+    <Content Include="Profile\ViewDocuments.aspx" />
     <Content Include="TimeManagement\EditTimesheet.aspx" />
     <Content Include="TimeManagement\EmployeeTimesheets.aspx" />
     <Content Include="TimeManagement\EmployeeTimeTracking.aspx" />
@@ -171,6 +175,20 @@
     <Compile Include="HR\Employees.aspx.designer.cs">
       <DependentUpon>Employees.aspx</DependentUpon>
     </Compile>
+    <Compile Include="HR\HRActionApproval.aspx.cs">
+      <DependentUpon>HRActionApproval.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\HRActionApproval.aspx.designer.cs">
+      <DependentUpon>HRActionApproval.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="HR\HRActionForm.aspx.cs">
+      <DependentUpon>HRActionForm.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="HR\HRActionForm.aspx.designer.cs">
+      <DependentUpon>HRActionForm.aspx</DependentUpon>
+    </Compile>
     <Compile Include="HR\ManageEmployeeOnboarding.aspx.cs">
       <DependentUpon>ManageEmployeeOnboarding.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -219,6 +237,13 @@
     </Compile>
     <Compile Include="Profile\ManageEmployeeProfiles.aspx.designer.cs">
       <DependentUpon>ManageEmployeeProfiles.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Profile\ViewDocuments.aspx.cs">
+      <DependentUpon>ViewDocuments.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Profile\ViewDocuments.aspx.designer.cs">
+      <DependentUpon>ViewDocuments.aspx</DependentUpon>
     </Compile>
     <Compile Include="TimeManagement\EditTimesheet.aspx.cs">
       <DependentUpon>EditTimesheet.aspx</DependentUpon>
@@ -359,6 +384,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DashboardMaster.Master" />
+    <Content Include="Files\time.pdf" />
+    <Content Include="Files\Timesheet2.pdf" />
     <None Include="packages.config" />
     <Content Include="Site.Master" />
     <None Include="Web.Debug.config">

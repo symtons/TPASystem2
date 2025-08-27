@@ -863,7 +863,7 @@ namespace TPASystem2
 
                 case "ADMIN":
                     actions.AppendLine(CreateQuickAction(" Employee Profile", "Register new employee", "person_add", $"{appPath}/Profile/ManageEmployeeProfiles.aspx", "add-employee"));
-                    actions.AppendLine(CreateQuickAction("Generate Report", "Create system reports", "assessment", "/reports", "generate-report"));
+                    actions.AppendLine(CreateQuickAction("Generate Report", "HR Action Form", "assessment", "/reports", "generate-report"));
                     actions.AppendLine(CreateQuickAction("Review Approvals", "Check pending requests", "assignment", "/approvals", "review-approvals"));
                     actions.AppendLine(CreateQuickAction("System Health", "View system status", "health_and_safety", "/admin/health", "system-health"));
                     break;
@@ -894,7 +894,7 @@ namespace TPASystem2
                     actions.AppendLine(CreateQuickAction("Time Entry", "Log work hours", "access_time", "/time/entry", "time-entry"));
                     actions.AppendLine(CreateQuickAction("Request Leave", "Submit time off request", "event_available", "/leave/request", "request-leave"));
                     actions.AppendLine(CreateQuickAction("My Profile", "Update personal info", "person", "/profile", "my-profile"));
-                    actions.AppendLine(CreateQuickAction("Submit Report", "Daily activity report", "description", "/reports/daily", "daily-report"));
+                    actions.AppendLine(CreateQuickAction("HR Action Form", "HR Action Form", "description",  $"{appPath}/HR/HRActionForm.aspx", "add-employee"));
                     break;
             }
 
