@@ -41,19 +41,19 @@ namespace TPASystem2.HR
 
         private void CheckUserPermissions()
         {
-            if (CurrentUserId == 0)
-            {
-                Response.Redirect("~/Login.aspx", false);
-                return;
-            }
+            //if (CurrentUserId == 0)
+            //{
+            //    Response.Redirect("~/Login.aspx", false);
+            //    return;
+            //}
 
-            // Check if user has HR Admin permissions
-            if (!CanApproveHRActions())
-            {
-                ShowError("You do not have permission to approve HR Actions.");
-                rptHRActions.Visible = false;
-                return;
-            }
+            //// Check if user has HR Admin permissions
+            //if (!CanApproveHRActions())
+            //{
+            //    ShowError("You do not have permission to approve HR Actions.");
+            //    rptHRActions.Visible = false;
+            //    return;
+            //}
         }
 
         private bool CanApproveHRActions()

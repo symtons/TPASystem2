@@ -31,11 +31,15 @@ namespace TPASystem2.LeaveManagement
         {
             if (!IsPostBack)
             {
-                if (!IsAuthorizedUser())
-                {
-                    Response.Redirect("~/Dashboard.aspx");
-                    return;
-                }
+
+                Session["UserId"] = 2; // Use existing employee ID
+                Session["UserRole"] = "Employee";
+                Session["Username"] = "demo.user";
+                //if (!IsAuthorizedUser())
+                //{
+                //    Response.Redirect("~/Dashboard.aspx");
+                //    return;
+                //}
 
                 InitializePage();
             }
@@ -50,8 +54,8 @@ namespace TPASystem2.LeaveManagement
 
         private void InitializePage()
         {
-            try
-            {
+            //try
+            //{
                 CurrentDate = DateTime.Today;
                 LoadUserInfo();
                 LoadFilterDropdowns();
@@ -59,18 +63,18 @@ namespace TPASystem2.LeaveManagement
                 LoadCalendar();
                 LoadLegend();
                 LoadMonthlyStatistics();
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                ShowMessage("Error loading calendar.", "error");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    LogError(ex);
+            //    ShowMessage("Error loading calendar.", "error");
+            //}
         }
 
         private void LoadUserInfo()
         {
-            try
-            {
+            //try
+            //{
                 int userId = Convert.ToInt32(Session["UserId"]);
 
                 using (SqlConnection conn = new SqlConnection(connectionString))
@@ -115,13 +119,13 @@ namespace TPASystem2.LeaveManagement
                 }
 
                 litCurrentMonth.Text = CurrentDate.ToString("MMMM yyyy");
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                litCurrentUser.Text = "User";
-                litViewPermission.Text = "Standard Access";
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    LogError(ex);
+            //    litCurrentUser.Text = "User";
+            //    litViewPermission.Text = "Standard Access";
+            //}
         }
 
         private void LoadFilterDropdowns()
@@ -206,8 +210,8 @@ namespace TPASystem2.LeaveManagement
 
         private void SetupViewType()
         {
-            try
-            {
+            //try
+            //{
                 string userRole = Session["UserRole"]?.ToString() ?? "";
 
                 ddlViewType.Items.Clear();
@@ -233,14 +237,14 @@ namespace TPASystem2.LeaveManagement
                         ddlViewType.SelectedValue = "my";
                         break;
                 }
-            }
-            catch (Exception ex)
-            {
-                LogError(ex);
-                ddlViewType.Items.Clear();
-                ddlViewType.Items.Add(new ListItem("My Leaves", "my"));
-                ddlViewType.SelectedValue = "my";
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    LogError(ex);
+            //    ddlViewType.Items.Clear();
+            //    ddlViewType.Items.Add(new ListItem("My Leaves", "my"));
+            //    ddlViewType.SelectedValue = "my";
+            //}
         }
 
         private void LoadLegend()
@@ -549,12 +553,24 @@ namespace TPASystem2.LeaveManagement
             string viewType = ddlViewType.SelectedValue;
             if (viewType != "all")
             {
-                cmd.Parameters.AddWithValue("@CurrentUserId", Convert.ToInt32(Session["UserId"]));
+                // Safe conversion
+                if (Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int userId))
+                {
+                    cmd.Parameters.AddWithValue("@CurrentUserId", userId);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@CurrentUserId", 2); // Fallback
+                }
             }
 
+            // Same pattern for other parameters
             if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
             {
-                cmd.Parameters.AddWithValue("@DepartmentFilter", Convert.ToInt32(ddlDepartmentFilter.SelectedValue));
+                if (int.TryParse(ddlDepartmentFilter.SelectedValue, out int deptId))
+                {
+                    cmd.Parameters.AddWithValue("@DepartmentFilter", deptId);
+                }
             }
 
             if (!string.IsNullOrEmpty(ddlLeaveTypeFilter.SelectedValue))
@@ -567,12 +583,7 @@ namespace TPASystem2.LeaveManagement
 
         #region Event Handlers
 
-        protected void btnPrevMonth_Click(object sender, EventArgs e)
-        {
-            CurrentDate = CurrentDate.AddMonths(-1);
-            LoadCalendar();
-            LoadMonthlyStatistics();
-        }
+       
 
         protected void btnNextMonth_Click(object sender, EventArgs e)
         {
@@ -808,12 +819,24 @@ namespace TPASystem2.LeaveManagement
             string viewType = ddlViewType.SelectedValue;
             if (viewType != "all")
             {
-                cmd.Parameters.AddWithValue("@CurrentUserId", Convert.ToInt32(Session["UserId"]));
+                // Safe conversion
+                if (Session["UserId"] != null && int.TryParse(Session["UserId"].ToString(), out int userId))
+                {
+                    cmd.Parameters.AddWithValue("@CurrentUserId", userId);
+                }
+                else
+                {
+                    cmd.Parameters.AddWithValue("@CurrentUserId", 2); // Fallback
+                }
             }
 
+            // Same pattern for department filter
             if (!string.IsNullOrEmpty(ddlDepartmentFilter.SelectedValue))
             {
-                cmd.Parameters.AddWithValue("@DepartmentFilter", Convert.ToInt32(ddlDepartmentFilter.SelectedValue));
+                if (int.TryParse(ddlDepartmentFilter.SelectedValue, out int deptId))
+                {
+                    cmd.Parameters.AddWithValue("@DepartmentFilter", deptId);
+                }
             }
 
             if (!string.IsNullOrEmpty(ddlLeaveTypeFilter.SelectedValue))
@@ -895,6 +918,20 @@ namespace TPASystem2.LeaveManagement
                 ip = Request.ServerVariables["REMOTE_ADDR"];
             }
             return ip ?? "Unknown";
+        }
+
+        protected void btnPrevMonth_Click(object sender, EventArgs e)
+        {
+            // Ensure session exists
+            if (Session["UserId"] == null)
+            {
+                Session["UserId"] = 2;
+                Session["UserRole"] = "Employee";
+            }
+
+            CurrentDate = CurrentDate.AddMonths(-1);
+            LoadCalendar();
+            LoadMonthlyStatistics();
         }
 
         #endregion

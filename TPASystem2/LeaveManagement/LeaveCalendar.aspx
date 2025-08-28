@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Leave Calendar" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="LeaveCalendar.aspx.cs" Inherits="TPASystem2.LeaveManagement.LeaveCalendar" %>
+﻿<%@ Page Title="Leave Calendar" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="LeaveCalendar.aspx.cs" Inherits="TPASystem2.LeaveManagement.LeaveCalendar" EnableEventValidation="false"  %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="DashboardContent" runat="server">
     <!-- CSS Links -->

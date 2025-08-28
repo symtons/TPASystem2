@@ -102,7 +102,7 @@ namespace TPASystem2
                 {
                     case "SUPERADMIN":
                         menuHtml.AppendLine(CreateNavItem("Employee Management", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
-                        menuHtml.AppendLine(CreateNavItem("Leave Management", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                        menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement/LeaveManagement.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("Reports & Analytics", "/reports", "assessment", currentPage == "reports"));
                         menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 
@@ -117,7 +117,7 @@ namespace TPASystem2
 
                     case "ADMIN":
                         menuHtml.AppendLine(CreateNavItem("Employee Management", $"{appPath}/HR/Employees.aspx", "people", currentPage == "employees"));
-                        menuHtml.AppendLine(CreateNavItem("Leave Management", "/LeaveManagement/Default.aspx", "event_available", currentPage == "leave-management"));
+                        menuHtml.AppendLine(CreateNavItem("Leave Management", $"{appPath}/LeaveManagement/LeaveManagement.aspx", "event_available", currentPage == "leave-management"));
                         menuHtml.AppendLine(CreateNavItem("Reports & Analytics", "/reports", "assessment", currentPage == "reports"));
                         menuHtml.AppendLine(CreateNavItem("Onboarding", $"{appPath}/OnBoarding/OnboardingManagement.aspx", "assignment", currentPage == "onboarding"));
 

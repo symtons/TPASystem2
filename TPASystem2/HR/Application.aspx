@@ -1276,7 +1276,7 @@
             </div>
             <div class="modal-footer">
                 <div class="modal-actions">
-                    <asp:Button ID="btnUpdateStatus" runat="server" Text="Update Status" CssClass="btn-tpa" OnClick="btnUpdateStatus_Click" />
+                    <asp:Button ID="btnUpdateStatus" runat="server" Text="Update for OnBoarding" CssClass="btn-tpa" OnClick="btnUpdateStatus_Click" />
                     <asp:Button ID="btnCloseModalFooter" runat="server" Text="Close" CssClass="btn-secondary" OnClick="btnCloseModal_Click" />
                 </div>
             </div>
