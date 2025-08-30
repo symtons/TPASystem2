@@ -1,11 +1,14 @@
-﻿<%@ Page Title="Leave Calendar" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="LeaveCalendar.aspx.cs" Inherits="TPASystem2.LeaveManagement.LeaveCalendar" EnableEventValidation="false"  %>
+﻿<%@ Page Title="Leave Calendar" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="LeaveCalendar.aspx.cs" Inherits="TPASystem2.LeaveManagement.LeaveCalendar" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="DashboardContent" runat="server">
     <!-- CSS Links -->
     <link href='<%=ResolveUrl("~/Content/css/tpa-dashboard.css") %>' rel="stylesheet" type="text/css" />
     <link href='<%=ResolveUrl("~/Content/css/tpa-common.css") %>' rel="stylesheet" type="text/css" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
     <style>
+
         /* ===============================================
    Leave Calendar Specific Styles
    Add these styles to tpa-common.css
@@ -40,6 +43,34 @@
     padding: 0 1rem;
 }
 
+.btn-nav {
+    background: var(--tpa-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-nav:hover {
+    background: var(--tpa-primary-dark);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    min-width: auto;
+}
+
 .calendar-filters {
     display: flex;
     gap: 15px;
@@ -65,6 +96,75 @@
 
 .filter-label .material-icons {
     font-size: 16px;
+}
+
+/* Calendar Statistics */
+.calendar-stats {
+    margin-bottom: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--border-radius-large);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+    border: 1px solid var(--border-light);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--tpa-primary), var(--tpa-primary-dark));
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-icon .material-icons {
+    font-size: 1.8rem;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
 }
 
 /* Calendar Container */
@@ -158,7 +258,7 @@
     font-weight: 600;
 }
 
-/* Leave indicators on calendar days - Dynamic colors from database */
+/* Leave indicators on calendar days */
 .leave-indicator {
     position: absolute;
     bottom: 4px;
@@ -167,149 +267,87 @@
     height: 6px;
     border-radius: 3px;
     z-index: 1;
-    /* Default background - will be overridden by inline styles from database */
     background: var(--tpa-secondary);
+    opacity: 0.8;
 }
 
-/* Fallback colors for leave types (if database color not available) */
-.leave-indicator.vacation {
-    background: linear-gradient(135deg, #4caf50, #388e3c);
-}
-
-.leave-indicator.sick {
-    background: linear-gradient(135deg, #f44336, #d32f2f);
-}
-
-.leave-indicator.personal {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
-}
-
-.leave-indicator.maternity,
-.leave-indicator.paternity {
-    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-}
-
-.leave-indicator.bereavement {
-    background: linear-gradient(135deg, #607d8b, #455a64);
-}
-
-.leave-indicator.emergency {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-}
-
-.leave-indicator.unpaid {
-    background: linear-gradient(135deg, #795548, #5d4037);
-}
-
-.leave-indicator.multiple {
-    background: linear-gradient(90deg, #4caf50 0%, #f44336 25%, #2196f3 50%, #9c27b0 75%, #ff9800 100%);
-    background-size: 200% 100%;
-    animation: rainbow-slide 3s linear infinite;
-}
-
-/* Holiday indicator */
-.holiday-indicator {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 12px;
-    height: 12px;
-    background: #ff5722;
-    border-radius: 50%;
-    border: 2px solid white;
-    z-index: 3;
-}
-
-.holiday-indicator::after {
-    content: "🎉";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 8px;
-    line-height: 1;
-}
-
-@keyframes rainbow-slide {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
-}
-
-/* Leave count badge */
 .leave-count {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    background: var(--tpa-primary);
+    top: 4px;
+    right: 4px;
+    background: var(--tpa-accent);
     color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 8px;
+    min-width: 16px;
+    text-align: center;
     z-index: 2;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
-/* Calendar Legend */
-.calendar-legend {
+/* Leave Legend */
+.leave-legend {
+    background: white;
+    border-radius: var(--border-radius-large);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-light);
+    margin-bottom: 2rem;
+}
+
+.legend-header {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 1rem;
+}
+
+.legend-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.legend-header .material-icons {
+    color: var(--tpa-primary);
+}
+
+.legend-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-    padding: 1rem;
+    gap: 1rem;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--background-light);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-light);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.legend-label {
     font-weight: 500;
     color: var(--text-primary);
 }
 
-.legend-color {
-    width: 20px;
-    height: 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(0,0,0,0.1);
-    flex-shrink: 0;
+.legend-count {
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
 
-.legend-color.vacation {
-    background: linear-gradient(135deg, #4caf50, #388e3c);
-}
-
-.legend-color.sick {
-    background: linear-gradient(135deg, #f44336, #d32f2f);
-}
-
-.legend-color.personal {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
-}
-
-.legend-color.maternity,
-.legend-color.paternity {
-    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-}
-
-.legend-color.bereavement {
-    background: linear-gradient(135deg, #607d8b, #455a64);
-}
-
-.legend-color.emergency {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-}
-
-.legend-color.multiple {
-    background: linear-gradient(90deg, #4caf50 0%, #f44336 25%, #2196f3 50%, #9c27b0 75%, #ff9800 100%);
-}
-
-/* Modal Overlay for Day Details */
+/* Day Details Modal */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -317,246 +355,190 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
     background: white;
     border-radius: var(--border-radius-large);
-    box-shadow: var(--shadow-heavy);
+    max-width: 600px;
     width: 90%;
-    max-width: 800px;
     max-height: 80vh;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    animation: slideUp 0.3s ease;
+    box-shadow: var(--shadow-heavy);
+    animation: modalSlideUp 0.3s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .modal-header {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border-light);
-    background: linear-gradient(135deg, var(--tpa-primary) 0%, var(--tpa-primary-dark) 100%);
+    background: linear-gradient(135deg, var(--tpa-primary), var(--tpa-primary-dark));
     color: white;
+    padding: 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.modal-title {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
+.modal-header h3 {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin: 0;
+    font-size: 1.2rem;
 }
 
-.modal-close {
-    background: none;
+.btn-close {
+    background: transparent;
     border: none;
     color: white;
     font-size: 1.5rem;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 50%;
-    transition: background-color var(--transition-fast);
-    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
 }
 
-.modal-close:hover {
+.btn-close:hover {
     background: rgba(255, 255, 255, 0.2);
-    color: white;
 }
 
 .modal-body {
-    padding: 2rem;
+    padding: 1.5rem;
+    max-height: 60vh;
     overflow-y: auto;
+}
+
+/* Leaves List */
+.leaves-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.leave-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    background: var(--background-light);
+    transition: all 0.3s ease;
+}
+
+.leave-item:hover {
+    background: white;
+    box-shadow: var(--shadow-light);
+}
+
+.employee-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--tpa-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.leave-info {
     flex: 1;
 }
 
-/* Modern Grid for Day Details */
-.modern-grid {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-    background: white;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.modern-grid th {
-    background: var(--background-light);
-    padding: 1rem;
-    text-align: left;
+.employee-name {
     font-weight: 600;
     color: var(--text-primary);
-    border-bottom: 2px solid var(--border-light);
+    margin-bottom: 0.25rem;
+}
+
+.leave-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.leave-type {
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
+    background: rgba(59, 130, 246, 0.1);
     font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-.modern-grid td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-light);
-    vertical-align: middle;
+.leave-duration {
+    color: var(--text-muted);
+    font-size: 0.9rem;
 }
 
-.modern-grid tr:hover {
-    background: var(--background-light);
+.leave-reason {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+    line-height: 1.4;
 }
 
-.modern-grid tr:last-child td {
-    border-bottom: none;
+.leave-status {
+    flex-shrink: 0;
 }
 
-/* Leave Status Badges */
-.leave-status-badge {
-    display: inline-block;
+.status-badge {
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .status-approved {
-    background: #e8f5e8;
-    color: #2e7d32;
-    border: 1px solid #4caf50;
+    background: #dcfce7;
+    color: #16a34a;
 }
 
-.status-pending {
-    background: #fff3e0;
-    color: #f57c00;
-    border: 1px solid #ff9800;
+/* No Data State */
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
 }
 
-.status-rejected {
-    background: #ffebee;
-    color: #c62828;
-    border: 1px solid #f44336;
+.no-data .material-icons {
+    font-size: 3rem;
+    color: var(--text-disabled);
+    margin-bottom: 1rem;
 }
 
-.status-draft {
-    background: #f3e5f5;
-    color: #7b1fa2;
-    border: 1px solid #9c27b0;
-}
-
-/* Leave Progress Indicator */
-.leave-progress {
-    font-size: 0.8rem;
+.no-data h4 {
+    margin: 0 0 0.5rem 0;
     color: var(--text-secondary);
-    font-style: italic;
 }
 
-/* Overview Cards for Statistics */
-.overview-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.overview-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: var(--border-radius-large);
-    box-shadow: var(--shadow-light);
-    border: 1px solid var(--border-light);
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.overview-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
-}
-
-.card-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: var(--border-radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-    flex-shrink: 0;
-}
-
-.card-icon.events {
-    background: linear-gradient(135deg, #4caf50, #388e3c);
-    color: white;
-}
-
-.card-icon.people {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
-    color: white;
-}
-
-.card-icon.schedule {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-    color: white;
-}
-
-.card-icon.trending {
-    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
-    color: white;
-}
-
-.card-content {
-    flex: 1;
-}
-
-.card-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1;
-    margin-bottom: 0.25rem;
-}
-
-.card-label {
+.no-data p {
+    margin: 0;
     font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-}
-
-.card-sublabel {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .calendar-controls {
         flex-direction: column;
         align-items: stretch;
@@ -565,41 +547,39 @@
     
     .calendar-navigation {
         justify-content: center;
-        order: 2;
     }
     
     .calendar-filters {
         justify-content: center;
-        order: 1;
-        flex-direction: column;
-        gap: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .calendar-controls {
+        padding: 1rem;
     }
     
     .filter-group {
-        min-width: auto;
-        width: 100%;
+        min-width: 120px;
+    }
+    
+    .current-month-display {
+        min-width: 150px;
+        font-size: 1rem;
     }
     
     .leave-calendar td,
     .leave-calendar th {
         height: 60px;
-        font-size: 12px;
         padding: 8px 4px;
-    }
-    
-    .current-month-display {
-        font-size: 16px;
-        min-width: auto;
-    }
-    
-    .calendar-legend {
-        gap: 15px;
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .legend-item {
-        font-size: 12px;
     }
     
     .modal-content {
@@ -607,63 +587,47 @@
         margin: 1rem;
     }
     
-    .modal-header {
-        padding: 1rem;
+    .leave-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
     }
     
-    .modal-body {
-        padding: 1rem;
-    }
-    
-    .overview-cards {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .overview-card {
-        padding: 1rem;
-    }
-    
-    .card-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
-    }
-    
-    .card-number {
-        font-size: 1.5rem;
+    .leave-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
     }
 }
 
 @media (max-width: 480px) {
+    .calendar-navigation {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .calendar-filters {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .leave-calendar {
+        font-size: 0.8rem;
+    }
+    
     .leave-calendar td,
     .leave-calendar th {
         height: 50px;
-        font-size: 11px;
         padding: 4px 2px;
     }
     
-    .leave-count {
-        width: 16px;
-        height: 16px;
-        font-size: 9px;
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
     }
     
-    .leave-indicator {
-        height: 4px;
-        bottom: 2px;
-        left: 2px;
-        right: 2px;
-    }
-    
-    .calendar-container {
-        padding: 1rem;
-    }
-    
-    .modern-grid th,
-    .modern-grid td {
-        padding: 0.5rem;
-        font-size: 0.8rem;
+    .stat-icon {
+        margin-bottom: 0.5rem;
     }
 }
     </style>
@@ -672,10 +636,10 @@
         <div class="welcome-content">
             <div class="welcome-text">
                 <h1 class="welcome-title">
-                    <i class="material-icons">date_range</i>
+                    <i class="material-icons">event_available</i>
                     Leave Calendar
                 </h1>
-                <p class="welcome-subtitle">Visual overview of leave schedules and team availability</p>
+                <p class="welcome-subtitle">View team leaves and plan your time off</p>
                 
                 <div class="employee-info">
                     <div class="employee-detail">
@@ -685,257 +649,226 @@
                         </span>
                     </div>
                     <div class="employee-detail">
-                        <i class="material-icons">visibility</i>
+                        <i class="material-icons">business</i>
                         <span>
-                            <asp:Literal ID="litViewPermission" runat="server" Text="View Permission"></asp:Literal>
+                            <asp:Literal ID="litDepartment" runat="server" Text="Department"></asp:Literal>
                         </span>
                     </div>
                     <div class="employee-detail">
-                        <i class="material-icons">calendar_today</i>
+                        <i class="material-icons">today</i>
                         <span>
-                            <asp:Literal ID="litCurrentMonth" runat="server" Text="Current Month"></asp:Literal>
+                            <asp:Literal ID="litCurrentDate" runat="server"></asp:Literal>
                         </span>
                     </div>
                 </div>
             </div>
-            <div class="header-actions">
-                <asp:Button ID="btnRequestLeave" runat="server" Text="Request Leave" 
-                    CssClass="btn btn-outline-light" OnClick="btnRequestLeave_Click" />
-                <asp:Button ID="btnBackToManagement" runat="server" Text="Back to Management" 
-                    CssClass="btn btn-outline-light" OnClick="btnBackToManagement_Click" />
+            <div class="welcome-actions">
+                <asp:Button ID="btnRequestLeave" runat="server" Text="Request Leave" CssClass="btn-tpa" OnClick="btnRequestLeave_Click" />
+                <asp:Button ID="btnMyLeaves" runat="server" Text="My Leaves" CssClass="btn-secondary" OnClick="btnMyLeaves_Click" />
             </div>
         </div>
     </div>
 
-    <!-- Alert Messages -->
-    <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert-panel">
-        <asp:Literal ID="litMessage" runat="server"></asp:Literal>
+    <!-- Error/Success Messages -->
+    <asp:Panel ID="pnlMessages" runat="server" Visible="false" CssClass="alert-panel">
+        <asp:Label ID="lblMessage" runat="server" CssClass="message-text"></asp:Label>
     </asp:Panel>
 
     <!-- Calendar Controls -->
-    <div class="time-status-card">
-        <div class="status-header">
-            <h3>
-                <i class="material-icons">tune</i>
-                Calendar Settings
-            </h3>
+    <div class="calendar-controls">
+        <div class="calendar-navigation">
+            <asp:Button ID="btnPrevMonth" runat="server" Text="‹" CssClass="btn-nav" OnClick="btnPrevMonth_Click" ToolTip="Previous Month" />
+            <div class="current-month-display">
+                <asp:Literal ID="litCurrentMonth" runat="server"></asp:Literal>
+            </div>
+            <asp:Button ID="btnNextMonth" runat="server" Text="›" CssClass="btn-nav" OnClick="btnNextMonth_Click" ToolTip="Next Month" />
+            <asp:Button ID="btnToday" runat="server" Text="Today" CssClass="btn-secondary btn-small" OnClick="btnToday_Click" />
         </div>
         
-        <div class="calendar-controls">
-            <div class="calendar-navigation">
-                <asp:Button ID="btnPrevMonth" runat="server" Text="‹ Previous" 
-                           CssClass="btn btn-secondary" 
-                           OnClick="btnPrevMonth_Click" />
-                <div class="current-month-display">
-                    <asp:Literal ID="litMonthYear" runat="server"></asp:Literal>
-                </div>
-                <asp:Button ID="btnNextMonth" runat="server" Text="Next ›" 
-                           CssClass="btn btn-secondary" 
-                           OnClick="btnNextMonth_Click" />
-                <asp:Button ID="btnToday" runat="server" Text="Today" 
-                           CssClass="btn btn-primary" 
-                           OnClick="btnToday_Click" />
+        <div class="calendar-filters">
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="material-icons">visibility</i>
+                    View Type
+                </label>
+                <asp:DropDownList ID="ddlViewType" runat="server" CssClass="form-control" AutoPostBack="true" OnSelectedIndexChanged="ddlViewType_SelectedIndexChanged">
+                    <asp:ListItem Value="all" Text="All Employees"></asp:ListItem>
+                    <asp:ListItem Value="my" Text="My Leaves Only"></asp:ListItem>
+                    <asp:ListItem Value="team" Text="My Team"></asp:ListItem>
+                    <asp:ListItem Value="department" Text="My Department"></asp:ListItem>
+                </asp:DropDownList>
             </div>
             
-            <div class="calendar-filters">
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="material-icons">visibility</i>
-                        View Type:
-                    </label>
-                    <asp:DropDownList ID="ddlViewType" runat="server" CssClass="form-control" 
-                                      AutoPostBack="true" OnSelectedIndexChanged="ddlViewType_SelectedIndexChanged">
-                        <asp:ListItem Value="my" Selected="true">My Leaves</asp:ListItem>
-                        <asp:ListItem Value="team">Team Leaves</asp:ListItem>
-                        <asp:ListItem Value="department">Department Leaves</asp:ListItem>
-                        <asp:ListItem Value="all">All Leaves</asp:ListItem>
-                    </asp:DropDownList>
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="material-icons">filter_list</i>
+                    Leave Type
+                </label>
+                <asp:DropDownList ID="ddlLeaveTypeFilter" runat="server" CssClass="form-control" AutoPostBack="true" OnSelectedIndexChanged="ddlLeaveTypeFilter_SelectedIndexChanged">
+                    <asp:ListItem Value="" Text="All Types"></asp:ListItem>
+                    <asp:ListItem Value="Vacation" Text="Vacation"></asp:ListItem>
+                    <asp:ListItem Value="Sick" Text="Sick Leave"></asp:ListItem>
+                    <asp:ListItem Value="Personal" Text="Personal"></asp:ListItem>
+                    <asp:ListItem Value="Emergency" Text="Emergency"></asp:ListItem>
+                    <asp:ListItem Value="Bereavement" Text="Bereavement"></asp:ListItem>
+                    <asp:ListItem Value="Maternity" Text="Maternity"></asp:ListItem>
+                    <asp:ListItem Value="Paternity" Text="Paternity"></asp:ListItem>
+                </asp:DropDownList>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Statistics -->
+    <div class="calendar-stats">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="material-icons">event</i>
                 </div>
-                
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="material-icons">business</i>
-                        Department:
-                    </label>
-                    <asp:DropDownList ID="ddlDepartmentFilter" runat="server" CssClass="form-control" 
-                                      AutoPostBack="true" OnSelectedIndexChanged="ddlDepartmentFilter_SelectedIndexChanged">
-                    </asp:DropDownList>
+                <div class="stat-content">
+                    <div class="stat-number">
+                        <asp:Literal ID="litTotalLeaves" runat="server">0</asp:Literal>
+                    </div>
+                    <div class="stat-label">Total Leaves</div>
+                    <div class="stat-subtitle">This month</div>
                 </div>
-                
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="material-icons">event</i>
-                        Leave Type:
-                    </label>
-                    <asp:DropDownList ID="ddlLeaveTypeFilter" runat="server" CssClass="form-control" 
-                                      AutoPostBack="true" OnSelectedIndexChanged="ddlLeaveTypeFilter_SelectedIndexChanged">
-                    </asp:DropDownList>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="material-icons">people</i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">
+                        <asp:Literal ID="litUniqueEmployees" runat="server">0</asp:Literal>
+                    </div>
+                    <div class="stat-label">Employees</div>
+                    <div class="stat-subtitle">On leave</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="material-icons">schedule</i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">
+                        <asp:Literal ID="litTotalDays" runat="server">0</asp:Literal>
+                    </div>
+                    <div class="stat-label">Total Days</div>
+                    <div class="stat-subtitle">Leave days</div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="material-icons">trending_up</i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">
+                        <asp:Literal ID="litBusiestDay" runat="server">N/A</asp:Literal>
+                    </div>
+                    <div class="stat-label">Busiest Day</div>
+                    <div class="stat-subtitle">Most leaves</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Calendar Display -->
+    <!-- Calendar Container -->
     <div class="calendar-container">
-        <asp:Calendar ID="calLeaveCalendar" runat="server"
-                      CssClass="leave-calendar"
-                      OnDayRender="calLeaveCalendar_DayRender"
-                      OnSelectionChanged="calLeaveCalendar_SelectionChanged"
-                      SelectionMode="Day"
-                      ShowGridLines="true"
-                      DayNameFormat="Short"
-                      NextPrevFormat="CustomText"
-                      ShowNextPrevMonth="false"
-                      ShowTitle="false">
+        <asp:Calendar ID="calLeave" runat="server" 
+                     CssClass="leave-calendar" 
+                     DayNameFormat="Full"
+                     FirstDayOfWeek="Sunday"
+                     ShowGridLines="true"
+                     OnDayRender="calLeave_DayRender"
+                     OnSelectionChanged="calLeave_SelectionChanged"
+                     OnVisibleMonthChanged="calLeave_VisibleMonthChanged">
             <DayHeaderStyle CssClass="calendar-day-header" />
             <DayStyle CssClass="calendar-day" />
             <OtherMonthDayStyle CssClass="calendar-other-month" />
             <SelectedDayStyle CssClass="calendar-selected-day" />
-            <TitleStyle CssClass="calendar-title" />
             <WeekendDayStyle CssClass="calendar-weekend" />
+            <TitleStyle CssClass="calendar-title" />
         </asp:Calendar>
     </div>
 
-    <!-- Calendar Legend -->
-    <div class="time-status-card">
-        <div class="status-header">
+    <!-- Leave Legend -->
+    <div class="leave-legend">
+        <div class="legend-header">
             <h3>
                 <i class="material-icons">info</i>
-                Legend
+                Leave Types Legend
             </h3>
         </div>
-        
-        <div class="calendar-legend">
-            <asp:Repeater ID="rptLegend" runat="server">
+        <div class="legend-items">
+            <asp:Repeater ID="rptLeaveLegend" runat="server">
                 <ItemTemplate>
                     <div class="legend-item">
-                        <div class="legend-color <%# Eval("TypeName").ToString().ToLower() %>"></div>
-                        <span><%# Eval("TypeName") %> Leave</span>
+                        <div class="legend-color" style='background: <%# Eval("ColorCode") %>;'></div>
+                        <span class="legend-label"><%# Eval("LeaveType") %></span>
+                        <span class="legend-count">(<%# Eval("Count") %> this month)</span>
                     </div>
                 </ItemTemplate>
             </asp:Repeater>
-            
-            <div class="legend-item">
-                <div class="legend-color multiple"></div>
-                <span>Multiple Leave Types</span>
-            </div>
         </div>
     </div>
 
-    <!-- Daily Leave Details Panel -->
-    <asp:Panel ID="pnlDayDetails" runat="server" CssClass="modal-overlay" Visible="false">
+    <!-- Selected Day Details Modal -->
+    <asp:Panel ID="pnlDayDetails" runat="server" Visible="false" CssClass="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">
-                    <i class="material-icons">event_note</i>
-                    Leave Details for <asp:Literal ID="litSelectedDate" runat="server"></asp:Literal>
-                </h4>
-                <asp:LinkButton ID="btnCloseDayDetails" runat="server" CssClass="modal-close" OnClick="btnCloseDayDetails_Click">
-                    <i class="material-icons">close</i>
-                </asp:LinkButton>
+                <h3>
+                    <i class="material-icons">event</i>
+                    Leaves for <asp:Literal ID="litSelectedDate" runat="server"></asp:Literal>
+                </h3>
+                <asp:Button ID="btnCloseDayDetails" runat="server" Text="×" CssClass="btn-close" OnClick="btnCloseDayDetails_Click" />
             </div>
-            
             <div class="modal-body">
-                <asp:GridView ID="gvDayLeaveDetails" runat="server" 
-                    CssClass="modern-grid" 
-                    AutoGenerateColumns="false" 
-                    EmptyDataText="No leave requests for this date.">
-                    
-                    <Columns>
-                        <asp:BoundField DataField="EmployeeName" HeaderText="Employee" />
-                        <asp:BoundField DataField="Department" HeaderText="Department" />
-                        <asp:BoundField DataField="LeaveType" HeaderText="Leave Type" />
-                        <asp:BoundField DataField="StartDate" HeaderText="Start Date" DataFormatString="{0:MMM dd, yyyy}" />
-                        <asp:BoundField DataField="EndDate" HeaderText="End Date" DataFormatString="{0:MMM dd, yyyy}" />
-                        <asp:BoundField DataField="DaysRequested" HeaderText="Days" />
-                        
-                        <asp:TemplateField HeaderText="Status">
-                            <ItemTemplate>
-                                <span class="leave-status-badge status-<%# Eval("Status").ToString().ToLower() %>">
-                                    <%# Eval("Status") %>
-                                </span>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                        
-                        <asp:TemplateField HeaderText="Progress">
-                            <ItemTemplate>
-                                <div class="leave-progress">
-                                    <%# GetLeaveProgress(Eval("StartDate"), Eval("EndDate")) %>
+                <asp:Repeater ID="rptDayLeaves" runat="server">
+                    <HeaderTemplate>
+                        <div class="leaves-list">
+                    </HeaderTemplate>
+                    <ItemTemplate>
+                        <div class="leave-item">
+                            <div class="employee-avatar">
+                                <%# GetInitials(Eval("EmployeeName").ToString()) %>
+                            </div>
+                            <div class="leave-info">
+                                <div class="employee-name"><%# Eval("EmployeeName") %></div>
+                                <div class="leave-details">
+                                    <span class="leave-type" style='color: <%# Eval("ColorCode") %>;'>
+                                        <%# Eval("LeaveType") %>
+                                    </span>
+                                    <span class="leave-duration">
+                                        <%# GetLeaveDuration(Eval("StartDate"), Eval("EndDate")) %>
+                                    </span>
                                 </div>
-                            </ItemTemplate>
-                        </asp:TemplateField>
-                    </Columns>
-                </asp:GridView>
+                                <div class="leave-reason"><%# Eval("Reason") %></div>
+                            </div>
+                            <div class="leave-status">
+                                <span class="status-badge status-approved">Approved</span>
+                            </div>
+                        </div>
+                    </ItemTemplate>
+                    <FooterTemplate>
+                        </div>
+                    </FooterTemplate>
+                </asp:Repeater>
+                
+                <asp:Panel ID="pnlNoLeavesForDay" runat="server" Visible="false" CssClass="no-data">
+                    <i class="material-icons">event_busy</i>
+                    <h4>No leaves scheduled for this day</h4>
+                    <p>All employees are available on this date.</p>
+                </asp:Panel>
             </div>
         </div>
     </asp:Panel>
 
-    <!-- Statistics Panel -->
-    <div class="time-status-card">
-        <div class="status-header">
-            <h3>
-                <i class="material-icons">analytics</i>
-                Monthly Statistics
-            </h3>
-        </div>
-        
-        <div class="overview-cards">
-            <div class="overview-card">
-                <div class="card-icon">
-                    <i class="material-icons">event_available</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litTotalLeaves" runat="server" Text="0"></asp:Literal>
-                    </div>
-                    <div class="card-label">Total Leaves</div>
-                    <div class="card-sublabel">This Month</div>
-                </div>
-            </div>
-
-            <div class="overview-card">
-                <div class="card-icon">
-                    <i class="material-icons">people</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litUniqueEmployees" runat="server" Text="0"></asp:Literal>
-                    </div>
-                    <div class="card-label">Employees on Leave</div>
-                    <div class="card-sublabel">This Month</div>
-                </div>
-            </div>
-
-            <div class="overview-card">
-                <div class="card-icon">
-                    <i class="material-icons">schedule</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litTotalDays" runat="server" Text="0"></asp:Literal>
-                    </div>
-                    <div class="card-label">Total Days</div>
-                    <div class="card-sublabel">Leave Taken</div>
-                </div>
-            </div>
-
-            <div class="overview-card">
-                <div class="card-icon">
-                    <i class="material-icons">trending_up</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litBusiestDay" runat="server" Text="N/A"></asp:Literal>
-                    </div>
-                    <div class="card-label">Busiest Day</div>
-                    <div class="card-sublabel">Most Leave Requests</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Hidden Fields -->
-    <asp:HiddenField ID="hfCurrentDate" runat="server" />
+    <asp:HiddenField ID="hfCurrentMonth" runat="server" />
+    <asp:HiddenField ID="hfCurrentYear" runat="server" />
     <asp:HiddenField ID="hfSelectedDate" runat="server" />
 
 </asp:Content>

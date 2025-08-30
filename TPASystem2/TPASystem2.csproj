@@ -94,6 +94,7 @@
     <Content Include="LeaveManagement\LeaveManagement.aspx" />
     <Content Include="Profile\AddEmployees.aspx" />
     <Content Include="Profile\ManageEmployeeProfiles.aspx" />
+    <Content Include="Profile\MyProfile.aspx" />
     <Content Include="Profile\ViewDocuments.aspx" />
     <Content Include="TimeManagement\EditTimesheet.aspx" />
     <Content Include="TimeManagement\EmployeeTimesheets.aspx" />
@@ -237,6 +238,13 @@
     </Compile>
     <Compile Include="Profile\ManageEmployeeProfiles.aspx.designer.cs">
       <DependentUpon>ManageEmployeeProfiles.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Profile\MyProfile.aspx.cs">
+      <DependentUpon>MyProfile.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Profile\MyProfile.aspx.designer.cs">
+      <DependentUpon>MyProfile.aspx</DependentUpon>
     </Compile>
     <Compile Include="Profile\ViewDocuments.aspx.cs">
       <DependentUpon>ViewDocuments.aspx</DependentUpon>

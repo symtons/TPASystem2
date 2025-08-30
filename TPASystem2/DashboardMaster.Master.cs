@@ -194,10 +194,11 @@ namespace TPASystem2
 
                 // Profile (everyone)
                 menuHtml.AppendLine(@"<div class='nav-section-spacer'></div>");
-                menuHtml.AppendLine(CreateNavItem("My Profile", "/profile", "person", currentPage == "profile"));
+                //menuHtml.AppendLine(CreateNavItem("My Profile", "/profile", "person", currentPage == "profile"));
+            menuHtml.AppendLine(CreateNavItem("My Profile", $"{appPath}/Profile/MyProfile.aspx", "person", currentPage == "profile"));
 
-                // Help (everyone)
-                menuHtml.AppendLine(CreateNavItem("Help & Support", "/help", "help", currentPage == "help"));
+            // Help (everyone)
+            menuHtml.AppendLine(CreateNavItem("Help & Support", "/help", "help", currentPage == "help"));
 
                 litNavigation.Text = menuHtml.ToString();
             //}
