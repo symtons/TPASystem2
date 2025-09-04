@@ -1,0 +1,416 @@
+﻿/**
+ * TPA Session Management Styles
+ * File: Content/css/tpa-session-styles.css
+ * Purpose: Session timeout warning modal and notification styles
+ */
+
+/* ===============================================
+   SESSION WARNING MODAL
+   =============================================== */
+
+.session-warning-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.session-warning-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+}
+
+.session-warning-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: sessionWarningSlideIn 0.3s ease-out;
+    text-align: center;
+}
+
+@keyframes sessionWarningSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ===============================================
+   WARNING MODAL CONTENT
+   =============================================== */
+
+.warning-header {
+    margin-bottom: 24px;
+}
+
+.warning-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+    animation: warningPulse 2s infinite;
+}
+
+@keyframes warningPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.warning-header h3 {
+    margin: 0;
+    color: #f44336;
+    font-size: 24px;
+    font-weight: 600;
+    font-family: inherit;
+}
+
+.warning-body {
+    margin-bottom: 32px;
+    color: #555;
+    line-height: 1.5;
+}
+
+    .warning-body p {
+        margin: 12px 0;
+        font-size: 16px;
+    }
+
+#countdownDisplay {
+    color: #f44336;
+    font-weight: bold;
+    font-size: 18px;
+    font-family: 'Courier New', monospace;
+    background: #fff5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    min-width: 50px;
+    border: 1px solid #ffebee;
+}
+
+/* ===============================================
+   WARNING MODAL ACTIONS
+   =============================================== */
+
+.warning-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+    .warning-actions .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 140px;
+        justify-content: center;
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+        .warning-actions .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .warning-actions .btn:active {
+            transform: translateY(0);
+        }
+
+    .warning-actions .btn-primary {
+        background: #ff9800;
+        color: white;
+    }
+
+        .warning-actions .btn-primary:hover {
+            background: #f57c00;
+        }
+
+    .warning-actions .btn-secondary {
+        background: #999;
+        color: white;
+    }
+
+        .warning-actions .btn-secondary:hover {
+            background: #777;
+        }
+
+    .warning-actions .material-icons {
+        font-size: 18px;
+    }
+
+/* ===============================================
+   SESSION NOTIFICATIONS
+   =============================================== */
+
+.session-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 400px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: notificationSlideIn 0.3s ease-out;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+@keyframes notificationSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.session-notification.success {
+    border-left: 4px solid #4caf50;
+}
+
+.session-notification.warning {
+    border-left: 4px solid #ff9800;
+}
+
+.session-notification.error {
+    border-left: 4px solid #f44336;
+}
+
+.session-notification.info {
+    border-left: 4px solid #2196f3;
+}
+
+.notification-content {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notification-message {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 12px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+    .notification-close:hover {
+        color: #666;
+    }
+
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+
+@media (max-width: 600px) {
+    .session-warning-content {
+        margin: 20px;
+        padding: 24px;
+        max-width: none;
+        width: auto;
+    }
+
+    .warning-actions {
+        flex-direction: column;
+    }
+
+        .warning-actions .btn {
+            width: 100%;
+            min-width: auto;
+        }
+
+    .session-notification {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+
+    .warning-header h3 {
+        font-size: 20px;
+    }
+
+    .warning-icon {
+        font-size: 40px;
+    }
+
+    .warning-body p {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 400px) {
+    .session-warning-content {
+        padding: 20px;
+        margin: 16px;
+    }
+
+    .warning-header {
+        margin-bottom: 20px;
+    }
+
+    .warning-body {
+        margin-bottom: 24px;
+    }
+
+    .warning-actions .btn {
+        padding: 10px 20px;
+        font-size: 13px;
+    }
+}
+
+/* ===============================================
+   ACCESSIBILITY SUPPORT
+   =============================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .session-warning-content {
+        border: 2px solid #000;
+    }
+
+    .warning-actions .btn {
+        border: 1px solid #000;
+    }
+
+    .session-notification {
+        border: 1px solid #000;
+    }
+
+    #countdownDisplay {
+        border: 2px solid #f44336;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .session-warning-content,
+    .session-notification {
+        animation: none;
+    }
+
+    .warning-icon {
+        animation: none;
+    }
+
+    .warning-actions .btn {
+        transition: none;
+    }
+
+        .warning-actions .btn:hover {
+            transform: none;
+        }
+}
+
+/* Focus styles for keyboard navigation */
+.warning-actions .btn:focus {
+    outline: 2px solid #ff9800;
+    outline-offset: 2px;
+}
+
+.notification-close:focus {
+    outline: 2px solid #666;
+    outline-offset: 1px;
+    border-radius: 2px;
+}
+
+/* ===============================================
+   PRINT STYLES
+   =============================================== */
+
+@media print {
+    .session-warning-modal,
+    .session-notification {
+        display: none !important;
+    }
+}
+
+/* ===============================================
+   DARK MODE SUPPORT (Optional)
+   =============================================== */
+
+@media (prefers-color-scheme: dark) {
+    .session-warning-content {
+        background: #2d2d2d;
+        color: #fff;
+    }
+
+    .warning-body {
+        color: #ccc;
+    }
+
+    #countdownDisplay {
+        background: #3d1a1a;
+        border-color: #5d2d2d;
+        color: #ff6b6b;
+    }
+
+    .session-notification {
+        background: #2d2d2d;
+        color: #fff;
+    }
+
+    .notification-message {
+        color: #fff;
+    }
+
+    .notification-close {
+        color: #ccc;
+    }
+
+        .notification-close:hover {
+            color: #fff;
+        }
+}

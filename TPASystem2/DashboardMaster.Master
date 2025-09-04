@@ -2,6 +2,7 @@
 
 <asp:Content ID="HeadContent" ContentPlaceHolderID="HeadContent" runat="server">
     <link href="Content/css/tpa-dashboard.css" rel="stylesheet" />
+    <link href="Content/css/tpa-session-styles.css" rel="stylesheet" />
 
 </asp:Content>
 
@@ -147,5 +148,6 @@
 
 
     <script src="<%= ResolveUrl("~/Content/js/tpa-dashboard.js") %>"></script>
+    <script src="<%= ResolveUrl("~/Content/js/tpa-session-manager.js") %>"></script>
     
 </asp:Content>

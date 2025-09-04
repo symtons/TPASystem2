@@ -8,10 +8,6 @@
 
     <style> 
 
-        /* ===============================================
-   JOB APPLICATIONS MANAGEMENT STYLES
-   Add these styles to tpa-common.css
-   =============================================== */
 
 /* Contact Information Display */
 .contact-info {

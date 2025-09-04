@@ -516,34 +516,7 @@ namespace TPASystem2.HR
             }
         }
 
-        private string BuildAddress(SqlDataReader reader)
-        {
-            List<string> addressParts = new List<string>();
-
-            string street = reader["HomeAddress"]?.ToString();
-            string apt = reader["AptNumber"]?.ToString();
-
-            if (!string.IsNullOrEmpty(street))
-            {
-                if (!string.IsNullOrEmpty(apt))
-                {
-                    street += $" Apt {apt}";
-                }
-                addressParts.Add(street);
-            }
-
-            string city = reader["City"]?.ToString();
-            string state = reader["State"]?.ToString();
-            string zip = reader["Zip"]?.ToString();
-
-            if (!string.IsNullOrEmpty(city) || !string.IsNullOrEmpty(state) || !string.IsNullOrEmpty(zip))
-            {
-                string cityStateZip = $"{city}, {state} {zip}".Trim().TrimStart(',').Trim();
-                addressParts.Add(cityStateZip);
-            }
-
-            return addressParts.Count > 0 ? string.Join("<br />", addressParts) : "N/A";
-        }
+  
 
         #endregion
 
@@ -632,59 +605,7 @@ namespace TPASystem2.HR
                 "hideStatusModal();", true);
         }
 
-        protected void btnSaveStatus_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (!string.IsNullOrEmpty(hdnSelectedApplicationId.Value))
-                {
-                    int applicationId = Convert.ToInt32(hdnSelectedApplicationId.Value);
-                    string newStatus = ddlNewStatus.SelectedValue;
-                    string notes = txtStatusNotes.Text.Trim();
-
-                    using (SqlConnection conn = new SqlConnection(connectionString))
-                    {
-                        string sql = @"
-                            UPDATE JobApplications 
-                            SET Status = @Status, LastModified = @LastModified
-                            WHERE ApplicationId = @Id";
-
-                        using (SqlCommand cmd = new SqlCommand(sql, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@Status", newStatus);
-                            cmd.Parameters.AddWithValue("@LastModified", DateTime.Now);
-                            cmd.Parameters.AddWithValue("@Id", applicationId);
-
-                            conn.Open();
-                            int affected = cmd.ExecuteNonQuery();
-
-                            if (affected > 0)
-                            {
-                                ShowMessage($"Application status updated to {GetStatusDisplayText(newStatus)}.", "success");
-                                LoadApplications();
-
-                                // Clear form
-                                txtStatusNotes.Text = "";
-
-                                // Hide modal
-                                ScriptManager.RegisterStartupScript(this, GetType(), "hideStatusModal",
-                                    "hideStatusModal();", true);
-                            }
-                            else
-                            {
-                                ShowMessage("Failed to update application status.", "error");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowMessage("Error updating status: " + ex.Message, "error");
-            }
-        }
-
-        #endregion
+       
 
         #region Helper Methods
 
@@ -788,5 +709,519 @@ namespace TPASystem2.HR
         }
 
         #endregion
+
+       
+
+    
+
+        private void ProcessApprovalWithOnboarding(int applicationId)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // Step 1: Get application data
+                        var applicationData = GetApplicationData(applicationId, conn, transaction);
+                        if (applicationData == null)
+                        {
+                            ShowMessage("Application not found", "error");
+                            return;
+                        }
+
+                        // Step 2: Update application status
+                        UpdateApplicationStatusInTransaction(applicationId, "Approved", conn, transaction);
+
+                        // Step 3: Create user account
+                        int userId = CreateUserAccount(applicationData, conn, transaction);
+
+                        // Step 4: Create employee record
+                        int employeeId = CreateEmployeeRecord(applicationData, userId, conn, transaction);
+
+                        // Step 5: Create onboarding tasks
+                        CreateOnboardingTasks(employeeId, applicationData.HireDate, conn, transaction);
+
+                        // Step 6: Create progress tracking
+                        CreateOnboardingProgress(employeeId, conn, transaction);
+
+                        transaction.Commit();
+                        ShowMessage($"Application approved successfully! Employee {applicationData.EmployeeNumber} created and onboarding initiated.", "success");
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        ShowMessage($"Error processing approval: {ex.Message}", "error");
+                    }
+                }
+            }
+        }
+
+        private void UpdateApplicationStatus(int applicationId, string status)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                string sql = "UPDATE [dbo].[JobApplications] SET [Status] = @Status, [LastModified] = GETUTCDATE() WHERE [ApplicationId] = @Id";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Status", status);
+                    cmd.Parameters.AddWithValue("@Id", applicationId);
+
+                    int affected = cmd.ExecuteNonQuery();
+                    if (affected > 0)
+                    {
+                        ShowMessage($"Application status updated to {status}.", "success");
+                    }
+                    else
+                    {
+                        ShowMessage("Application not found or no changes made.", "warning");
+                    }
+                }
+            }
+        }
+
+        private ApplicationData GetApplicationData(int applicationId, SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = @"
+        SELECT [FirstName], [LastName], [Position1], [CellPhone], [HomePhone], 
+               [HomeAddress], [City], [State], [Zip], [AptNumber], [EmploymentType]
+        FROM [dbo].[JobApplications] 
+        WHERE [ApplicationId] = @ApplicationId";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@ApplicationId", applicationId);
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new ApplicationData
+                        {
+                            ApplicationId = applicationId,
+                            FirstName = reader["FirstName"]?.ToString() ?? "",
+                            LastName = reader["LastName"]?.ToString() ?? "",
+                            Position = reader["Position1"]?.ToString() ?? "General Employee",
+                            Phone = reader["CellPhone"]?.ToString() ?? reader["HomePhone"]?.ToString() ?? "Not Provided",
+                            Address = BuildAddress(reader),
+                            Email = $"{reader["FirstName"]}.{reader["LastName"]}@tpainc.com".ToLower(),
+                            EmployeeNumber = GenerateEmployeeNumber(conn, transaction),
+                            HireDate = DateTime.UtcNow.AddDays(14),
+                            EmploymentType = reader["EmploymentType"]?.ToString() ?? "Full Time"
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+
+        private string BuildAddress(SqlDataReader reader)
+        {
+            var parts = new List<string>();
+
+            if (!string.IsNullOrEmpty(reader["HomeAddress"]?.ToString()))
+                parts.Add(reader["HomeAddress"].ToString());
+
+            if (!string.IsNullOrEmpty(reader["AptNumber"]?.ToString()))
+                parts.Add($"Apt {reader["AptNumber"]}");
+
+            if (!string.IsNullOrEmpty(reader["City"]?.ToString()))
+                parts.Add(reader["City"].ToString());
+
+            if (!string.IsNullOrEmpty(reader["State"]?.ToString()))
+                parts.Add(reader["State"].ToString());
+
+            if (!string.IsNullOrEmpty(reader["Zip"]?.ToString()))
+                parts.Add(reader["Zip"].ToString());
+
+            return parts.Count > 0 ? string.Join(", ", parts) : "Address Not Provided";
+        }
+
+        private string GenerateEmployeeNumber(SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = @"
+        SELECT ISNULL(MAX(CAST(RIGHT([EmployeeNumber], 4) AS INT)), 0) + 1 
+        FROM [dbo].[Employees] 
+        WHERE [EmployeeNumber] LIKE 'EMP%' AND LEN([EmployeeNumber]) = 7";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                int nextNumber = Convert.ToInt32(cmd.ExecuteScalar());
+                return $"EMP{nextNumber:D4}";
+            }
+        }
+
+        private void UpdateApplicationStatusInTransaction(int applicationId, string status, SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = "UPDATE [dbo].[JobApplications] SET [Status] = @Status, [LastModified] = GETUTCDATE() WHERE [ApplicationId] = @Id";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@Status", status);
+                cmd.Parameters.AddWithValue("@Id", applicationId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private int CreateUserAccount(ApplicationData data, SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = @"
+        INSERT INTO [dbo].[Users] (
+            [Email], [PasswordHash], [Salt], [Role], [IsActive], [MustChangePassword], 
+            [CreatedAt], [UpdatedAt], [FailedLoginAttempts]
+        )
+        VALUES (
+            @Email, @PasswordHash, @Salt, @Role, @IsActive, @MustChangePassword,
+            GETUTCDATE(), GETUTCDATE(), @FailedLoginAttempts
+        );
+        SELECT SCOPE_IDENTITY();";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@Email", data.Email);
+                cmd.Parameters.AddWithValue("@PasswordHash", "7UqSUHMlJ2oKwgsnJCCh/RdOpcTdJI537HSRDFW4OmY=");
+                cmd.Parameters.AddWithValue("@Salt", "testsault");
+                cmd.Parameters.AddWithValue("@Role", "EMPLOYEE");
+                cmd.Parameters.AddWithValue("@IsActive", true);
+                cmd.Parameters.AddWithValue("@MustChangePassword", true);
+                cmd.Parameters.AddWithValue("@FailedLoginAttempts", 0);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        private int CreateEmployeeRecord(ApplicationData data, int userId, SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = @"
+        INSERT INTO [dbo].[Employees] (
+            [UserId], [EmployeeNumber], [FirstName], [LastName], [Email], [PhoneNumber], 
+            [Address], [DepartmentId], [JobTitle], [HireDate], [EmployeeType], [Status], 
+            [CreatedAt], [UpdatedAt], [IsActive]
+        )
+        VALUES (
+            @UserId, @EmployeeNumber, @FirstName, @LastName, @Email, @PhoneNumber,
+            @Address, @DepartmentId, @JobTitle, @HireDate, @EmployeeType, @Status,
+            GETUTCDATE(), GETUTCDATE(), @IsActive
+        );
+        SELECT SCOPE_IDENTITY();";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                cmd.Parameters.AddWithValue("@EmployeeNumber", data.EmployeeNumber);
+                cmd.Parameters.AddWithValue("@FirstName", data.FirstName);
+                cmd.Parameters.AddWithValue("@LastName", data.LastName);
+                cmd.Parameters.AddWithValue("@Email", data.Email);
+                cmd.Parameters.AddWithValue("@PhoneNumber", data.Phone);
+                cmd.Parameters.AddWithValue("@Address", data.Address);
+                cmd.Parameters.AddWithValue("@DepartmentId", 1); // Default department
+                cmd.Parameters.AddWithValue("@JobTitle", data.Position);
+                cmd.Parameters.AddWithValue("@HireDate", data.HireDate);
+                cmd.Parameters.AddWithValue("@EmployeeType", data.EmploymentType);
+                cmd.Parameters.AddWithValue("@Status", "Pending Onboarding");
+                cmd.Parameters.AddWithValue("@IsActive", true);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        private void CreateOnboardingTasks(int employeeId, DateTime hireDate, SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = @"
+        INSERT INTO [dbo].[OnboardingTasks] (
+            [EmployeeId], [Title], [Description], [Category], [Priority], [Status], 
+            [DueDate], [Instructions], [CanEmployeeComplete], [BlocksSystemAccess], 
+            [IsMandatory], [AssignedById], [CreatedDate]
+        )
+        VALUES 
+        (@EmployeeId, 'Direct Deposit Enrollment', 'Complete direct deposit enrollment for payroll', 
+         'SETUP', 'HIGH', 'PENDING', @DepositDueDate, 
+         'Employee: Complete direct deposit enrollment form with banking information', 
+         1, 0, 1, 1, GETUTCDATE()),
+        (@EmployeeId, 'Complete Mandatory Training', 'Complete all required company training modules', 
+         'TRAINING', 'HIGH', 'PENDING', @TrainingDueDate, 
+         'Employee: Complete all mandatory training courses and assessments', 
+         1, 0, 1, 1, GETUTCDATE())";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                cmd.Parameters.AddWithValue("@DepositDueDate", hireDate.AddDays(7));
+                cmd.Parameters.AddWithValue("@TrainingDueDate", hireDate.AddDays(10));
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private void CreateOnboardingProgress(int employeeId, SqlConnection conn, SqlTransaction transaction)
+        {
+            string sql = @"
+        INSERT INTO [dbo].[OnboardingProgress] (
+            [EmployeeId], [TotalTasks], [CompletedTasks], [PendingTasks], [CompletionPercentage], 
+            [StartDate], [Status], [LastUpdated], [MandatoryTasksTotal], [MandatoryTasksCompleted], 
+            [MandatoryCompletionPercentage], [AllMandatoryCompleted]
+        )
+        VALUES (
+            @EmployeeId, 2, 0, 2, 0.0, @StartDate, 'IN_PROGRESS', 
+            GETUTCDATE(), 2, 0, 0.0, 0
+        )";
+
+            using (SqlCommand cmd = new SqlCommand(sql, conn, transaction))
+            {
+                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                cmd.Parameters.AddWithValue("@StartDate", DateTime.UtcNow.AddDays(14));
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+
+
+
+      
+
+        protected void btnSaveStatus_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(hdnSelectedApplicationId.Value))
+                {
+                    int applicationId = Convert.ToInt32(hdnSelectedApplicationId.Value);
+                    string newStatus = ddlNewStatus.SelectedValue;
+
+                    if (newStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Handle approval with onboarding creation
+                        ApproveApplicationWithOnboarding(applicationId);
+                    }
+                    else
+                    {
+                        // Handle simple status update
+                        SimpleStatusUpdate(applicationId, newStatus);
+                    }
+
+                    // Refresh and close modal
+                    LoadApplications();
+                    ScriptManager.RegisterStartupScript(this, GetType(), "hideStatusModal", "hideStatusModal();", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowMessage($"Error processing status update: {ex.Message}", "error");
+            }
+        }
+
+        private void ApproveApplicationWithOnboarding(int applicationId)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // Variables for the process
+                        string firstName = "", lastName = "", position = "", phone = "", email = "";
+                        string employeeNumber = "", address = "";
+                        DateTime hireDate = DateTime.UtcNow.AddDays(14);
+                        int userId = 0, employeeId = 0;
+
+                        // Step 1: Get application data (properly close reader before next operations)
+                        string getAppSql = @"
+                    SELECT [FirstName], [LastName], [Position1], 
+                           COALESCE([CellPhone], [HomePhone], 'Not Provided') as Phone,
+                           COALESCE([HomeAddress] + ', ' + [City] + ', ' + [State] + ' ' + [Zip], 'Address Not Provided') as Address
+                    FROM [dbo].[JobApplications] 
+                    WHERE [ApplicationId] = @ApplicationId";
+
+                        using (SqlCommand cmd = new SqlCommand(getAppSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ApplicationId", applicationId);
+                            using (SqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    firstName = reader["FirstName"]?.ToString() ?? "";
+                                    lastName = reader["LastName"]?.ToString() ?? "";
+                                    position = reader["Position1"]?.ToString() ?? "General Employee";
+                                    phone = reader["Phone"]?.ToString() ?? "";
+                                    address = reader["Address"]?.ToString() ?? "";
+                                    email = $"{firstName}.{lastName}@tpainc.com".ToLower();
+                                }
+                                // Reader will be closed automatically by using statement
+                            }
+                        }
+
+                        // Check if we got the data
+                        if (string.IsNullOrEmpty(firstName))
+                        {
+                            transaction.Rollback();
+                            ShowMessage("Application data not found", "error");
+                            return;
+                        }
+
+                        // Step 2: Generate employee number
+                        string empNumSql = @"
+                    SELECT 'EMP' + RIGHT('0000' + CAST(
+                        ISNULL(MAX(CAST(RIGHT([EmployeeNumber], 4) AS INT)), 0) + 1 
+                        AS VARCHAR(4)), 4)
+                    FROM [dbo].[Employees] 
+                    WHERE [EmployeeNumber] LIKE 'EMP%' AND LEN([EmployeeNumber]) = 7";
+
+                        using (SqlCommand cmd = new SqlCommand(empNumSql, conn, transaction))
+                        {
+                            employeeNumber = cmd.ExecuteScalar()?.ToString() ?? "EMP0001";
+                        }
+
+                        // Step 3: Update application status
+                        string updateAppSql = "UPDATE [dbo].[JobApplications] SET [Status] = 'Approved', [LastModified] = GETUTCDATE() WHERE [ApplicationId] = @ApplicationId";
+                        using (SqlCommand cmd = new SqlCommand(updateAppSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ApplicationId", applicationId);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // Step 4: Create user account
+                        string createUserSql = @"
+                    INSERT INTO [dbo].[Users] (
+                        [Email], [PasswordHash], [Salt], [Role], [IsActive], [MustChangePassword], 
+                        [CreatedAt], [UpdatedAt], [FailedLoginAttempts]
+                    )
+                    VALUES (
+                        @Email, '7UqSUHMlJ2oKwgsnJCCh/RdOpcTdJI537HSRDFW4OmY=', 'testsault', 'EMPLOYEE', 1, 1,
+                        GETUTCDATE(), GETUTCDATE(), 0
+                    );
+                    SELECT SCOPE_IDENTITY();";
+
+                        using (SqlCommand cmd = new SqlCommand(createUserSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@Email", email);
+                            userId = Convert.ToInt32(cmd.ExecuteScalar());
+                        }
+
+                        // Step 5: Create employee record
+                        string createEmpSql = @"
+                    INSERT INTO [dbo].[Employees] (
+                        [UserId], [EmployeeNumber], [FirstName], [LastName], [Email], [PhoneNumber], 
+                        [Address], [DepartmentId], [JobTitle], [HireDate], [EmployeeType], [Status], 
+                        [CreatedAt], [UpdatedAt], [IsActive]
+                    )
+                    VALUES (
+                        @UserId, @EmployeeNumber, @FirstName, @LastName, @Email, @PhoneNumber,
+                        @Address, 1, @JobTitle, @HireDate, 'Full Time', 'Pending Onboarding',
+                        GETUTCDATE(), GETUTCDATE(), 1
+                    );
+                    SELECT SCOPE_IDENTITY();";
+
+                        using (SqlCommand cmd = new SqlCommand(createEmpSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@UserId", userId);
+                            cmd.Parameters.AddWithValue("@EmployeeNumber", employeeNumber);
+                            cmd.Parameters.AddWithValue("@FirstName", firstName);
+                            cmd.Parameters.AddWithValue("@LastName", lastName);
+                            cmd.Parameters.AddWithValue("@Email", email);
+                            cmd.Parameters.AddWithValue("@PhoneNumber", phone);
+                            cmd.Parameters.AddWithValue("@Address", address);
+                            cmd.Parameters.AddWithValue("@JobTitle", position);
+                            cmd.Parameters.AddWithValue("@HireDate", hireDate);
+
+                            employeeId = Convert.ToInt32(cmd.ExecuteScalar());
+                        }
+
+                        // Step 6: Create 2 onboarding tasks
+                        string createTasksSql = @"
+                    INSERT INTO [dbo].[OnboardingTasks] (
+                        [EmployeeId], [Title], [Description], [Category], [Priority], [Status], 
+                        [DueDate], [Instructions], [CanEmployeeComplete], [BlocksSystemAccess], 
+                        [IsMandatory], [AssignedById], [CreatedDate]
+                    )
+                    VALUES 
+                    (@EmployeeId, 'Direct Deposit Enrollment', 'Complete direct deposit enrollment for payroll', 
+                     'SETUP', 'HIGH', 'PENDING', @DepositDueDate, 
+                     'Employee: Complete direct deposit enrollment form with banking information', 
+                     1, 0, 1, 1, GETUTCDATE()),
+                    (@EmployeeId, 'Complete Mandatory Training', 'Complete all required company training modules', 
+                     'TRAINING', 'HIGH', 'PENDING', @TrainingDueDate, 
+                     'Employee: Complete all mandatory training courses and assessments', 
+                     1, 0, 1, 1, GETUTCDATE())";
+
+                        using (SqlCommand cmd = new SqlCommand(createTasksSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                            cmd.Parameters.AddWithValue("@DepositDueDate", hireDate.AddDays(7));
+                            cmd.Parameters.AddWithValue("@TrainingDueDate", hireDate.AddDays(10));
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // Step 7: Create progress tracking
+                        string createProgressSql = @"
+                    INSERT INTO [dbo].[OnboardingProgress] (
+                        [EmployeeId], [TotalTasks], [CompletedTasks], [PendingTasks], [CompletionPercentage], 
+                        [StartDate], [Status], [LastUpdated], [MandatoryTasksTotal], [MandatoryTasksCompleted], 
+                        [MandatoryCompletionPercentage], [AllMandatoryCompleted]
+                    )
+                    VALUES (
+                        @EmployeeId, 2, 0, 2, 0.0, @StartDate, 'IN_PROGRESS', 
+                        GETUTCDATE(), 2, 0, 0.0, 0
+                    )";
+
+                        using (SqlCommand cmd = new SqlCommand(createProgressSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                            cmd.Parameters.AddWithValue("@StartDate", hireDate);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                        ShowMessage($"Application approved successfully! Employee {employeeNumber} ({firstName} {lastName}) created and onboarding initiated.", "success");
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        ShowMessage($"Error processing approval: {ex.Message}", "error");
+                    }
+                }
+            }
+        }
+
+        private void SimpleStatusUpdate(int applicationId, string status)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                string sql = "UPDATE [dbo].[JobApplications] SET [Status] = @Status, [LastModified] = GETUTCDATE() WHERE [ApplicationId] = @Id";
+
+                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Status", status);
+                    cmd.Parameters.AddWithValue("@Id", applicationId);
+
+                    int affected = cmd.ExecuteNonQuery();
+                    if (affected > 0)
+                    {
+                        ShowMessage($"Application status updated to {status}.", "success");
+                    }
+                    else
+                    {
+                        ShowMessage("Application not found or no changes made.", "warning");
+                    }
+                }
+            }
+        }
+        // Helper class for application data
+        public class ApplicationData
+        {
+            public int ApplicationId { get; set; }
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public string Position { get; set; }
+            public string Phone { get; set; }
+            public string Address { get; set; }
+            public string Email { get; set; }
+            public string EmployeeNumber { get; set; }
+            public DateTime HireDate { get; set; }
+            public string EmploymentType { get; set; }
+        }
     }
 }
+#endregion

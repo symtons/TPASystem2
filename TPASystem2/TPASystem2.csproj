@@ -71,9 +71,11 @@
     <Content Include="Content\css\tpa-auth.css" />
     <Content Include="Content\css\tpa-common.css" />
     <Content Include="Content\css\tpa-dashboard.css" />
+    <Content Include="Content\css\tpa-session-styles.css" />
     <Content Include="Content\js\tpa-onboarding.js" />
     <Content Include="Content\js\tpa-common.js" />
     <Content Include="Content\js\tpa-dashboard.js" />
+    <Content Include="Content\js\tpa-session-manager.js" />
     <Content Include="Content\logo.png" />
     <Content Include="Dashboard.aspx" />
     <Content Include="Debug.aspx" />
@@ -394,6 +396,7 @@
     <Content Include="DashboardMaster.Master" />
     <Content Include="Files\time.pdf" />
     <Content Include="Files\Timesheet2.pdf" />
+    <Content Include="KeepAlive.ashx" />
     <None Include="packages.config" />
     <Content Include="Site.Master" />
     <None Include="Web.Debug.config">
