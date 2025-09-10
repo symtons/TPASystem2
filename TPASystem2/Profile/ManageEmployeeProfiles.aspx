@@ -8,10 +8,7 @@
 
   <style>
 
-      /* ===============================================
-   GRID-BASED EMPLOYEE MANAGEMENT STYLES
-   Add these styles to tpa-common.css
-   =============================================== */
+  
 
 /* Employee Grid Specific Styles */
 .employee-info-cell {
@@ -820,7 +817,7 @@
             <div class="welcome-actions">
                <!-- Fixed Add Employee Button -->
 <asp:Button ID="btnAddEmployee" runat="server" Text="Add Employee" 
-    CssClass="btn-tpa" OnClick="btnAddEmployee_Click" />
+    CssClass="btn-tpa" OnClick="btnAddEmployee_Click"  Visible="false"/>
       <asp:Button ID="Button1" runat="server" Text="Add Employee" OnClick="Button1_Click" />
 <!-- Fixed Export Button -->
 <asp:Button ID="btnExportEmployees" runat="server" Text="Export" 
@@ -835,62 +832,7 @@
     </asp:Panel>
 
     <!-- Dashboard Overview -->
-    <div class="dashboard-overview">
-        <div class="overview-title">
-            <h2>Employee Overview</h2>
-            <p>Quick statistics and management controls</p>
-        </div>
-        
-        <div class="overview-cards">
-            <div class="overview-card active">
-                <div class="card-icon">
-                    <i class="material-icons">people</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litTotalEmployees" runat="server">0</asp:Literal>
-                    </div>
-                    <div class="card-label">Total Employees</div>
-                </div>
-            </div>
-            
-            <div class="overview-card pending">
-                <div class="card-icon">
-                    <i class="material-icons">assignment_ind</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litActiveOnboarding" runat="server">0</asp:Literal>
-                    </div>
-                    <div class="card-label">Active Onboarding</div>
-                </div>
-            </div>
-            
-            <div class="overview-card approved">
-                <div class="card-icon">
-                    <i class="material-icons">person_add</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litNewHires" runat="server">0</asp:Literal>
-                    </div>
-                    <div class="card-label">New Hires This Month</div>
-                </div>
-            </div>
-            
-            <div class="overview-card completed">
-                <div class="card-icon">
-                    <i class="material-icons">business</i>
-                </div>
-                <div class="card-content">
-                    <div class="card-number">
-                        <asp:Literal ID="litDepartmentCount" runat="server">0</asp:Literal>
-                    </div>
-                    <div class="card-label">Departments</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <!-- Filters Section -->
     <div class="management-controls">

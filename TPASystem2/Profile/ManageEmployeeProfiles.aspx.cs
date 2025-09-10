@@ -65,7 +65,7 @@ namespace TPASystem2.HR
             bool isProgramDirector = IsProgramDirector();
 
             // Show/hide Add Employee button based on role
-            btnAddEmployee.Visible = isAdmin || isProgramDirector;
+            Button1.Visible = isAdmin || isProgramDirector;
 
             // Set user role display
             litUserRole.Text = CurrentUserRole;
@@ -224,7 +224,7 @@ namespace TPASystem2.HR
                         }
 
                         int totalEmployees = Convert.ToInt32(cmd.ExecuteScalar());
-                        litTotalEmployees.Text = totalEmployees.ToString();
+                       // litTotalEmployees.Text = totalEmployees.ToString();
                     }
 
                     // Get active onboarding count
@@ -247,7 +247,7 @@ namespace TPASystem2.HR
                         }
 
                         int activeOnboarding = Convert.ToInt32(cmd.ExecuteScalar());
-                        litActiveOnboarding.Text = activeOnboarding.ToString();
+                        //litActiveOnboarding.Text = activeOnboarding.ToString();
                     }
 
                     // Get new hires this month
@@ -271,7 +271,7 @@ namespace TPASystem2.HR
                         }
 
                         int newHires = Convert.ToInt32(cmd.ExecuteScalar());
-                        litNewHires.Text = newHires.ToString();
+                        //litNewHires.Text = newHires.ToString();
                     }
 
                     // Get department count
@@ -279,17 +279,17 @@ namespace TPASystem2.HR
                     using (SqlCommand cmd = new SqlCommand(deptQuery, conn))
                     {
                         int deptCount = Convert.ToInt32(cmd.ExecuteScalar());
-                        litDepartmentCount.Text = deptCount.ToString();
+                       // litDepartmentCount.Text = deptCount.ToString();
                     }
                 }
             }
             catch (Exception ex)
             {
                 LogError(ex);
-                litTotalEmployees.Text = "0";
-                litActiveOnboarding.Text = "0";
-                litNewHires.Text = "0";
-                litDepartmentCount.Text = "0";
+                //litTotalEmployees.Text = "0";
+                //litActiveOnboarding.Text = "0";
+                //litNewHires.Text = "0";
+                //litDepartmentCount.Text = "0";
             }
         }
 

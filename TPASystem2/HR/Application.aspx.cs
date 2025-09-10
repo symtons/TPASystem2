@@ -977,8 +977,9 @@ namespace TPASystem2.HR
 
 
 
+       
 
-      
+  
 
         protected void btnSaveStatus_Click(object sender, EventArgs e)
         {
@@ -1046,7 +1047,8 @@ namespace TPASystem2.HR
                                     position = reader["Position1"]?.ToString() ?? "General Employee";
                                     phone = reader["Phone"]?.ToString() ?? "";
                                     address = reader["Address"]?.ToString() ?? "";
-                                    email = $"{firstName}.{lastName}@tpainc.com".ToLower();
+                                    
+                                    email = $"{firstName}{lastName.Substring(0, 1)}@tennesseepersonalassistance.org".ToLower();
                                 }
                                 // Reader will be closed automatically by using statement
                             }
@@ -1088,7 +1090,7 @@ namespace TPASystem2.HR
                         [CreatedAt], [UpdatedAt], [FailedLoginAttempts]
                     )
                     VALUES (
-                        @Email, '7UqSUHMlJ2oKwgsnJCCh/RdOpcTdJI537HSRDFW4OmY=', 'testsault', 'EMPLOYEE', 1, 1,
+                        @Email, '7UqSUHMlJ2oKwgsnJCCh/RdOpcTdJI537HSRDFW4OmY=', 'testsalt', 'EMPLOYEE', 1, 1,
                         GETUTCDATE(), GETUTCDATE(), 0
                     );
                     SELECT SCOPE_IDENTITY();";
@@ -1128,48 +1130,79 @@ namespace TPASystem2.HR
                             employeeId = Convert.ToInt32(cmd.ExecuteScalar());
                         }
 
-                        // Step 6: Create 2 onboarding tasks
+                        // Step 6: Create 2 onboarding tasks (with TemplateId to satisfy foreign key)
                         string createTasksSql = @"
                     INSERT INTO [dbo].[OnboardingTasks] (
-                        [EmployeeId], [Title], [Description], [Category], [Priority], [Status], 
+                        [EmployeeId], [TemplateId], [Title], [Description], [Category], [Priority], [Status], 
                         [DueDate], [Instructions], [CanEmployeeComplete], [BlocksSystemAccess], 
                         [IsMandatory], [AssignedById], [CreatedDate]
                     )
                     VALUES 
-                    (@EmployeeId, 'Direct Deposit Enrollment', 'Complete direct deposit enrollment for payroll', 
+                    (@EmployeeId, @TemplateId, 'Direct Deposit Enrollment', 'Complete direct deposit enrollment for payroll', 
                      'SETUP', 'HIGH', 'PENDING', @DepositDueDate, 
                      'Employee: Complete direct deposit enrollment form with banking information', 
                      1, 0, 1, 1, GETUTCDATE()),
-                    (@EmployeeId, 'Complete Mandatory Training', 'Complete all required company training modules', 
+                    (@EmployeeId, @TemplateId, 'Complete Mandatory Training', 'Complete all required company training modules', 
                      'TRAINING', 'HIGH', 'PENDING', @TrainingDueDate, 
                      'Employee: Complete all mandatory training courses and assessments', 
                      1, 0, 1, 1, GETUTCDATE())";
 
                         using (SqlCommand cmd = new SqlCommand(createTasksSql, conn, transaction))
                         {
+                            // Get a valid TemplateId or use 1 as default
+                            int templateId = 1; // Default template ID
+                            try
+                            {
+                                string getTemplateSql = "SELECT TOP 1 Id FROM [dbo].[OnboardingTemplates] WHERE IsActive = 1 ORDER BY Id";
+                                using (SqlCommand templateCmd = new SqlCommand(getTemplateSql, conn, transaction))
+                                {
+                                    var result = templateCmd.ExecuteScalar();
+                                    if (result != null)
+                                        templateId = Convert.ToInt32(result);
+                                }
+                            }
+                            catch
+                            {
+                                // Use default templateId = 1
+                            }
+
                             cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                            cmd.Parameters.AddWithValue("@TemplateId", templateId);
                             cmd.Parameters.AddWithValue("@DepositDueDate", hireDate.AddDays(7));
                             cmd.Parameters.AddWithValue("@TrainingDueDate", hireDate.AddDays(10));
                             cmd.ExecuteNonQuery();
                         }
 
-                        // Step 7: Create progress tracking
-                        string createProgressSql = @"
-                    INSERT INTO [dbo].[OnboardingProgress] (
-                        [EmployeeId], [TotalTasks], [CompletedTasks], [PendingTasks], [CompletionPercentage], 
-                        [StartDate], [Status], [LastUpdated], [MandatoryTasksTotal], [MandatoryTasksCompleted], 
-                        [MandatoryCompletionPercentage], [AllMandatoryCompleted]
-                    )
-                    VALUES (
-                        @EmployeeId, 2, 0, 2, 0.0, @StartDate, 'IN_PROGRESS', 
-                        GETUTCDATE(), 2, 0, 0.0, 0
-                    )";
+                        // Step 7: Create progress tracking (check if exists first)
+                        string checkProgressSql = "SELECT COUNT(*) FROM [dbo].[OnboardingProgress] WHERE [EmployeeId] = @EmployeeId";
+                        bool progressExists = false;
 
-                        using (SqlCommand cmd = new SqlCommand(createProgressSql, conn, transaction))
+                        using (SqlCommand checkCmd = new SqlCommand(checkProgressSql, conn, transaction))
                         {
-                            cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
-                            cmd.Parameters.AddWithValue("@StartDate", hireDate);
-                            cmd.ExecuteNonQuery();
+                            checkCmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                            int count = Convert.ToInt32(checkCmd.ExecuteScalar());
+                            progressExists = count > 0;
+                        }
+
+                        if (!progressExists)
+                        {
+                            string createProgressSql = @"
+                        INSERT INTO [dbo].[OnboardingProgress] (
+                            [EmployeeId], [TotalTasks], [CompletedTasks], [PendingTasks], [CompletionPercentage], 
+                            [StartDate], [Status], [LastUpdated], [MandatoryTasksTotal], [MandatoryTasksCompleted], 
+                            [MandatoryCompletionPercentage], [AllMandatoryCompleted]
+                        )
+                        VALUES (
+                            @EmployeeId, 2, 0, 2, 0.0, @StartDate, 'IN_PROGRESS', 
+                            GETUTCDATE(), 2, 0, 0.0, 0
+                        )";
+
+                            using (SqlCommand cmd = new SqlCommand(createProgressSql, conn, transaction))
+                            {
+                                cmd.Parameters.AddWithValue("@EmployeeId", employeeId);
+                                cmd.Parameters.AddWithValue("@StartDate", hireDate);
+                                cmd.ExecuteNonQuery();
+                            }
                         }
 
                         transaction.Commit();

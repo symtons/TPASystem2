@@ -87,42 +87,6 @@ namespace TPASystem2.HR
         protected global::System.Web.UI.WebControls.Literal litMessage;
 
         /// <summary>
-        /// litTotalEmployees control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litTotalEmployees;
-
-        /// <summary>
-        /// litActiveOnboarding control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litActiveOnboarding;
-
-        /// <summary>
-        /// litNewHires control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litNewHires;
-
-        /// <summary>
-        /// litDepartmentCount control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal litDepartmentCount;
-
-        /// <summary>
         /// txtEmployeeSearch control.
         /// </summary>
         /// <remarks>
