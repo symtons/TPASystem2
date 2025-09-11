@@ -816,19 +816,30 @@
             
             <div class="welcome-actions">
                <!-- Fixed Add Employee Button -->
-      <asp:Button ID="Button1" runat="server" Text="Button" OnClick="Button1_Click" />
-     <%-- <asp:Button ID="Button1" runat="server" Text="Add Employee" OnClick="Button1_Click" CssClass="btn-tpa" UseSubmitBehavior="true"  CausesValidation="false"/>--%>
+                <asp:Button ID="btnExportEmployees" runat="server" 
+    Text="Export Employees" 
+    CssClass="btn btn-secondary" 
+    OnClick="btnExportEmployees_Click" />
+     <asp:Button ID="Button1" runat="server" 
+    Text="Add Employee" 
+    CssClass="btn-tpa" 
+    OnClick="Button1_Click" 
+    style="margin-right: 10px;" />
+    
 
+    
             </div>
         </div>
     </div>
+
+  
 
     <!-- Message Panel -->
     <asp:Panel ID="pnlMessage" runat="server" Visible="false" CssClass="alert">
         <asp:Literal ID="litMessage" runat="server"></asp:Literal>
     </asp:Panel>
 
-    <!-- Dashboard Overview -->
+    
     
 
     <!-- Filters Section -->

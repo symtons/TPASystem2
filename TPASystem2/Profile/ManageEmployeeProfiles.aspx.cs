@@ -1529,5 +1529,11 @@ namespace TPASystem2.HR
         {
             Response.Redirect("~/Profile/AddEmployees.aspx");
         }
+        // Add these debug methods to ManageEmployeeProfiles.aspx.cs
+        // Place them in the #region Action Button Handlers section
+
+
+
+
     }
 }
