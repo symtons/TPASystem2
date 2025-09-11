@@ -816,8 +816,8 @@
             
             <div class="welcome-actions">
                <!-- Fixed Add Employee Button -->
-
-      <asp:Button ID="Button1" runat="server" Text="Add Employee" OnClick="Button1_Click" CssClass="btn-tpa" UseSubmitBehavior="true"  CausesValidation="false"/>
+      <asp:Button ID="Button1" runat="server" Text="Button" OnClick="Button1_Click" />
+     <%-- <asp:Button ID="Button1" runat="server" Text="Add Employee" OnClick="Button1_Click" CssClass="btn-tpa" UseSubmitBehavior="true"  CausesValidation="false"/>--%>
 
             </div>
         </div>
