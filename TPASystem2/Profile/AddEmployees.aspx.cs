@@ -11,7 +11,7 @@ using System.Web.Services;
 
 namespace TPASystem2.Profile
 {
-    public partial class AddEmployee : System.Web.UI.Page
+    public partial class AddEmployees : System.Web.UI.Page
     {
         private string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
@@ -506,10 +506,19 @@ namespace TPASystem2.Profile
 
         private bool HasEmployeeCreationAccess()
         {
-            string userRole = CurrentUserRole?.ToUpper() ?? "";
-            return userRole.Contains("ADMIN") ||
-                   userRole.Contains("HR") ||
-                   userRole.Contains("PROGRAMDIRECTOR");
+            string userRole = CurrentUserRole; // Use the property instead of expecting a parameter
+    
+    // More robust role checking
+    if (string.IsNullOrEmpty(userRole))
+        return false;
+        
+    userRole = userRole.Trim().ToUpper();
+    
+    return userRole == "ADMIN" ||
+           userRole == "HRADMIN" ||
+           userRole == "SUPERADMIN" ||
+           userRole == "SYSTEMADMINISTRATOR" ||
+           userRole == "PROGRAMDIRECTOR";
         }
 
         private bool IsValidSSN(string ssn)

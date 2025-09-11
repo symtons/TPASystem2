@@ -11,7 +11,7 @@ namespace TPASystem2.Profile
 {
 
 
-    public partial class AddEmployee
+    public partial class AddEmployees
     {
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿<%@ Page Title="Add Employee" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="AddEmployee.aspx.cs" Inherits="TPASystem2.Profile.AddEmployee" %>
+﻿<%@ Page Title="Add Employee" Language="C#" MasterPageFile="~/DashboardMaster.Master" AutoEventWireup="true" CodeBehind="AddEmployees.aspx.cs" Inherits="TPASystem2.Profile.AddEmployees" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="DashboardContent" runat="server">
     <!-- CSS Links -->
